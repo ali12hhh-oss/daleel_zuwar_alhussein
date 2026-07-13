@@ -41,18 +41,27 @@ jobs:
       - name: تحميل حزم Flutter
         run: flutter pub get
 
-      # نولّد فقط سكربتات وملف Gradle Wrapper (gradlew) تلقائياً لأنها ملفات
-      # بناء (bootstrap) قياسية وليست جزءاً من الكود المصدري.
-      # نُثبّت إصدار Gradle 8.7 هنا تحديداً (بدل الأحدث تلقائياً) لأن سكربتات
-      # Flutter الداخلية (Groovy) غير متوافقة مع Gradle 9+.
+      # نولّد سكربتات وملف Gradle Wrapper (gradlew) في مجلد مؤقّت منفصل تماماً
+      # عن مشروعنا، ثم ننسخ الملفات الناتجة فقط. هذا يتجنّب مشكلة أن تشغيل
+      # "gradle wrapper" مباشرة داخل مجلد android/ يجبر Gradle على تقييم كل
+      # مشروع Flutter (بما فيه مكتبات كل حزمة مثل geolocator) خارج سياق أداة
+      # Flutter نفسها، مما يسبب أخطاء غير مرتبطة بمشروعنا فعلياً.
       - name: توليد Gradle Wrapper
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
 
-      - name: بناء سكربتات gradlew
-        working-directory: android
-        run: gradle wrapper --gradle-version 8.7 --distribution-type all
+      - name: بناء سكربتات gradlew في مجلد معزول ثم نسخها للمشروع
+        run: |
+          mkdir -p /tmp/gradle-wrapper-gen
+          cd /tmp/gradle-wrapper-gen
+          gradle wrapper --gradle-version 8.7 --distribution-type all
+          cp gradlew "$GITHUB_WORKSPACE/android/gradlew"
+          cp gradlew.bat "$GITHUB_WORKSPACE/android/gradlew.bat"
+          mkdir -p "$GITHUB_WORKSPACE/android/gradle/wrapper"
+          cp gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
+          cp gradle/wrapper/gradle-wrapper.properties "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
+          chmod +x "$GITHUB_WORKSPACE/android/gradlew"
 
       - name: توليد أيقونة التطبيق (تحديث احتياطي، الأيقونات مُضمَّنة أصلاً في المشروع)
         run: dart run flutter_launcher_icons || true
