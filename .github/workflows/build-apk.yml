@@ -26,11 +26,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # مجلد android/ مُضمَّن مسبقاً في المشروع (لا نستخدم flutter create هنا
-      # حتى لا تُفقد أي تخصيصات كملف AndroidManifest أو build.gradle).
-      # يحتاج settings.gradle.kts إلى ملف android/local.properties لمعرفة
-      # مسار تثبيت Flutter SDK؛ هذا الملف عادة يولّده Flutter تلقائياً، لكن
-      # ننشئه هنا يدوياً كخطوة احترازية مبكرة.
       - name: إنشاء android/local.properties
         run: |
           FLUTTER_SDK_PATH="$(dirname "$(dirname "$(which flutter)")")"
@@ -40,17 +35,35 @@ jobs:
       - name: تحميل حزم Flutter
         run: flutter pub get
 
-      # الحل الجذري لملفات Gradle Wrapper: بدل تشغيل أمر "gradle" يدوياً (الذي
-      # أثبت هشاشته بسبب فروقات إصدارات Gradle/Groovy مع سكربتات Flutter)،
-      # نجعل أداة Flutter نفسها تُنشئ مشروعاً تجريبياً معزولاً بأمر
-      # "flutter create" (وهو مصمم لهذا الغرض ويعمل دائماً بنجاح مضموناً مع
-      # أي نسخة Flutter مثبَّتة)، ثم ننسخ منه فقط سكربتات التشغيل العامة
-      # (gradlew, gradlew.bat, gradle-wrapper.jar) — وهذه سكربتات عامة لا
-      # ترتبط بإصدار Gradle معيّن (تقرأ الإصدار من gradle-wrapper.properties
-      # وقت التشغيل). لذلك **لا ننسخ** gradle-wrapper.properties من المشروع
-      # التجريبي، لأنه يحمل إصدار Gradle قديماً من قالب Flutter الافتراضي
-      # (7.6.3) غير متوافق مع AGP 8.5.1 الذي نستخدمه؛ نُبقي على ملفنا الخاص
-      # المثبَّت مسبقاً على الإصدار 8.7 المتوافق.
+      # ✅ إصلاح مكتبة geolocator_android - الحل الجذري
+      - name: إصلاح ملف build.gradle لـ geolocator_android
+        run: |
+          GEOLOCATOR_GRADLE="$HOME/.pub-cache/hosted/pub.dev/geolocator_android-4.6.2/android/build.gradle"
+          if [ -f "$GEOLOCATOR_GRADLE" ]; then
+            echo "=== قبل الإصلاح ==="
+            cat "$GEOLOCATOR_GRADLE"
+            
+            # استبدال flutter.compileSdkVersion بـ compileSdk 34
+            sed -i 's/flutter\.compileSdkVersion/34/g' "$GEOLOCATOR_GRADLE"
+            
+            # استبدال flutter.minSdkVersion بـ minSdk 21
+            sed -i 's/flutter\.minSdkVersion/21/g' "$GEOLOCATOR_GRADLE"
+            
+            # استبدال flutter.targetSdkVersion بـ targetSdk 34
+            sed -i 's/flutter\.targetSdkVersion/34/g' "$GEOLOCATOR_GRADLE"
+            
+            # إزالة أي سطر يحتوي على flutter { source = ".." }
+            sed -i '/flutter\s*{/d' "$GEOLOCATOR_GRADLE"
+            sed -i '/source\s*=/d' "$GEOLOCATOR_GRADLE"
+            sed -i '/}/d' "$GEOLOCATOR_GRADLE"
+            
+            echo "=== بعد الإصلاح ==="
+            cat "$GEOLOCATOR_GRADLE"
+          else
+            echo "ملف geolocator_android build.gradle غير موجود"
+            find "$HOME/.pub-cache" -name "build.gradle" -path "*geolocator_android*" 2>/dev/null
+          fi
+
       - name: توليد ملفات Gradle Wrapper عبر مشروع تجريبي معزول
         run: |
           set -e
@@ -66,10 +79,10 @@ jobs:
           echo "تم نسخ سكربتات Gradle Wrapper بنجاح:"
           ls -la "$GITHUB_WORKSPACE/android/gradlew" "$GITHUB_WORKSPACE/android/gradle/wrapper/"
 
-      - name: توليد أيقونة التطبيق (تحديث احتياطي، الأيقونات مُضمَّنة أصلاً في المشروع)
+      - name: توليد أيقونة التطبيق (تحديث احتياطي)
         run: dart run flutter_launcher_icons || true
 
-      - name: تحليل الكود (اختياري، لا يوقف البناء عند التحذيرات)
+      - name: تحليل الكود (اختياري)
         run: flutter analyze || true
 
       - name: بناء APK (Release)
@@ -82,7 +95,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: إنشاء إصدار (Release) على GitHub يحتوي الـ APK
+      - name: إنشاء إصدار (Release) على GitHub
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
