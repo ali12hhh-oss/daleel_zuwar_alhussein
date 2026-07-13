@@ -1,46 +1,61 @@
 import '../models/models.dart';
 
-/// بيانات نموذجية (Placeholder) فقط.
-/// تنبيه مهم جداً: لم يتم إدراج أي فتوى فعلية هنا لأن الفتاوى الدقيقة
-/// تختلف بحسب نص السؤال وزمانه وقد تتغيّر مع الوقت. يجب على مطوّر التطبيق
-/// تعبئة هذا الملف بإجابات حقيقية منقولة حرفياً من المواقع الرسمية لكل مرجع
-/// (مثال: sistani.org لمكتب السيد السيستاني) مع ذكر المصدر ورابط الفتوى الأصلي،
-/// أو ربط هذا القسم مباشرة بواجهة برمجية (API) رسمية لموقع المرجع إن توفرت.
-const List<ShariQuestion> sampleQuestions = [
-  ShariQuestion(
-    scholarId: 'sistani',
-    category: 'قسم عام (نموذج)',
-    question: '[أدخل هنا نص السؤال الشرعي]',
-    answer:
-        'يرجى تعبئة الجواب الرسمي المنقول حرفياً من الموقع الرسمي لمكتب المرجع، '
-        'مع ذكر رابط المصدر وتاريخ آخر تحديث.',
+const List<Scholar> scholars = [
+  Scholar(
+    id: 'sistani',
+    name: 'السيد علي السيستاني',
+    title: 'آية الله العظمى',
+    officialSite: 'https://www.sistani.org',
+    istiftaUrl: 'https://www.sistani.org/arabic/qa/search/',
+    isLiving: true,
   ),
-  ShariQuestion(
-    scholarId: 'sadr',
-    category: 'قسم عام (نموذج)',
-    question: '[أدخل هنا نص السؤال الشرعي]',
-    answer:
-        'يرجى تعبئة الجواب من مصدر موثّق يُنسب رسمياً لمكتب السيد الشهيد الصدر '
-        'مع ذكر المصدر.',
+  Scholar(
+    id: 'khamenei',
+    name: 'السيد علي الخامنئي',
+    title: 'آية الله العظمى (شهيد)',
+    officialSite: 'https://arabic.khamenei.ir',
+    istiftaUrl: 'https://arabic.khamenei.ir/fatwa',
+    isLiving: true,
   ),
-  ShariQuestion(
-    scholarId: 'khamenei',
-    category: 'قسم عام (نموذج)',
-    question: '[أدخل هنا نص السؤال الشرعي]',
-    answer:
-        'يرجى تعبئة الجواب من الموقع الرسمي arabic.khamenei.ir مع ذكر رابط المصدر.',
+  Scholar(
+    id: 'sadr',
+    name: 'السيد محمد الصدر',
+    title: 'آية الله العظمى (شهيد)',
+    officialSite: '',
+    istiftaUrl: '',
+    isLiving: false,
   ),
-  ShariQuestion(
-    scholarId: 'shirazi',
-    category: 'قسم عام (نموذج)',
-    question: '[أدخل هنا نص السؤال الشرعي]',
-    answer: 'يرجى تعبئة الجواب من مصدر موثّق رسمي مع ذكر المصدر.',
+  Scholar(
+    id: 'shirazi',
+    name: 'السيد صادق الحسيني الشيرازي',
+    title: 'آية الله العظمى',
+    officialSite: '',
+    istiftaUrl: '',
+    isLiving: true,
   ),
-  ShariQuestion(
-    scholarId: 'khoei',
-    category: 'قسم عام (نموذج)',
-    question: '[أدخل هنا نص السؤال الشرعي]',
-    answer: 'يرجى تعبئة الجواب من مصدر موثّق رسمي مع ذكر المصدر.',
+  Scholar(
+    id: 'khoei',
+    name: 'السيد أبو القاسم الخوئي',
+    title: 'آية الله العظمى (رحمه الله)',
+    officialSite: '',
+    istiftaUrl: '',
+    isLiving: false,
+  ),
+  Scholar(
+    id: 'haeri',
+    name: 'السيد كمال الحيدري',
+    title: 'آية الله العظمى',
+    officialSite: '',
+    istiftaUrl: '',
+    isLiving: true,
+  ),
+  Scholar(
+    id: 'najafi',
+    name: 'الشيخ بشير حسين النجفي',
+    title: 'آية الله العظمى',
+    officialSite: '',
+    istiftaUrl: '',
+    isLiving: true,
   ),
 ];
 
@@ -52,3 +67,5 @@ const List<String> questionCategories = [
   'الأسرة والمواريث',
   'مسائل متفرقة',
 ];
+
+const List<ShariQuestion> sampleQuestions = [];
