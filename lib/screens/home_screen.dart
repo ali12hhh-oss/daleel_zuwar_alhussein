@@ -1,0 +1,119 @@
+import 'package:flutter/material.dart';
+import '../theme.dart';
+import '../widgets/section_card.dart';
+import 'route_screen.dart';
+import 'scholars_screen.dart';
+import 'hussein_quotes_screen.dart';
+import 'mawadda_screen.dart';
+import 'battle_screen.dart';
+import 'sabaya_screen.dart';
+import 'ahlulbayt_dates_screen.dart';
+
+class HomeScreen extends StatelessWidget {
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
+
+  const HomeScreen({
+    super.key,
+    required this.themeMode,
+    required this.onToggleTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('دليل زوار الحسين'),
+        actions: [
+          IconButton(
+            tooltip: isDark ? 'الوضع النهاري' : 'الوضع الليلي',
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            onPressed: onToggleTheme,
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Column(
+              children: [
+                Text('السلام عليك يا أبا عبدالله',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 6),
+                Text('دليلك الشامل لزيارة الإمام الحسين عليه السلام',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          SectionCard(
+            title: 'طريق زائر الحسين',
+            subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
+            icon: Icons.directions_walk,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const RouteScreen())),
+          ),
+          SectionCard(
+            title: 'أسئلة شرعية',
+            subtitle: 'اختر المرجع الديني الشيعي واطّلع على الأجوبة الشرعية',
+            icon: Icons.menu_book,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ScholarsScreen())),
+          ),
+          SectionCard(
+            title: 'أقوال الإمام الحسين عليه السلام',
+            subtitle: 'خطبه وكلماته في كربلاء',
+            icon: Icons.format_quote,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const HusseinQuotesScreen())),
+          ),
+          SectionCard(
+            title: 'خطب السبايا',
+            subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
+            icon: Icons.record_voice_over,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const SabayaScreen())),
+          ),
+          SectionCard(
+            title: 'مودة أهل البيت عليهم السلام',
+            subtitle: 'أحاديث النبي صلى الله عليه وآله في حب أهل البيت',
+            icon: Icons.favorite,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MawaddaScreen())),
+          ),
+          SectionCard(
+            title: 'معركة الطف',
+            subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
+            icon: Icons.history_edu,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const BattleScreen())),
+          ),
+          SectionCard(
+            title: 'ولادات ووفيات أهل البيت',
+            subtitle: 'تواريخ ولادة واستشهاد المعصومين عليهم السلام',
+            icon: Icons.calendar_month,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AhlulBaytDatesScreen())),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,35 @@
+name: daleel_zuwar_alhussein
+description: "دليل زوار الحسين - تطبيق ديني حسيني شامل"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  geolocator: ^11.0.0
+  url_launcher: ^6.2.5
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/app_icon.png
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  # خلفية موحّدة للأيقونات التكيفية على أندرويد (Adaptive Icon)
+  adaptive_icon_background: "#0B4D3C"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
