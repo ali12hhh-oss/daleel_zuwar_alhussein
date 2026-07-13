@@ -59,9 +59,7 @@ class _RouteScreenState extends State<RouteScreen> {
       }
 
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
+        desiredAccuracy: LocationAccuracy.high, // ✅ بدل locationSettings
       );
 
       IraqiCity nearest = iraqiCities.first;
