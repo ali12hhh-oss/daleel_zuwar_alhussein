@@ -32,37 +32,13 @@ jobs:
           echo "flutter.sdk=$FLUTTER_SDK_PATH" > android/local.properties
           cat android/local.properties
 
+      # ✅ تحديث الحزم ثم تحميلها
       - name: تحميل حزم Flutter
-        run: flutter pub get
-
-      # ✅ إصلاح مكتبة geolocator_android - الحل الجذري
-      - name: إصلاح ملف build.gradle لـ geolocator_android
         run: |
-          GEOLOCATOR_GRADLE="$HOME/.pub-cache/hosted/pub.dev/geolocator_android-4.6.2/android/build.gradle"
-          if [ -f "$GEOLOCATOR_GRADLE" ]; then
-            echo "=== قبل الإصلاح ==="
-            cat "$GEOLOCATOR_GRADLE"
-            
-            # استبدال flutter.compileSdkVersion بـ compileSdk 34
-            sed -i 's/flutter\.compileSdkVersion/34/g' "$GEOLOCATOR_GRADLE"
-            
-            # استبدال flutter.minSdkVersion بـ minSdk 21
-            sed -i 's/flutter\.minSdkVersion/21/g' "$GEOLOCATOR_GRADLE"
-            
-            # استبدال flutter.targetSdkVersion بـ targetSdk 34
-            sed -i 's/flutter\.targetSdkVersion/34/g' "$GEOLOCATOR_GRADLE"
-            
-            # إزالة أي سطر يحتوي على flutter { source = ".." }
-            sed -i '/flutter\s*{/d' "$GEOLOCATOR_GRADLE"
-            sed -i '/source\s*=/d' "$GEOLOCATOR_GRADLE"
-            sed -i '/}/d' "$GEOLOCATOR_GRADLE"
-            
-            echo "=== بعد الإصلاح ==="
-            cat "$GEOLOCATOR_GRADLE"
-          else
-            echo "ملف geolocator_android build.gradle غير موجود"
-            find "$HOME/.pub-cache" -name "build.gradle" -path "*geolocator_android*" 2>/dev/null
-          fi
+          flutter pub upgrade
+          flutter pub get
+
+      # ✅ لا تعدل ملفات المكتبة! الـ override في pubspec.yaml يكفي
 
       - name: توليد ملفات Gradle Wrapper عبر مشروع تجريبي معزول
         run: |
@@ -74,15 +50,15 @@ jobs:
           cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
           chmod +x "$GITHUB_WORKSPACE/android/gradlew"
           rm -rf /tmp/wrapper_ref
-          echo "--- محتوى gradle-wrapper.properties (يجب أن يبقى 8.7) ---"
+          echo "--- محتوى gradle-wrapper.properties ---"
           cat "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
           echo "تم نسخ سكربتات Gradle Wrapper بنجاح:"
           ls -la "$GITHUB_WORKSPACE/android/gradlew" "$GITHUB_WORKSPACE/android/gradle/wrapper/"
 
-      - name: توليد أيقونة التطبيق (تحديث احتياطي)
+      - name: توليد أيقونة التطبيق
         run: dart run flutter_launcher_icons || true
 
-      - name: تحليل الكود (اختياري)
+      - name: تحليل الكود
         run: flutter analyze || true
 
       - name: بناء APK (Release)
