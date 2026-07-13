@@ -21,23 +21,23 @@ const List<Scholar> scholars = [
     id: 'sadr',
     name: 'السيد محمد الصدر',
     title: 'آية الله العظمى (شهيد)',
-    officialSite: '',
-    istiftaUrl: '',
+    officialSite: 'https://jawabna.com',
+    istiftaUrl: 'https://jawabna.com',
     isLiving: false,
   ),
   Scholar(
     id: 'shirazi',
     name: 'السيد صادق الحسيني الشيرازي',
     title: 'آية الله العظمى',
-    officialSite: '',
-    istiftaUrl: '',
+    officialSite: 'https://shirazi.ir',
+    istiftaUrl: 'https://shirazi.ir/fa/qa/',
     isLiving: true,
   ),
   Scholar(
     id: 'khoei',
     name: 'السيد أبو القاسم الخوئي',
     title: 'آية الله العظمى (رحمه الله)',
-    officialSite: '',
+    officialSite: 'https://alkhoei.net',
     istiftaUrl: '',
     isLiving: false,
   ),
@@ -45,15 +45,15 @@ const List<Scholar> scholars = [
     id: 'haeri',
     name: 'السيد كمال الحيدري',
     title: 'آية الله العظمى',
-    officialSite: '',
-    istiftaUrl: '',
+    officialSite: 'https://alhaydari.com',
+    istiftaUrl: 'https://alhaydari.com/ar/category/estefta/',
     isLiving: true,
   ),
   Scholar(
     id: 'najafi',
     name: 'الشيخ بشير حسين النجفي',
     title: 'آية الله العظمى',
-    officialSite: '',
+    officialSite: 'https://alnajafi.org',
     istiftaUrl: '',
     isLiving: true,
   ),
@@ -68,4 +68,7 @@ const List<String> questionCategories = [
   'مسائل متفرقة',
 ];
 
+// ✅ قسم الأسئلة الشرعية - قريباً
+// سيتم إضافة أسئلة وأجوبة خاصة بالزوار من المواقع الرسمية للمراجع
+// حسب المعتقد الشيعي الإثني عشري
 const List<ShariQuestion> sampleQuestions = [];
