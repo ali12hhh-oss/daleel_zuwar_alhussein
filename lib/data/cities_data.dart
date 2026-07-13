@@ -1,13 +1,8 @@
 import '../models/models.dart';
 
-/// إحداثيات كربلاء المقدسة (منطقة الحرمين الشريفين تقريباً)
 const double karbalaLat = 32.6160;
 const double karbalaLng = 44.0249;
 
-/// مسافات تقريبية (بالطريق البري) بين أبرز المدن العراقية وكربلاء.
-/// هذه أرقام تقريبية للاسترشاد العام فقط وليست مسارات مشي دقيقة؛
-/// يُنصح بربط هذا القسم بخدمة خرائط حقيقية (Google Directions API) للحصول
-/// على أدق مسار سير فعلي وتحديثه بحسب حالة الطرق والمواكب الحسينية.
 const List<IraqiCity> iraqiCities = [
   IraqiCity(name: 'كربلاء', lat: 32.6160, lng: 44.0249, approxDistanceKm: 0),
   IraqiCity(name: 'النجف', lat: 31.9958, lng: 44.3107, approxDistanceKm: 80),
@@ -25,4 +20,47 @@ const List<IraqiCity> iraqiCities = [
   IraqiCity(name: 'الموصل', lat: 36.3489, lng: 43.1189, approxDistanceKm: 487),
   IraqiCity(name: 'أربيل', lat: 36.1911, lng: 44.0093, approxDistanceKm: 500),
   IraqiCity(name: 'دهوك', lat: 36.8617, lng: 42.9952, approxDistanceKm: 566),
+  // ✅ محافظات ومدن إضافية
+  IraqiCity(name: 'السليمانية', lat: 35.5575, lng: 45.4350, approxDistanceKm: 520),
+  IraqiCity(name: 'حلبجة', lat: 35.1776, lng: 45.9863, approxDistanceKm: 480),
+  IraqiCity(name: 'تكريت (صلاح الدين)', lat: 34.5969, lng: 43.6781, approxDistanceKm: 280),
+  IraqiCity(name: 'سامراء', lat: 34.1983, lng: 43.8746, approxDistanceKm: 180),
+  IraqiCity(name: 'الفلوجة', lat: 33.3554, lng: 43.7794, approxDistanceKm: 120),
+  IraqiCity(name: 'الطارمية', lat: 33.6700, lng: 44.3800, approxDistanceKm: 95),
+  IraqiCity(name: 'المقدادية', lat: 33.9744, lng: 44.5831, approxDistanceKm: 125),
+  IraqiCity(name: 'الخالص', lat: 33.8086, lng: 44.5344, approxDistanceKm: 115),
+  IraqiCity(name: 'بلد (صلاح الدين)', lat: 34.0156, lng: 44.1450, approxDistanceKm: 200),
+  IraqiCity(name: 'بيجي', lat: 34.9291, lng: 43.4931, approxDistanceKm: 320),
+  IraqiCity(name: 'الشعلة', lat: 33.3800, lng: 44.2800, approxDistanceKm: 100),
+  IraqiCity(name: 'المدينة (النجف)', lat: 32.0100, lng: 44.3300, approxDistanceKm: 82),
+  IraqiCity(name: 'الكفل', lat: 32.3800, lng: 44.4000, approxDistanceKm: 65),
+  IraqiCity(name: 'الهاشمية', lat: 32.4300, lng: 44.5200, approxDistanceKm: 55),
+  IraqiCity(name: 'المسيب', lat: 32.5800, lng: 44.3800, approxDistanceKm: 45),
+  IraqiCity(name: 'اللطيفية', lat: 33.1800, lng: 44.5500, approxDistanceKm: 85),
+  IraqiCity(name: 'اليوسفية', lat: 33.7300, lng: 44.3000, approxDistanceKm: 90),
+  IraqiCity(name: 'الإسكندرية (بابل)', lat: 32.2000, lng: 44.6200, approxDistanceKm: 110),
+  IraqiCity(name: 'الحمدانية', lat: 33.7500, lng: 44.2500, approxDistanceKm: 95),
+  IraqiCity(name: 'التاجي', lat: 33.5500, lng: 44.2800, approxDistanceKm: 85),
+  IraqiCity(name: 'أبو غريب', lat: 33.2900, lng: 44.1800, approxDistanceKm: 95),
+  IraqiCity(name: 'الفحامة', lat: 33.4200, lng: 44.3500, approxDistanceKm: 100),
+  IraqiCity(name: 'الطارمية', lat: 33.6700, lng: 44.3800, approxDistanceKm: 95),
+  IraqiCity(name: 'الدجيل', lat: 33.9800, lng: 44.2200, approxDistanceKm: 140),
+  IraqiCity(name: 'بلدروز', lat: 33.7500, lng: 45.3300, approxDistanceKm: 160),
+  IraqiCity(name: 'مندلي', lat: 33.7500, lng: 45.5500, approxDistanceKm: 170),
+  IraqiCity(name: 'الزبير', lat: 30.3800, lng: 47.7200, approxDistanceKm: 590),
+  IraqiCity(name: 'القرنة', lat: 30.9700, lng: 47.9300, approxDistanceKm: 540),
+  IraqiCity(name: 'الشطرة', lat: 31.4100, lng: 46.1700, approxDistanceKm: 340),
+  IraqiCity(name: 'الرفاعي', lat: 31.7200, lng: 46.1000, approxDistanceKm: 310),
+  IraqiCity(name: 'الحي', lat: 31.9300, lng: 46.0500, approxDistanceKm: 290),
+  IraqiCity(name: 'الغراف', lat: 31.2500, lng: 46.2500, approxDistanceKm: 380),
+  IraqiCity(name: 'الشفة', lat: 32.1500, lng: 46.3500, approxDistanceKm: 260),
+  IraqiCity(name: 'الدغارة', lat: 32.3000, lng: 46.2000, approxDistanceKm: 240),
+  IraqiCity(name: 'السنية', lat: 32.4500, lng: 46.0500, approxDistanceKm: 220),
+  IraqiCity(name: 'الحمزة الغربي', lat: 31.7500, lng: 44.6500, approxDistanceKm: 150),
+  IraqiCity(name: 'الخضر', lat: 31.8500, lng: 44.6000, approxDistanceKm: 140),
+  IraqiCity(name: 'الشنافية', lat: 31.5800, lng: 44.6500, approxDistanceKm: 160),
+  IraqiCity(name: 'الدغارة', lat: 32.3000, lng: 46.2000, approxDistanceKm: 240),
+  IraqiCity(name: 'السماوة', lat: 31.3234, lng: 45.2830, approxDistanceKm: 250),
+  IraqiCity(name: 'الخضر', lat: 31.8500, lng: 44.6000, approxDistanceKm: 140),
+  IraqiCity(name: 'الشنافية', lat: 31.5800, lng: 44.6500, approxDistanceKm: 160),
 ];
