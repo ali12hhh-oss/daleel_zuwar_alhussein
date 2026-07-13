@@ -37,14 +37,10 @@ jobs:
           flutter pub upgrade
           flutter pub get
 
-      # ✅ إصلاح مكتبة geolocator_android
       - name: إصلاح ملف build.gradle لـ geolocator_android
         run: |
           GEO_FILE=$(find "$HOME/.pub-cache/hosted/pub.dev" -path "*/geolocator_android-*/android/build.gradle" | head -1)
-          
           if [ -n "$GEO_FILE" ]; then
-            echo "Found: $GEO_FILE"
-            
             cat > "$GEO_FILE" << 'EOF'
           group 'com.baseflow.geolocator'
           version '1.0-SNAPSHOT'
@@ -69,6 +65,7 @@ jobs:
           apply plugin: 'com.android.library'
 
           android {
+              namespace 'com.baseflow.geolocator'
               compileSdk 34
               
               defaultConfig {
@@ -92,11 +89,6 @@ jobs:
               implementation 'com.google.android.gms:play-services-location:21.0.1'
           }
           EOF
-            
-            echo "Fixed geolocator_android build.gradle"
-          else
-            echo "Warning: geolocator_android build.gradle not found!"
-            find "$HOME/.pub-cache" -name "build.gradle" | grep geolocator || true
           fi
 
       - name: توليد ملفات Gradle Wrapper
