@@ -32,15 +32,74 @@ jobs:
           echo "flutter.sdk=$FLUTTER_SDK_PATH" > android/local.properties
           cat android/local.properties
 
-      # ✅ تحديث الحزم ثم تحميلها
       - name: تحميل حزم Flutter
         run: |
           flutter pub upgrade
           flutter pub get
 
-      # ✅ لا تعدل ملفات المكتبة! الـ override في pubspec.yaml يكفي
+      # ✅ إصلاح مكتبة geolocator_android
+      - name: إصلاح ملف build.gradle لـ geolocator_android
+        run: |
+          GEO_FILE=$(find "$HOME/.pub-cache/hosted/pub.dev" -path "*/geolocator_android-*/android/build.gradle" | head -1)
+          
+          if [ -n "$GEO_FILE" ]; then
+            echo "Found: $GEO_FILE"
+            
+            cat > "$GEO_FILE" << 'EOF'
+          group 'com.baseflow.geolocator'
+          version '1.0-SNAPSHOT'
 
-      - name: توليد ملفات Gradle Wrapper عبر مشروع تجريبي معزول
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.1.0'
+              }
+          }
+
+          rootProject.allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          apply plugin: 'com.android.library'
+
+          android {
+              compileSdk 34
+              
+              defaultConfig {
+                  minSdk 21
+                  targetSdk 34
+                  testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+              }
+              
+              lintOptions {
+                  disable 'InvalidPackage'
+              }
+              
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.core:core:1.10.1'
+              implementation 'com.google.android.gms:play-services-location:21.0.1'
+          }
+          EOF
+            
+            echo "Fixed geolocator_android build.gradle"
+          else
+            echo "Warning: geolocator_android build.gradle not found!"
+            find "$HOME/.pub-cache" -name "build.gradle" | grep geolocator || true
+          fi
+
+      - name: توليد ملفات Gradle Wrapper
         run: |
           set -e
           flutter create --platforms=android --org com.wraptemp /tmp/wrapper_ref
@@ -50,10 +109,6 @@ jobs:
           cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
           chmod +x "$GITHUB_WORKSPACE/android/gradlew"
           rm -rf /tmp/wrapper_ref
-          echo "--- محتوى gradle-wrapper.properties ---"
-          cat "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
-          echo "تم نسخ سكربتات Gradle Wrapper بنجاح:"
-          ls -la "$GITHUB_WORKSPACE/android/gradlew" "$GITHUB_WORKSPACE/android/gradle/wrapper/"
 
       - name: توليد أيقونة التطبيق
         run: dart run flutter_launcher_icons || true
@@ -64,14 +119,14 @@ jobs:
       - name: بناء APK (Release)
         run: flutter build apk --release
 
-      - name: رفع ملف APK كمخرَج (Artifact)
+      - name: رفع ملف APK كمخرَج
         uses: actions/upload-artifact@v4
         with:
           name: daleel-zuwar-alhussein-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: إنشاء إصدار (Release) على GitHub
+      - name: إنشاء إصدار على GitHub
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
