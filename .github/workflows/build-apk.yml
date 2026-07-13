@@ -30,8 +30,7 @@ jobs:
       # حتى لا تُفقد أي تخصيصات كملف AndroidManifest أو build.gradle).
       # يحتاج settings.gradle.kts إلى ملف android/local.properties لمعرفة
       # مسار تثبيت Flutter SDK؛ هذا الملف عادة يولّده Flutter تلقائياً، لكن
-      # ننشئه هنا يدوياً لأننا سنستدعي Gradle مباشرة (خطوة توليد الـ wrapper)
-      # قبل أول أمر Flutter يلمس مجلد أندرويد.
+      # ننشئه هنا يدوياً كخطوة احترازية مبكرة.
       - name: إنشاء android/local.properties
         run: |
           FLUTTER_SDK_PATH="$(dirname "$(dirname "$(which flutter)")")"
@@ -41,27 +40,26 @@ jobs:
       - name: تحميل حزم Flutter
         run: flutter pub get
 
-      # نولّد سكربتات وملف Gradle Wrapper (gradlew) في مجلد مؤقّت منفصل تماماً
-      # عن مشروعنا، ثم ننسخ الملفات الناتجة فقط. هذا يتجنّب مشكلة أن تشغيل
-      # "gradle wrapper" مباشرة داخل مجلد android/ يجبر Gradle على تقييم كل
-      # مشروع Flutter (بما فيه مكتبات كل حزمة مثل geolocator) خارج سياق أداة
-      # Flutter نفسها، مما يسبب أخطاء غير مرتبطة بمشروعنا فعلياً.
-      - name: توليد Gradle Wrapper
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
-
-      - name: بناء سكربتات gradlew في مجلد معزول ثم نسخها للمشروع
+      # الحل الجذري لملفات Gradle Wrapper: بدل تشغيل أمر "gradle" يدوياً (الذي
+      # أثبت هشاشته بسبب فروقات إصدارات Gradle/Groovy مع سكربتات Flutter)،
+      # نجعل أداة Flutter نفسها تُنشئ مشروعاً تجريبياً معزولاً بأمر
+      # "flutter create" (وهو مصمم لهذا الغرض ويعمل دائماً بنجاح مضموناً مع
+      # أي نسخة Flutter مثبَّتة)، ثم ننسخ فقط 4 ملفات الـ wrapper الناتجة
+      # (gradlew, gradlew.bat, gradle-wrapper.jar, gradle-wrapper.properties)
+      # إلى مشروعنا الحقيقي — دون أن يُنشئ أو يلمس أي ملف آخر من ملفاتنا.
+      - name: توليد ملفات Gradle Wrapper عبر مشروع تجريبي معزول
         run: |
-          mkdir -p /tmp/gradle-wrapper-gen
-          cd /tmp/gradle-wrapper-gen
-          gradle wrapper --gradle-version 8.7 --distribution-type all
-          cp gradlew "$GITHUB_WORKSPACE/android/gradlew"
-          cp gradlew.bat "$GITHUB_WORKSPACE/android/gradlew.bat"
+          set -e
+          flutter create --platforms=android --org com.wraptemp /tmp/wrapper_ref
+          cp /tmp/wrapper_ref/android/gradlew "$GITHUB_WORKSPACE/android/gradlew"
+          cp /tmp/wrapper_ref/android/gradlew.bat "$GITHUB_WORKSPACE/android/gradlew.bat"
           mkdir -p "$GITHUB_WORKSPACE/android/gradle/wrapper"
-          cp gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
-          cp gradle/wrapper/gradle-wrapper.properties "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
+          cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
+          cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.properties "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
           chmod +x "$GITHUB_WORKSPACE/android/gradlew"
+          rm -rf /tmp/wrapper_ref
+          echo "تم نسخ ملفات Gradle Wrapper بنجاح:"
+          ls -la "$GITHUB_WORKSPACE/android/gradlew" "$GITHUB_WORKSPACE/android/gradle/wrapper/"
 
       - name: توليد أيقونة التطبيق (تحديث احتياطي، الأيقونات مُضمَّنة أصلاً في المشروع)
         run: dart run flutter_launcher_icons || true
