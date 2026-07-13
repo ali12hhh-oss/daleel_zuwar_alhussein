@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../data/cities_data.dart';
 import '../models/models.dart';
 import '../theme.dart';
@@ -19,10 +21,15 @@ class _RouteScreenState extends State<RouteScreen> {
   Position? _position;
   IraqiCity? _nearestCity;
   double? _straightDistanceKm;
+  bool _showMap = false;
+
+  /// إحداثيات كربلاء المقدسة
+  static const double karbalaLat = 32.616;
+  static const double karbalaLng = 44.024;
 
   /// حساب المسافة بخط مستقيم بين نقطتين بالكيلومترات (معادلة Haversine)
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
-    const R = 6371.0; // نصف قطر الأرض بالكيلومتر
+    const R = 6371.0;
     final dLat = _deg2rad(lat2 - lat1);
     final dLon = _deg2rad(lon2 - lon1);
     final a = sin(dLat / 2) * sin(dLat / 2) +
@@ -59,7 +66,7 @@ class _RouteScreenState extends State<RouteScreen> {
       }
 
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high, // ✅ بدل locationSettings
+        desiredAccuracy: LocationAccuracy.high,
       );
 
       IraqiCity nearest = iraqiCities.first;
@@ -198,6 +205,109 @@ class _RouteScreenState extends State<RouteScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            
+            // ✅ زر عرض/إخفاء الخريطة
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.map, color: AppColors.primaryGreen),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'خريطة الطريق',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'خريطة OpenStreetMap لكربلاء والطريق إليها',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => setState(() => _showMap = !_showMap),
+                        icon: Icon(_showMap ? Icons.map_off : Icons.map),
+                        label: Text(_showMap ? 'إخفاء الخريطة' : 'عرض الخريطة'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // ✅ الخريطة
+            if (_showMap) ...[
+              const SizedBox(height: 16),
+              Card(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    height: 400,
+                    child: FlutterMap(
+                      options: const MapOptions(
+                        initialCenter: LatLng(karbalaLat, karbalaLng),
+                        initialZoom: 13,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.daleelzuwar.alhussein',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: const LatLng(karbalaLat, karbalaLng),
+                              width: 40,
+                              height: 40,
+                              child: Icon(
+                                Icons.location_on,
+                                color: AppColors.primaryGreen,
+                                size: 40,
+                              ),
+                            ),
+                            if (_position != null)
+                              Marker(
+                                point: LatLng(_position!.latitude, _position!.longitude),
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.person_pin_circle,
+                                  color: Colors.blue,
+                                  size: 40,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            
             const SizedBox(height: 16),
             const Text('أو اختر نقطة انطلاق من المدن الرئيسية:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
