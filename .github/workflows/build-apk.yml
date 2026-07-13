@@ -44,9 +44,13 @@ jobs:
       # أثبت هشاشته بسبب فروقات إصدارات Gradle/Groovy مع سكربتات Flutter)،
       # نجعل أداة Flutter نفسها تُنشئ مشروعاً تجريبياً معزولاً بأمر
       # "flutter create" (وهو مصمم لهذا الغرض ويعمل دائماً بنجاح مضموناً مع
-      # أي نسخة Flutter مثبَّتة)، ثم ننسخ فقط 4 ملفات الـ wrapper الناتجة
-      # (gradlew, gradlew.bat, gradle-wrapper.jar, gradle-wrapper.properties)
-      # إلى مشروعنا الحقيقي — دون أن يُنشئ أو يلمس أي ملف آخر من ملفاتنا.
+      # أي نسخة Flutter مثبَّتة)، ثم ننسخ منه فقط سكربتات التشغيل العامة
+      # (gradlew, gradlew.bat, gradle-wrapper.jar) — وهذه سكربتات عامة لا
+      # ترتبط بإصدار Gradle معيّن (تقرأ الإصدار من gradle-wrapper.properties
+      # وقت التشغيل). لذلك **لا ننسخ** gradle-wrapper.properties من المشروع
+      # التجريبي، لأنه يحمل إصدار Gradle قديماً من قالب Flutter الافتراضي
+      # (7.6.3) غير متوافق مع AGP 8.5.1 الذي نستخدمه؛ نُبقي على ملفنا الخاص
+      # المثبَّت مسبقاً على الإصدار 8.7 المتوافق.
       - name: توليد ملفات Gradle Wrapper عبر مشروع تجريبي معزول
         run: |
           set -e
@@ -55,10 +59,11 @@ jobs:
           cp /tmp/wrapper_ref/android/gradlew.bat "$GITHUB_WORKSPACE/android/gradlew.bat"
           mkdir -p "$GITHUB_WORKSPACE/android/gradle/wrapper"
           cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
-          cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.properties "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
           chmod +x "$GITHUB_WORKSPACE/android/gradlew"
           rm -rf /tmp/wrapper_ref
-          echo "تم نسخ ملفات Gradle Wrapper بنجاح:"
+          echo "--- محتوى gradle-wrapper.properties (يجب أن يبقى 8.7) ---"
+          cat "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.properties"
+          echo "تم نسخ سكربتات Gradle Wrapper بنجاح:"
           ls -la "$GITHUB_WORKSPACE/android/gradlew" "$GITHUB_WORKSPACE/android/gradle/wrapper/"
 
       - name: توليد أيقونة التطبيق (تحديث احتياطي، الأيقونات مُضمَّنة أصلاً في المشروع)
