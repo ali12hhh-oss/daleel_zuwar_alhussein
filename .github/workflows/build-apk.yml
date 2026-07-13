@@ -28,6 +28,19 @@ jobs:
 
       # مجلد android/ مُضمَّن مسبقاً في المشروع (لا نستخدم flutter create هنا
       # حتى لا تُفقد أي تخصيصات كملف AndroidManifest أو build.gradle).
+      # يحتاج settings.gradle.kts إلى ملف android/local.properties لمعرفة
+      # مسار تثبيت Flutter SDK؛ هذا الملف عادة يولّده Flutter تلقائياً، لكن
+      # ننشئه هنا يدوياً لأننا سنستدعي Gradle مباشرة (خطوة توليد الـ wrapper)
+      # قبل أول أمر Flutter يلمس مجلد أندرويد.
+      - name: إنشاء android/local.properties
+        run: |
+          FLUTTER_SDK_PATH="$(dirname "$(dirname "$(which flutter)")")"
+          echo "flutter.sdk=$FLUTTER_SDK_PATH" > android/local.properties
+          cat android/local.properties
+
+      - name: تحميل حزم Flutter
+        run: flutter pub get
+
       # نولّد فقط سكربتات وملف Gradle Wrapper (gradlew) تلقائياً لأنها ملفات
       # بناء (bootstrap) قياسية وليست جزءاً من الكود المصدري.
       - name: توليد Gradle Wrapper
@@ -36,9 +49,6 @@ jobs:
       - name: بناء سكربتات gradlew
         working-directory: android
         run: gradle wrapper --gradle-version 8.7 --distribution-type all
-
-      - name: تحميل حزم Flutter
-        run: flutter pub get
 
       - name: توليد أيقونة التطبيق (تحديث احتياطي، الأيقونات مُضمَّنة أصلاً في المشروع)
         run: dart run flutter_launcher_icons || true
