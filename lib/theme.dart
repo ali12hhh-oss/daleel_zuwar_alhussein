@@ -48,7 +48,7 @@ ThemeData buildLightTheme() {
         color: Colors.white,
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme( // ✅ CardTheme بدل CardThemeData
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: AppColors.lightCard,
@@ -86,7 +86,7 @@ ThemeData buildDarkTheme() {
         color: AppColors.darkText,
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme( // ✅ CardTheme بدل CardThemeData
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: AppColors.darkCard,
