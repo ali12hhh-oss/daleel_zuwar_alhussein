@@ -8,6 +8,7 @@ import 'mawadda_screen.dart';
 import 'battle_screen.dart';
 import 'sabaya_screen.dart';
 import 'ahlulbayt_dates_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ThemeMode themeMode;
@@ -26,6 +27,15 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('دليل زوار الحسين'),
         actions: [
+          // ✅ زر الإعدادات (الضبط)
+          IconButton(
+            tooltip: 'الإعدادات',
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
           IconButton(
             tooltip: isDark ? 'الوضع النهاري' : 'الوضع الليلي',
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
@@ -110,6 +120,26 @@ class HomeScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const AhlulBaytDatesScreen())),
+          ),
+          // ✅ مواقيت الصلاة
+          SectionCard(
+            title: 'مواقيت الصلاة',
+            subtitle: 'حسب كتيب مواقيت الصلاة للسيد السيستاني',
+            icon: Icons.access_time_filled,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const PrayerTimesScreen())),
+          ),
+          // ✅ الأهلة
+          SectionCard(
+            title: 'الأهلة',
+            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
+            icon: Icons.nightlight_round,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const CrescentScreen())),
           ),
           const SizedBox(height: 12),
         ],
