@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.daleelzuwar.alhussein"
     compileSdk = 34
-    ndkVersion = "25.1.8937393"
+    ndkVersion = "26.1.10909125" // ✅ تحديث NDK
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
