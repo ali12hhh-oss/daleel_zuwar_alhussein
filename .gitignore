@@ -1,0 +1,33 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+*.iml
+*.log
+
+# Android
+android/.gradle/
+android/local.properties
+android/**/*.keystore
+android/key.properties
+# ملفات bootstrap لـ Gradle Wrapper تُولَّد تلقائياً (راجع README)
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# macOS
+.DS_Store
+
+# VS Code / IntelliJ
+.vscode/
+.idea/
