@@ -1,14 +1,13 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // يجب أن يُطبَّق إضافة Flutter Gradle بعد إضافتي أندرويد وكوتلن
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.daleelzuwar.alhussein"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 34
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -21,20 +20,16 @@ android {
     }
 
     defaultConfig {
-        // معرّف التطبيق الفريد (Application ID) — غيّره إذا أردت نشره على متجر مختلف
         applicationId = "com.daleelzuwar.alhussein"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0.0"
         multiDexEnabled = true
     }
 
     buildTypes {
         release {
-            // مبدئياً نوقّع نسخة الإصدار بمفتاح التصحيح الافتراضي (Debug) لتسهيل
-            // أول بناء تجريبي؛ عند الرغبة بالنشر الفعلي على متجر جوجل بلاي يجب
-            // إنشاء مفتاح توقيع خاص (راجع قسم "التوقيع للنشر" في README).
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             isShrinkResources = false
