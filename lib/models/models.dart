@@ -74,12 +74,14 @@ class Narration {
   final String? hijriYear;
   final String attributedTo; // المصدر/الكتاب الذي نقل هذه الرواية تحديداً
   final bool isMostFamous; // هل هذه هي الرواية الأشهر/المعتمدة في أغلب التقاويم المعاصرة
+  final String? note; // ✅ إضافة note
 
   const Narration({
     required this.hijriDate,
     this.hijriYear,
     required this.attributedTo,
     this.isMostFamous = false,
+    this.note, // ✅ إضافة note
   });
 }
 
