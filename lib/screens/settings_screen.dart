@@ -139,59 +139,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ التذكير اليدوي بمناسبة معينة
+  /// ✅ التذكير اليدوي بمناسبة معينة - عرض جميع المناسبات مع تصنيف
   void _showReminderDialog() {
-    final upcomingEvents = _getUpcomingEvents();
+    final allEvents = _getUpcomingEvents();
+
+    // تصنيف المناسبات
+    final births = allEvents.where((e) => e.kind == EventKind.birth).toList();
+    final deaths = allEvents.where((e) => e.kind == EventKind.death).toList();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تذكير بمناسبة'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: upcomingEvents.length,
-            itemBuilder: (context, index) {
-              final event = upcomingEvents[index];
-              return ListTile(
-                leading: Icon(
-                  event.kind == EventKind.birth ? Icons.brightness_5 : Icons.brightness_2,
-                  color: event.kind == EventKind.birth
-                      ? AppColors.primaryGreen
-                      : Colors.grey[700],
+      builder: (context) => DefaultTabController(
+        length: 3,
+        child: AlertDialog(
+          title: const Text('تذكير بمناسبة'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: Column(
+              children: [
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'الكل'),
+                    Tab(text: 'ولادات'),
+                    Tab(text: 'وفيات'),
+                  ],
+                  labelColor: AppColors.primaryGreen,
                 ),
-                title: Text(event.personName),
-                subtitle: Text(
-                  event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد',
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // جميع المناسبات
+                      _buildEventsList(allEvents),
+                      // الولادات فقط
+                      _buildEventsList(births),
+                      // الوفيات فقط
+                      _buildEventsList(deaths),
+                    ],
+                  ),
                 ),
-                onTap: () {
-                  _showInstantNotification(
-                    'تذكير: ${event.personName}',
-                    '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} ${event.personName}',
-                  );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('تم تعيين تذكير لـ ${event.personName}')),
-                  );
-                },
-              );
-            },
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إغلاق'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
-          ),
-        ],
       ),
     );
   }
 
-  /// ✅ الحصول على المناسبات القادمة
+  /// ✅ بناء قائمة المناسبات
+  Widget _buildEventsList(List<AhlulBaytEvent> events) {
+    if (events.isEmpty) {
+      return const Center(
+        child: Text('لا توجد مناسبات في هذا القسم'),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: events.length,
+      itemBuilder: (context, index) {
+        final event = events[index];
+        return ListTile(
+          leading: Icon(
+            event.kind == EventKind.birth ? Icons.brightness_5 : Icons.brightness_2,
+            color: event.kind == EventKind.birth
+                ? AppColors.primaryGreen
+                : Colors.grey[700],
+          ),
+          title: Text(event.personName),
+          subtitle: Text(
+            '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} - ${event.hijriDate}',
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.notifications_active, color: AppColors.primaryGreen),
+            onPressed: () {
+              _showInstantNotification(
+                'تذكير: ${event.personName}',
+                '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} ${event.personName} - ${event.hijriDate}',
+              );
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('تم تعيين تذكير لـ ${event.personName}')),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// ✅ الحصول على جميع مناسبات أهل البيت (ولادات ووفيات)
   List<AhlulBaytEvent> _getUpcomingEvents() {
-    return ahlulBaytEvents.take(10).toList();
+    // عرض جميع المناسبات بدون تقييد
+    return ahlulBaytEvents.toList();
   }
 
   @override
@@ -373,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 16),
 
-          // ✅ معلومات التطبيق
+          // ✅ معلومات التطبيق - تعريف كامل
           const Text(
             'عن التطبيق',
             style: TextStyle(
@@ -382,18 +428,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          ListTile(
-            leading: Icon(Icons.info, color: AppColors.primaryGreen),
-            title: const Text('الإصدار'),
-            subtitle: const Text('1.0.0'),
+
+          // تعريف كامل بالتطبيق
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            color: Colors.grey[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.info, color: AppColors.primaryGreen),
+                      SizedBox(width: 8),
+                      Text(
+                        'دليل زوار الحسين',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'تطبيق ديني حسيني شامل يهدف إلى خدمة زوار الإمام الحسين عليه السلام وتوفير '
+                    'المعلومات الشرعية والتاريخية والخدمية لهم.',
+                    style: TextStyle(fontSize: 13, height: 1.6),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'المميزات:
+'
+                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله
+'
+                    '• أقوال وخطب الإمام الحسين عليه السلام
+'
+                    '• أسئلة شرعية وفتاوى
+'
+                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام
+'
+                    '• خريطة تفاعلية للأماكن المقدسة
+'
+                    '• إشعارات وتذكير بالمناسبات',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const SizedBox(height: 8),
+                  const Row(
+                    children: [
+                      Text('الإصدار: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('1.0.0'),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Row(
+                    children: [
+                      Text('المطور: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('فريق دليل زوار الحسين'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          ListTile(
-            leading: Icon(Icons.email, color: AppColors.primaryGreen),
-            title: const Text('تواصل معنا'),
-            subtitle: const Text('للاقتراحات والملاحظات'),
-            onTap: () {
-              // TODO: فتح البريد
-            },
+
+          // تواصل معنا - إضافة إيميل
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Icon(Icons.email, color: AppColors.primaryGreen),
+              title: const Text('تواصل معنا'),
+              subtitle: const Text('mhtraf6@gmail.com'),
+              trailing: const Icon(Icons.open_in_new, size: 18),
+              onTap: () async {
+                final Uri emailUri = Uri(
+                  scheme: 'mailto',
+                  path: 'mhtraf6@gmail.com',
+                  queryParameters: {
+                    'subject': 'اقتراح/ملاحظة - دليل زوار الحسين',
+                  },
+                );
+                // TODO: استخدام url_launcher لفتح الإيميل
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('mhtraf6@gmail.com')),
+                );
+              },
+            ),
           ),
         ],
       ),
