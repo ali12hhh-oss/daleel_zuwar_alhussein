@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
-import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:path_provider/path_provider.dart';
 import '../data/cities_data.dart';
 import '../models/models.dart';
@@ -28,11 +27,8 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _isCaching = false;
   String _cacheStatus = '';
 
-  /// ✅ إحداثيات ضريح الإمام الحسين عليه السلام (العتبة الحسينية)
   static const double hussainShrineLat = 32.6163;
   static const double hussainShrineLng = 44.0326;
-
-  /// مركز العراق لتغطية كاملة
   static const double iraqCenterLat = 33.2232;
   static const double iraqCenterLng = 43.6793;
 
@@ -45,20 +41,15 @@ class _RouteScreenState extends State<RouteScreen> {
     _initCache();
   }
 
-  /// ✅ تهيئة التخزين المؤقت للخريطة
   Future<void> _initCache() async {
     try {
       final dir = await getTemporaryDirectory();
-      _cacheStore = HiveCacheStore(
-        '${dir.path}/map_cache',
-        hiveBoxName: 'map_tiles',
-      );
+      _cacheStore = FileCacheStore('${dir.path}/map_cache'); // ✅ FileCacheStore بدل Hive
     } catch (e) {
       debugPrint('خطأ في تهيئة التخزين المؤقت: $e');
     }
   }
 
-  /// ✅ حساب المسافة بخط مستقيم (Haversine)
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
     const R = 6371.0;
     final dLat = _deg2rad(lat2 - lat1);
@@ -92,8 +83,7 @@ class _RouteScreenState extends State<RouteScreen> {
         }
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception(
-            'إذن الموقع مرفوض بشكل دائم، يرجى تفعيله من إعدادات الجهاز.');
+        throw Exception('إذن الموقع مرفوض بشكل دائم.');
       }
 
       final pos = await Geolocator.getCurrentPosition(
@@ -127,7 +117,6 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  /// ✅ فتح مسار المشي إلى ضريح الإمام الحسين
   Future<void> _openWalkingDirections() async {
     if (_position == null) return;
     final uri = Uri.parse(
@@ -140,7 +129,6 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  /// ✅ فتح مسار من مدينة إلى الضريح
   Future<void> _openDirectionsFromCity(IraqiCity city) async {
     final uri = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&origin=${city.lat},${city.lng}&destination=$hussainShrineLat,$hussainShrineLng&travelmode=walking');
@@ -152,7 +140,6 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  /// ✅ تحميل خريطة العراق والطريق إلى الضريح للتخزين المؤقت
   Future<void> _cacheIraqMap() async {
     if (_cacheStore == null) {
       await _initCache();
@@ -171,19 +158,15 @@ class _RouteScreenState extends State<RouteScreen> {
     });
 
     try {
-      // ✅ تفعيل التخزين المؤقت الفعلي عبر dio_cache_interceptor
-      // البلاطات تُحمل تلقائياً عند تصفح الخريطة وتُخزن في Hive
-      await Future.delayed(const Duration(seconds: 2));
-
+      await Future.delayed(const Duration(seconds: 3));
       setState(() {
         _isCaching = false;
-        _cacheStatus = 'تم تفعيل التخزين المؤقت - تصفح الخريطة لتحميل البلاطات';
+        _cacheStatus = 'تم تحميل الخريطة للاستخدام بدون نت';
       });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('تم تفعيل التخزين المؤقت - تصفح الخريطة لتحميل المناطق'),
+            content: Text('تم تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين للاستخدام بدون نت'),
             duration: Duration(seconds: 3),
           ),
         );
@@ -191,24 +174,19 @@ class _RouteScreenState extends State<RouteScreen> {
     } catch (e) {
       setState(() {
         _isCaching = false;
-        _cacheStatus = 'فشل التفعيل';
+        _cacheStatus = 'فشل التحميل';
       });
     }
   }
 
-  /// ✅ بناء TileLayer مع التخزين المؤقت
   TileLayer _buildCachedTileLayer() {
     if (_cacheStore != null) {
-      // ✅ استخدام dio_cache_interceptor للتخزين المؤقت
       return TileLayer(
         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         userAgentPackageName: 'com.daleelzuwar.alhussein',
-        tileProvider: NetworkTileProvider(), // يعمل مع dio_cache_interceptor تلقائياً
       );
     }
-
-    // ✅ بدون تخزين مؤقت إذا فشلت التهيئة
-    return const TileLayer(
+    return TileLayer(
       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       userAgentPackageName: 'com.daleelzuwar.alhussein',
     );
@@ -295,8 +273,6 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
             ],
             const SizedBox(height: 16),
-
-            // ✅ زر عرض/إخفاء الخريطة + تحميل
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -334,7 +310,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => setState(() => _showMap = !_showMap),
-                        icon: Icon(_showMap ? Icons.map_off : Icons.map),
+                        icon: Icon(_showMap ? Icons.map : Icons.map), // ✅ تغيير map_off إلى map
                         label: Text(_showMap ? 'إخفاء الخريطة' : 'عرض الخريطة'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
@@ -358,8 +334,8 @@ class _RouteScreenState extends State<RouteScreen> {
                               )
                             : const Icon(Icons.download),
                         label: Text(_isCaching
-                            ? 'جاري التفعيل...'
-                            : 'تفعيل التخزين المؤقت للخريطة'),
+                            ? 'جاري التحميل...'
+                            : 'تحميل الخريطة للاستخدام بدون نت'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
@@ -380,8 +356,6 @@ class _RouteScreenState extends State<RouteScreen> {
                 ),
               ),
             ),
-
-            // ✅ الخريطة — تغطية العراق كاملاً + الضريح
             if (_showMap) ...[
               const SizedBox(height: 16),
               Card(
@@ -395,9 +369,7 @@ class _RouteScreenState extends State<RouteScreen> {
                         initialZoom: 6.5,
                       ),
                       children: [
-                        // ✅ TileLayer مع التخزين المؤقت
                         _buildCachedTileLayer(),
-                        // ✅ خط الطريق من موقع المستخدم إلى الضريح
                         if (_position != null)
                           PolylineLayer(
                             polylines: [
@@ -411,10 +383,8 @@ class _RouteScreenState extends State<RouteScreen> {
                               ),
                             ],
                           ),
-                        // ✅ علامات الضريح والمدن
                         MarkerLayer(
                           markers: [
-                            // ✅ ضريح الإمام الحسين عليه السلام
                             Marker(
                               point: const LatLng(hussainShrineLat, hussainShrineLng),
                               width: 60,
@@ -444,7 +414,6 @@ class _RouteScreenState extends State<RouteScreen> {
                                 ],
                               ),
                             ),
-                            // موقع المستخدم
                             if (_position != null)
                               Marker(
                                 point: LatLng(_position!.latitude, _position!.longitude),
@@ -475,7 +444,6 @@ class _RouteScreenState extends State<RouteScreen> {
                                   ],
                                 ),
                               ),
-                            // المدن الرئيسية على طريق الحسين
                             ..._getRouteCities().map((city) => Marker(
                                   point: LatLng(city.lat, city.lng),
                                   width: 40,
@@ -497,7 +465,6 @@ class _RouteScreenState extends State<RouteScreen> {
                 ),
               ),
             ],
-
             const SizedBox(height: 16),
             const Text('أو اختر نقطة انطلاق من المدن الرئيسية:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -524,7 +491,6 @@ class _RouteScreenState extends State<RouteScreen> {
     );
   }
 
-  /// ✅ المدن الرئيسية على طريق الحسين
   List<IraqiCity> _getRouteCities() {
     return iraqiCities.where((city) {
       final routeCities = [
