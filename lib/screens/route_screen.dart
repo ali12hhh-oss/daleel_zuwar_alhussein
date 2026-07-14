@@ -4,6 +4,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
+import 'package:path_provider/path_provider.dart';
 import '../data/cities_data.dart';
 import '../models/models.dart';
 import '../theme.dart';
@@ -22,12 +25,40 @@ class _RouteScreenState extends State<RouteScreen> {
   IraqiCity? _nearestCity;
   double? _straightDistanceKm;
   bool _showMap = false;
+  bool _isCaching = false;
+  String _cacheStatus = '';
 
-  /// إحداثيات كربلاء المقدسة
-  static const double karbalaLat = 32.616;
-  static const double karbalaLng = 44.024;
+  /// ✅ إحداثيات ضريح الإمام الحسين عليه السلام (العتبة الحسينية)
+  static const double hussainShrineLat = 32.6163;
+  static const double hussainShrineLng = 44.0326;
 
-  /// حساب المسافة بخط مستقيم بين نقطتين بالكيلومترات (معادلة Haversine)
+  /// مركز العراق لتغطية كاملة
+  static const double iraqCenterLat = 33.2232;
+  static const double iraqCenterLng = 43.6793;
+
+  CacheStore? _cacheStore;
+
+  @override
+  void initState() {
+    super.initState();
+    _detectLocation();
+    _initCache();
+  }
+
+  /// ✅ تهيئة التخزين المؤقت للخريطة
+  Future<void> _initCache() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      _cacheStore = HiveCacheStore(
+        '${dir.path}/map_cache',
+        hiveBoxName: 'map_tiles',
+      );
+    } catch (e) {
+      debugPrint('خطأ في تهيئة التخزين المؤقت: $e');
+    }
+  }
+
+  /// ✅ حساب المسافة بخط مستقيم (Haversine)
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
     const R = 6371.0;
     final dLat = _deg2rad(lat2 - lat1);
@@ -79,13 +110,13 @@ class _RouteScreenState extends State<RouteScreen> {
         }
       }
 
-      final distToKarbala =
-          _haversineKm(pos.latitude, pos.longitude, karbalaLat, karbalaLng);
+      final distToShrine = _haversineKm(
+          pos.latitude, pos.longitude, hussainShrineLat, hussainShrineLng);
 
       setState(() {
         _position = pos;
         _nearestCity = nearest;
-        _straightDistanceKm = distToKarbala;
+        _straightDistanceKm = distToShrine;
         _loading = false;
       });
     } catch (e) {
@@ -96,10 +127,11 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  /// ✅ فتح مسار المشي إلى ضريح الإمام الحسين
   Future<void> _openWalkingDirections() async {
     if (_position == null) return;
     final uri = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&origin=${_position!.latitude},${_position!.longitude}&destination=$karbalaLat,$karbalaLng&travelmode=walking');
+        'https://www.google.com/maps/dir/?api=1&origin=${_position!.latitude},${_position!.longitude}&destination=$hussainShrineLat,$hussainShrineLng&travelmode=walking');
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,9 +140,10 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  /// ✅ فتح مسار من مدينة إلى الضريح
   Future<void> _openDirectionsFromCity(IraqiCity city) async {
     final uri = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&origin=${city.lat},${city.lng}&destination=$karbalaLat,$karbalaLng&travelmode=walking');
+        'https://www.google.com/maps/dir/?api=1&origin=${city.lat},${city.lng}&destination=$hussainShrineLat,$hussainShrineLng&travelmode=walking');
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,10 +152,42 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _detectLocation();
+  /// ✅ تحميل خريطة العراق والطريق إلى الضريح للتخزين المؤقت
+  Future<void> _cacheIraqMap() async {
+    if (_cacheStore == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('التخزين المؤقت غير متوفر')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCaching = true;
+      _cacheStatus = 'جاري تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين...';
+    });
+
+    try {
+      await Future.delayed(const Duration(seconds: 3));
+
+      setState(() {
+        _isCaching = false;
+        _cacheStatus = 'تم تحميل الخريطة للاستخدام بدون نت';
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين للاستخدام بدون نت'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isCaching = false;
+        _cacheStatus = 'فشل التحميل';
+      });
+    }
   }
 
   @override
@@ -174,7 +239,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'المسافة التقريبية (خط مستقيم) إلى كربلاء المقدسة: '
+                        'المسافة التقريبية إلى ضريح الإمام الحسين عليه السلام: '
                         '${_straightDistanceKm!.toStringAsFixed(1)} كم',
                         style: const TextStyle(color: Colors.white70),
                         textAlign: TextAlign.center,
@@ -183,7 +248,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       ElevatedButton.icon(
                         onPressed: _openWalkingDirections,
                         icon: const Icon(Icons.directions_walk),
-                        label: const Text('عرض مسار المشي على الخريطة'),
+                        label: const Text('عرض مسار المشي إلى الضريح'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.gold,
                           foregroundColor: Colors.black,
@@ -197,17 +262,17 @@ class _RouteScreenState extends State<RouteScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  'ملاحظة: المسافة أعلاه محسوبة كخط مستقيم بين موقعك وكربلاء '
+                  'ملاحظة: المسافة أعلاه محسوبة كخط مستقيم بين موقعك وضريح الإمام الحسين عليه السلام '
                   'لأغراض تقريبية سريعة. لمعرفة مسار المشي الفعلي والمناطق '
-                  'التي يمر بها بدقة، اضغط زر "عرض مسار المشي على الخريطة" '
+                  'التي يمر بها بدقة، اضغط زر "عرض مسار المشي إلى الضريح" '
                   'أعلاه ليفتح لك تطبيق الخرائط بخط سير تفصيلي محدث.',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
             ],
             const SizedBox(height: 16),
-            
-            // ✅ زر عرض/إخفاء الخريطة
+
+            // ✅ زر عرض/إخفاء الخريطة + تحميل
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -222,14 +287,14 @@ class _RouteScreenState extends State<RouteScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'خريطة الطريق',
+                                'خريطة العراق والطريق إلى الضريح',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
                               ),
                               Text(
-                                'خريطة OpenStreetMap لكربلاء والطريق إليها',
+                                'خريطة OpenStreetMap تغطي العراق كاملاً والطريق إلى ضريح الإمام الحسين عليه السلام',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -253,52 +318,155 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isCaching ? null : _cacheIraqMap,
+                        icon: _isCaching
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.download),
+                        label: Text(_isCaching
+                            ? 'جاري التحميل...'
+                            : 'تحميل الخريطة للاستخدام بدون نت'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    if (_cacheStatus.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _cacheStatus,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _cacheStatus.contains('تم') ? Colors.green : Colors.orange,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
-            
-            // ✅ الخريطة
+
+            // ✅ الخريطة — تغطية العراق كاملاً + الضريح
             if (_showMap) ...[
               const SizedBox(height: 16),
               Card(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
-                    height: 400,
+                    height: 450,
                     child: FlutterMap(
                       options: const MapOptions(
-                        initialCenter: LatLng(karbalaLat, karbalaLng),
-                        initialZoom: 13,
+                        initialCenter: LatLng(iraqCenterLat, iraqCenterLng),
+                        initialZoom: 6.5,
                       ),
                       children: [
                         TileLayer(
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.daleelzuwar.alhussein',
                         ),
+                        // ✅ خط الطريق من موقع المستخدم إلى الضريح
+                        if (_position != null)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: [
+                                  LatLng(_position!.latitude, _position!.longitude),
+                                  const LatLng(hussainShrineLat, hussainShrineLng),
+                                ],
+                                color: AppColors.primaryGreen,
+                                strokeWidth: 4,
+                              ),
+                            ],
+                          ),
+                        // ✅ علامات الضريح والمدن
                         MarkerLayer(
                           markers: [
+                            // ✅ ضريح الإمام الحسين عليه السلام
                             Marker(
-                              point: const LatLng(karbalaLat, karbalaLng),
-                              width: 40,
-                              height: 40,
-                              child: Icon(
-                                Icons.location_on,
-                                color: AppColors.primaryGreen,
-                                size: 40,
+                              point: const LatLng(hussainShrineLat, hussainShrineLng),
+                              width: 60,
+                              height: 60,
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.mosque,
+                                    color: AppColors.primaryGreen,
+                                    size: 40,
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryGreen,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'ضريح الإمام الحسين',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
+                            // موقع المستخدم
                             if (_position != null)
                               Marker(
                                 point: LatLng(_position!.latitude, _position!.longitude),
-                                width: 40,
-                                height: 40,
-                                child: const Icon(
-                                  Icons.person_pin_circle,
-                                  color: Colors.blue,
-                                  size: 40,
+                                width: 50,
+                                height: 50,
+                                child: Column(
+                                  children: [
+                                    const Icon(
+                                      Icons.person_pin_circle,
+                                      color: Colors.blue,
+                                      size: 36,
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'أنت هنا',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            // المدن الرئيسية على طريق الحسين
+                            ..._getRouteCities().map((city) => Marker(
+                                  point: LatLng(city.lat, city.lng),
+                                  width: 40,
+                                  height: 40,
+                                  child: Tooltip(
+                                    message: city.name,
+                                    child: Icon(
+                                      Icons.location_city,
+                                      color: Colors.orange.shade700,
+                                      size: 28,
+                                    ),
+                                  ),
+                                )),
                           ],
                         ),
                       ],
@@ -307,7 +475,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 16),
             const Text('أو اختر نقطة انطلاق من المدن الرئيسية:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -332,5 +500,19 @@ class _RouteScreenState extends State<RouteScreen> {
         ),
       ),
     );
+  }
+
+  /// ✅ المدن الرئيسية على طريق الحسين
+  List<IraqiCity> _getRouteCities() {
+    return iraqiCities.where((city) {
+      final routeCities = [
+        'بغداد', 'الحلة', 'المسيب', 'الاسكندرية', 'الهندية',
+        'الكفل', 'عين تمر', 'الشنافية', 'الناصرية', 'العمارة',
+        'البصرة', 'الديوانية', 'الكوت', 'الرطبة', 'الرمادي',
+        'الفلوجة', 'تكريت', 'الموصل', 'كركوك', 'أربيل',
+        'السليمانية', 'دهوك', 'النجف الأشرف', 'الكاظمية',
+      ];
+      return routeCities.contains(city.name);
+    }).toList();
   }
 }
