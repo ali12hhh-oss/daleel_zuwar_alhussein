@@ -9,6 +9,9 @@ import 'battle_screen.dart';
 import 'sabaya_screen.dart';
 import 'ahlulbayt_dates_screen.dart';
 import 'settings_screen.dart';
+import 'tasbih_screen.dart';
+import 'qibla_screen.dart';
+import 'ziarat_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ThemeMode themeMode;
@@ -68,6 +71,8 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+
+          // ✅ الأزرار القديمة (جميعها محتفظة)
           SectionCard(
             title: 'طريق زائر الحسين',
             subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
@@ -121,7 +126,6 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const AhlulBaytDatesScreen())),
           ),
-          // ✅ مواقيت الصلاة
           SectionCard(
             title: 'مواقيت الصلاة',
             subtitle: 'حسب كتيب مواقيت الصلاة للسيد السيستاني',
@@ -131,7 +135,6 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const PrayerTimesScreen())),
           ),
-          // ✅ الأهلة
           SectionCard(
             title: 'الأهلة',
             subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
@@ -141,6 +144,36 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const CrescentScreen())),
           ),
+
+          // ✅ الأزرار الجديدة
+          SectionCard(
+            title: 'المسبحة الإلكترونية',
+            subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
+            icon: Icons.fingerprint,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const TasbihScreen())),
+          ),
+          SectionCard(
+            title: 'اتجاه القبلة',
+            subtitle: 'حساب اتجاه القبلة حسب موقعك',
+            icon: Icons.explore,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const QiblaScreen())),
+          ),
+          SectionCard(
+            title: 'الزيارات',
+            subtitle: 'زيارة عاشوراء، وارث، الأربعين، العباس، علي الأكبر، الأصحاب',
+            icon: Icons.mosque,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ZiaratScreen())),
+          ),
+
           const SizedBox(height: 12),
         ],
       ),
