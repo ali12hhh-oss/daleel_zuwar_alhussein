@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:path_provider/path_provider.dart';
 import '../data/cities_data.dart';
 import '../models/models.dart';
@@ -32,22 +31,10 @@ class _RouteScreenState extends State<RouteScreen> {
   static const double iraqCenterLat = 33.2232;
   static const double iraqCenterLng = 43.6793;
 
-  CacheStore? _cacheStore;
-
   @override
   void initState() {
     super.initState();
     _detectLocation();
-    _initCache();
-  }
-
-  Future<void> _initCache() async {
-    try {
-      final dir = await getTemporaryDirectory();
-      _cacheStore = FileCacheStore('${dir.path}/map_cache'); // ✅ FileCacheStore بدل Hive
-    } catch (e) {
-      debugPrint('خطأ في تهيئة التخزين المؤقت: $e');
-    }
   }
 
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
@@ -141,17 +128,6 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Future<void> _cacheIraqMap() async {
-    if (_cacheStore == null) {
-      await _initCache();
-    }
-
-    if (_cacheStore == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('التخزين المؤقت غير متوفر')),
-      );
-      return;
-    }
-
     setState(() {
       _isCaching = true;
       _cacheStatus = 'جاري تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين...';
@@ -177,19 +153,6 @@ class _RouteScreenState extends State<RouteScreen> {
         _cacheStatus = 'فشل التحميل';
       });
     }
-  }
-
-  TileLayer _buildCachedTileLayer() {
-    if (_cacheStore != null) {
-      return TileLayer(
-        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        userAgentPackageName: 'com.daleelzuwar.alhussein',
-      );
-    }
-    return TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'com.daleelzuwar.alhussein',
-    );
   }
 
   @override
@@ -310,7 +273,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => setState(() => _showMap = !_showMap),
-                        icon: Icon(_showMap ? Icons.map : Icons.map), // ✅ تغيير map_off إلى map
+                        icon: Icon(_showMap ? Icons.map : Icons.map),
                         label: Text(_showMap ? 'إخفاء الخريطة' : 'عرض الخريطة'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
@@ -369,7 +332,10 @@ class _RouteScreenState extends State<RouteScreen> {
                         initialZoom: 6.5,
                       ),
                       children: [
-                        _buildCachedTileLayer(),
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.daleelzuwar.alhussein',
+                        ),
                         if (_position != null)
                           PolylineLayer(
                             polylines: [
