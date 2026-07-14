@@ -12,6 +12,8 @@ import 'settings_screen.dart';
 import 'tasbih_screen.dart';
 import 'qibla_screen.dart';
 import 'ziarat_screen.dart';
+import 'prayer_times_screen.dart'; // ✅ جديد
+import 'crescent_screen.dart'; // ✅ جديد
 
 class HomeScreen extends StatelessWidget {
   final ThemeMode themeMode;
@@ -30,7 +32,6 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('دليل زوار الحسين'),
         actions: [
-          // ✅ زر الإعدادات (الضبط)
           IconButton(
             tooltip: 'الإعدادات',
             icon: const Icon(Icons.settings),
@@ -71,8 +72,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-
-          // ✅ الأزرار القديمة (جميعها محتفظة)
           SectionCard(
             title: 'طريق زائر الحسين',
             subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
@@ -144,8 +143,6 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const CrescentScreen())),
           ),
-
-          // ✅ الأزرار الجديدة
           SectionCard(
             title: 'المسبحة الإلكترونية',
             subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
@@ -173,7 +170,6 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const ZiaratScreen())),
           ),
-
           const SizedBox(height: 12),
         ],
       ),
