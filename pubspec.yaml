@@ -20,11 +20,11 @@ dependencies:
   latlong2: ^0.9.0
   sqflite: ^2.3.0
   dio: ^5.4.0
-  dio_cache_interceptor: ^3.5.0      # ✅ جديد - تخزين مؤقت للبلاطات
-  http_cache_hive_store: ^3.2.2       # ✅ جديد - تخزين Hive للبلاطات
+  dio_cache_interceptor: ^3.5.0
+  http_cache_hive_store: ^3.2.2
   flutter_map_cache: ^1.0.0
   flutter_local_notifications: ^16.3.0
-  timezone: ^0.9.2                     # ✅ جديد - مطلوب للإشعارات المجدولة
+  timezone: ^0.9.2
 
 dev_dependencies:
   flutter_test:
