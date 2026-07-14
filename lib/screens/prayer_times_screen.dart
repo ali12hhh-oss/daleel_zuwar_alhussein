@@ -141,10 +141,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     double minDist = double.infinity;
 
     for (final city in cities) {
-      final d = _haversineKm(lat, lng, city['lat']!, city['lng']!);
+      final d = _haversineKm(
+        lat,
+        lng,
+        (city['lat'] as num).toDouble(),
+        (city['lng'] as num).toDouble(),
+      );
       if (d < minDist) {
         minDist = d;
-        nearest = city['name']!;
+        nearest = city['name'] as String;
       }
     }
 
