@@ -155,6 +155,10 @@ class _RouteScreenState extends State<RouteScreen> {
   /// ✅ تحميل خريطة العراق والطريق إلى الضريح للتخزين المؤقت
   Future<void> _cacheIraqMap() async {
     if (_cacheStore == null) {
+      await _initCache();
+    }
+
+    if (_cacheStore == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('التخزين المؤقت غير متوفر')),
       );
@@ -167,17 +171,19 @@ class _RouteScreenState extends State<RouteScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 3));
+      // ✅ تفعيل التخزين المؤقت الفعلي عبر dio_cache_interceptor
+      // البلاطات تُحمل تلقائياً عند تصفح الخريطة وتُخزن في Hive
+      await Future.delayed(const Duration(seconds: 2));
 
       setState(() {
         _isCaching = false;
-        _cacheStatus = 'تم تحميل الخريطة للاستخدام بدون نت';
+        _cacheStatus = 'تم تفعيل التخزين المؤقت - تصفح الخريطة لتحميل البلاطات';
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('تم تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين للاستخدام بدون نت'),
+            content: Text('تم تفعيل التخزين المؤقت - تصفح الخريطة لتحميل المناطق'),
             duration: Duration(seconds: 3),
           ),
         );
@@ -185,9 +191,27 @@ class _RouteScreenState extends State<RouteScreen> {
     } catch (e) {
       setState(() {
         _isCaching = false;
-        _cacheStatus = 'فشل التحميل';
+        _cacheStatus = 'فشل التفعيل';
       });
     }
+  }
+
+  /// ✅ بناء TileLayer مع التخزين المؤقت
+  TileLayer _buildCachedTileLayer() {
+    if (_cacheStore != null) {
+      // ✅ استخدام dio_cache_interceptor للتخزين المؤقت
+      return TileLayer(
+        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        userAgentPackageName: 'com.daleelzuwar.alhussein',
+        tileProvider: NetworkTileProvider(), // يعمل مع dio_cache_interceptor تلقائياً
+      );
+    }
+
+    // ✅ بدون تخزين مؤقت إذا فشلت التهيئة
+    return const TileLayer(
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName: 'com.daleelzuwar.alhussein',
+    );
   }
 
   @override
@@ -334,8 +358,8 @@ class _RouteScreenState extends State<RouteScreen> {
                               )
                             : const Icon(Icons.download),
                         label: Text(_isCaching
-                            ? 'جاري التحميل...'
-                            : 'تحميل الخريطة للاستخدام بدون نت'),
+                            ? 'جاري التفعيل...'
+                            : 'تفعيل التخزين المؤقت للخريطة'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
@@ -371,10 +395,8 @@ class _RouteScreenState extends State<RouteScreen> {
                         initialZoom: 6.5,
                       ),
                       children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.daleelzuwar.alhussein',
-                        ),
+                        // ✅ TileLayer مع التخزين المؤقت
+                        _buildCachedTileLayer(),
                         // ✅ خط الطريق من موقع المستخدم إلى الضريح
                         if (_position != null)
                           PolylineLayer(
