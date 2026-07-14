@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.daleelzuwar.alhussein"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "26.1.10909125" // ✅ تحديث NDK
 
     compileOptions {
