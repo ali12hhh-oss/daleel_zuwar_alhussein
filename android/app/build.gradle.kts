@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.daleelzuwar.alhussein"
     compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "26.1.10909125"  // ✅ تغيير من flutter.ndkVersion إلى 26.1.10909125
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
