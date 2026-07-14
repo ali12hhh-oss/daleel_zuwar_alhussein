@@ -12,8 +12,8 @@ import 'settings_screen.dart';
 import 'tasbih_screen.dart';
 import 'qibla_screen.dart';
 import 'ziarat_screen.dart';
-import 'prayer_times_screen.dart'; // ✅ جديد
-import 'crescent_screen.dart'; // ✅ جديد
+import 'prayer_times_screen.dart';
+import 'crescent_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ThemeMode themeMode;
