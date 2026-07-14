@@ -13,14 +13,18 @@ dependencies:
   geolocator: ^11.0.0
   url_launcher: ^6.2.5
   google_fonts: ^6.2.1
-  adhan: ^2.0.0
+  # adhan: ^2.0.0  # ❌ حُذف - استُبدل بحساب يدوي للشيعة
   flutter_pdfview: ^1.3.2
   path_provider: ^2.1.2
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
   sqflite: ^2.3.0
   dio: ^5.4.0
+  dio_cache_interceptor: ^3.5.0      # ✅ جديد - تخزين مؤقت للبلاطات
+  http_cache_hive_store: ^3.2.2       # ✅ جديد - تخزين Hive للبلاطات
   flutter_map_cache: ^1.0.0
+  flutter_local_notifications: ^16.3.0
+  timezone: ^0.9.2                     # ✅ جديد - مطلوب للإشعارات المجدولة
 
 dev_dependencies:
   flutter_test:
