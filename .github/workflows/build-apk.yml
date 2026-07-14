@@ -70,17 +70,17 @@ jobs:
           android {
               namespace 'com.baseflow.geolocator'
               compileSdk 34
-              
+
               defaultConfig {
                   minSdk 21
                   targetSdk 34
                   testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
               }
-              
+
               lintOptions {
                   disable 'InvalidPackage'
               }
-              
+
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
@@ -104,9 +104,6 @@ jobs:
           cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
           chmod +x "$GITHUB_WORKSPACE/android/gradlew"
           rm -rf /tmp/wrapper_ref
-
-      - name: توليد أيقونة التطبيق
-        run: dart run flutter_launcher_icons || true
 
       - name: تحليل الكود
         run: flutter analyze || true
