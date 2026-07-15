@@ -229,14 +229,9 @@ class _SermonCardState extends State<_SermonCard> {
 
   // نسخ النص
   Future<void> _copyText() async {
-    final fullText = widget.text + '
-
-' +
-        'المناسبة: ' + widget.occasion + '
-' +
-        'المصدر: ' + widget.source + '
-
-' +
+    final fullText = widget.text + '\n\n' +
+        'المناسبة: ' + widget.occasion + '\n' +
+        'المصدر: ' + widget.source + '\n\n' +
         'من تطبيق دليل زوار الحسين';
 
     await Clipboard.setData(ClipboardData(text: fullText));
