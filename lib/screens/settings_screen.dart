@@ -141,6 +141,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// ✅ الحصول على التاريخ الهجري من الروايات
+  String _getHijriDate(AhlulBaytEvent event) {
+    if (event.narrations.isEmpty) return '';
+    // استخدام الرواية الأشهر إن وجدت، وإلا أول رواية
+    final famousNarration = event.narrations.firstWhere(
+      (n) => n.isMostFamous,
+      orElse: () => event.narrations.first,
+    );
+    return famousNarration.hijriDate;
+  }
+
   /// ✅ التذكير اليدوي بمناسبة معينة - عرض جميع المناسبات مع تصنيف
   void _showReminderDialog() {
     final allEvents = _getUpcomingEvents();
@@ -204,6 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
+        final hijriDate = _getHijriDate(event);
         return ListTile(
           leading: Icon(
             event.kind == EventKind.birth ? Icons.brightness_5 : Icons.brightness_2,
@@ -213,14 +225,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           title: Text(event.personName),
           subtitle: Text(
-            '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} - ${event.hijriDate}',
+            '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} - $hijriDate',
           ),
           trailing: IconButton(
             icon: const Icon(Icons.notifications_active, color: AppColors.primaryGreen),
             onPressed: () {
               _showInstantNotification(
                 'تذكير: ${event.personName}',
-                '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} ${event.personName} - ${event.hijriDate}',
+                '${event.kind == EventKind.birth ? 'ولادة' : 'وفاة/استشهاد'} ${event.personName} - $hijriDate',
               );
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
