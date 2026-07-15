@@ -345,10 +345,8 @@ class _RouteScreenState extends State<RouteScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  '✅ المسافة على الطريق محسوبة بدقة عبر خدمة OSRM العالمية
-'
-                  '✅ الخريطة احترافية وتوضح المسار الفعلي والمناطق التي يمر بها
-'
+                  '✅ المسافة على الطريق محسوبة بدقة عبر خدمة OSRM العالمية\n'
+                  '✅ الخريطة احترافية وتوضح المسار الفعلي والمناطق التي يمر بها\n'
                   '✅ اضغط زر "عرض مسار المشي" لفتح Google Maps بخط سير تفصيلي',
                   style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.6),
                 ),
