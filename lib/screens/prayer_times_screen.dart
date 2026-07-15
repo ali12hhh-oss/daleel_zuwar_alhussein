@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:math' as math;
 import '../theme.dart';
 
@@ -16,17 +17,47 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   String? _error;
   String? _cityName;
 
-  // ✅ أوقات الصلاة المحسوبة
+  // اوقات الصلاة المحسوبة
   DateTime? _fajr;
   DateTime? _sunrise;
   DateTime? _dhuhr;
   DateTime? _sunset;
   DateTime? _midnight;
 
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
   @override
   void initState() {
     super.initState();
+    _initNotifications();
     _getLocationAndCalculate();
+  }
+
+  Future<void> _initNotifications() async {
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidSettings);
+    await _notificationsPlugin.initialize(initSettings);
+  }
+
+  Future<void> _showPrayerNotification(String prayerName, String time) async {
+    const androidDetails = AndroidNotificationDetails(
+      'prayer_channel',
+      'تذكير الصلاة',
+      channelDescription: 'تذكير بأوقات الصلاة',
+      importance: Importance.high,
+      priority: Priority.high,
+      sound: RawResourceAndroidNotificationSound('adhan'), // صوت الأذان
+      playSound: true,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    await _notificationsPlugin.show(
+      prayerName.hashCode,
+      'حان وقت $prayerName',
+      'الساعة $time',
+      notificationDetails,
+    );
   }
 
   Future<void> _getLocationAndCalculate() async {
@@ -52,10 +83,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // ✅ تحديد أقرب مدينة
+      // تحديد اقرب مدينة
       final city = _findNearestCity(position.latitude, position.longitude);
 
-      // ✅ حساب أوقات الصلاة
+      // حساب اوقات الصلاة
       final times = _calculateShiaPrayerTimes(
         position.latitude,
         position.longitude,
@@ -80,15 +111,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
-  /// ✅ تحديد أقرب مدينة عراقية
+  /// تحديد اقرب مدينة عراقية
   String _findNearestCity(double lat, double lng) {
     final cities = [
       {'name': 'بغداد', 'lat': 33.3152, 'lng': 44.3661},
       {'name': 'كربلاء المقدسة', 'lat': 32.6160, 'lng': 44.0240},
-      {'name': 'النجف الأشرف', 'lat': 31.9924, 'lng': 44.3140},
+      {'name': 'النجف الاشرف', 'lat': 31.9924, 'lng': 44.3140},
       {'name': 'البصرة', 'lat': 30.5156, 'lng': 47.7804},
       {'name': 'الموصل', 'lat': 36.3566, 'lng': 43.1642},
-      {'name': 'أربيل', 'lat': 36.1911, 'lng': 44.0092},
+      {'name': 'اربيل', 'lat': 36.1911, 'lng': 44.0092},
       {'name': 'السليمانية', 'lat': 35.5575, 'lng': 45.4350},
       {'name': 'الناصرية', 'lat': 31.0489, 'lng': 46.2637},
       {'name': 'الكوت', 'lat': 32.5093, 'lng': 45.8182},
@@ -141,12 +172,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     double minDist = double.infinity;
 
     for (final city in cities) {
-      final d = _haversineKm(
-        lat,
-        lng,
-        (city['lat'] as num).toDouble(),
-        (city['lng'] as num).toDouble(),
-      );
+      final d = _haversineKm(lat, lng, (city['lat'] as num).toDouble(), (city['lng'] as num).toDouble());
       if (d < minDist) {
         minDist = d;
         nearest = city['name'] as String;
@@ -156,7 +182,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return nearest;
   }
 
-  /// ✅ حساب أوقات الصلاة للشيعة (حسب كراس السيد السيستاني)
+  /// حساب اوقات الصلاة للشيعة (حسب كراس السيد السيستاني)
   Map<String, DateTime> _calculateShiaPrayerTimes(double lat, double lng, DateTime date) {
     // اليوم من السنة
     final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
@@ -211,13 +237,16 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return R * c;
   }
 
-  String _formatTime(DateTime time) {
-    final hour = time.hour.toString().padLeft(2, '0');
+  /// تنسيق الوقت بنظام 12 ساعة (AM/PM)
+  String _formatTime12Hour(DateTime time) {
+    final hour = time.hour;
     final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    final period = hour >= 12 ? 'مساءً' : 'صباحاً';
+    final hour12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '$hour12:$minute $period';
   }
 
-  /// ✅ التحقق مما إذا كان الوقت الحالي ضمن وقت الصلاة
+  /// التحقق مما اذا كان الوقت الحالي ضمن وقت الصلاة
   bool _isCurrentPrayer(String prayerName) {
     final now = DateTime.now();
     if (_fajr == null || _dhuhr == null || _sunset == null) return false;
@@ -243,7 +272,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // ✅ بطاقة المعلومات
+            // بطاقة المعلومات
             Card(
               color: AppColors.lightGold.withOpacity(0.3),
               child: Padding(
@@ -262,7 +291,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'حسب كراس توقيتات الصلاة للسيد السيستاني دام ظله\n'
-                      'للشيعة الإثني عشرية - الوقت يتحدد تلقائياً حسب موقعك',
+                      'للشيعة الاثني عشرية - الوقت يتحدد تلقائياً حسب موقعك',
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 13),
                     ),
@@ -286,7 +315,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ✅ حالة التحميل
+            // حالة التحميل
             if (_loading)
               const Center(
                 child: Padding(
@@ -295,7 +324,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
               ),
 
-            // ✅ خطأ
+            // خطأ
             if (_error != null)
               Card(
                 color: Colors.red[50],
@@ -307,17 +336,17 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       const SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: _getLocationAndCalculate,
-                        child: const Text('إعادة المحاولة'),
+                        child: const Text('اعادة المحاولة'),
                       ),
                     ],
                   ),
                 ),
               ),
 
-            // ✅ أوقات الصلاة للشيعة
+            // اوقات الصلاة للشيعة
             if (!_loading && _error == null && _fajr != null) ...[
               const Text(
-                'أوقات الصلاة اليوم',
+                'اوقات الصلاة اليوم',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -325,60 +354,63 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ صلاة الصبح
+              // صلاة الصبح
               _PrayerTimeCard(
                 name: 'صلاة الصبح',
-                time: _formatTime(_fajr!),
-                subtitle: 'من طلوع الفجر الصادق إلى طلوع الشمس',
+                time: _formatTime12Hour(_fajr!),
+                subtitle: 'من طلوع الفجر الصادق الى طلوع الشمس',
                 icon: Icons.wb_twilight,
                 isCurrent: _isCurrentPrayer('fajr'),
                 color: Colors.indigo,
+                onReminder: () => _showPrayerNotification('صلاة الصبح', _formatTime12Hour(_fajr!)),
               ),
 
-              // ✅ الشروق (انتهاء وقت الصبح)
+              // الشروق (انتهاء وقت الصبح)
               _PrayerTimeCard(
                 name: 'الشروق',
-                time: _formatTime(_sunrise!),
+                time: _formatTime12Hour(_sunrise!),
                 subtitle: 'انتهاء وقت صلاة الصبح',
                 icon: Icons.wb_sunny,
                 isCurrent: false,
                 color: Colors.orange,
               ),
 
-              // ✅ صلاة الظهرين (الظهر + العصر)
+              // صلاة الظهرين (الظهر + العصر)
               _PrayerTimeCard(
                 name: 'صلاة الظهرين',
-                time: _formatTime(_dhuhr!),
-                subtitle: 'من زوال الشمس إلى الغروب (الظهر + العصر)',
+                time: _formatTime12Hour(_dhuhr!),
+                subtitle: 'من زوال الشمس الى الغروب (الظهر + العصر)',
                 icon: Icons.sunny,
                 isCurrent: _isCurrentPrayer('dhuhr'),
                 color: Colors.amber.shade700,
+                onReminder: () => _showPrayerNotification('صلاة الظهرين', _formatTime12Hour(_dhuhr!)),
               ),
 
-              // ✅ الغروب
+              // الغروب
               _PrayerTimeCard(
                 name: 'الغروب',
-                time: _formatTime(_sunset!),
+                time: _formatTime12Hour(_sunset!),
                 subtitle: 'انتهاء وقت صلاة الظهرين',
                 icon: Icons.wb_twilight,
                 isCurrent: false,
                 color: Colors.deepOrange,
               ),
 
-              // ✅ صلاة العشائين (المغرب + العشاء)
+              // صلاة العشائين (المغرب + العشاء)
               _PrayerTimeCard(
                 name: 'صلاة العشائين',
-                time: _formatTime(_sunset!),
-                subtitle: 'من الغروب إلى منتصف الليل (المغرب + العشاء)',
+                time: _formatTime12Hour(_sunset!),
+                subtitle: 'من الغروب الى منتصف الليل (المغرب + العشاء)',
                 icon: Icons.nights_stay,
                 isCurrent: _isCurrentPrayer('maghrib'),
                 color: Colors.deepPurple,
+                onReminder: () => _showPrayerNotification('صلاة العشائين', _formatTime12Hour(_sunset!)),
               ),
 
-              // ✅ منتصف الليل
+              // منتصف الليل
               _PrayerTimeCard(
                 name: 'منتصف الليل',
-                time: _formatTime(_midnight!),
+                time: _formatTime12Hour(_midnight!),
                 subtitle: 'انتهاء وقت صلاة العشائين',
                 icon: Icons.bedtime,
                 isCurrent: false,
@@ -388,7 +420,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
             const SizedBox(height: 16),
 
-            // ✅ ملاحظات مهمة للشيعة
+            // ملاحظات مهمة للشيعة
             Card(
               color: Colors.grey[100],
               child: const Padding(
@@ -402,13 +434,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      '• صلاة الصبح: وقت واحد من طلوع الفجر الصادق إلى طلوع الشمس\n'
-                      '• صلاة الظهرين: وقت واحد من زوال الشمس (الظهر) إلى الغروب\n'
+                      '• صلاة الصبح: وقت واحد من طلوع الفجر الصادق الى طلوع الشمس\n'
+                      '• صلاة الظهرين: وقت واحد من زوال الشمس (الظهر) الى الغروب\n'
                       '  - يستحب تأخير العصر قليلاً\n'
-                      '• صلاة العشائين: وقت واحد من الغروب إلى منتصف الليل\n'
-                      '  - يستحب تأخير العشاء إلى ثلث الليل\n'
-                      '• الأوقات تقريبية وتحدد حسب رؤية الهلال والموقع الجغرافي\n'
-                      '• يُفضل الرجوع إلى التقويم الرسمي للسيد السيستاني دام ظله',
+                      '• صلاة العشائين: وقت واحد من الغروب الى منتصف الليل\n'
+                      '  - يستحب تأخير العشاء الى ثلث الليل\n'
+                      '• الاوقات تقريبية وتحدد حسب رؤية الهلال والموقع الجغرافي\n'
+                      '• يُفضل الرجوع الى التقويم الرسمي للسيد السيستاني دام ظله',
                       style: TextStyle(fontSize: 12, height: 1.8),
                     ),
                   ],
@@ -422,7 +454,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 }
 
-// ✅ بطاقة وقت الصلاة
+// بطاقة وقت الصلاة
 class _PrayerTimeCard extends StatelessWidget {
   final String name;
   final String time;
@@ -430,6 +462,7 @@ class _PrayerTimeCard extends StatelessWidget {
   final IconData icon;
   final bool isCurrent;
   final Color color;
+  final VoidCallback? onReminder;
 
   const _PrayerTimeCard({
     required this.name,
@@ -438,6 +471,7 @@ class _PrayerTimeCard extends StatelessWidget {
     required this.icon,
     required this.isCurrent,
     required this.color,
+    this.onReminder,
   });
 
   @override
@@ -521,6 +555,14 @@ class _PrayerTimeCard extends StatelessWidget {
                 ],
               ),
             ),
+            // زر تذكير
+            if (onReminder != null)
+              IconButton(
+                icon: const Icon(Icons.notifications_active),
+                color: AppColors.primaryGreen,
+                tooltip: 'تذكير بهذا الوقت',
+                onPressed: onReminder,
+              ),
           ],
         ),
       ),
