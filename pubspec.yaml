@@ -10,20 +10,42 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+
+  # الموقع والخرائط
   geolocator: ^11.0.0
-  url_launcher: ^6.2.5
-  google_fonts: ^6.2.1
-  flutter_pdfview: ^1.3.2
-  path_provider: ^2.1.2
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
+
+  # الروابط والملفات
+  url_launcher: ^6.2.5
+  flutter_pdfview: ^1.3.2
+  path_provider: ^2.1.2
+
+  # التصميم والخطوط
+  google_fonts: ^6.2.1
+
+  # قاعدة البيانات
   sqflite: ^2.3.0
+
+  # الشبكة والتخزين المؤقت
   dio: ^5.4.0
   dio_cache_interceptor: ^3.5.0
   flutter_map_cache: ^1.0.0
+  http: ^1.2.0
+
+  # الإشعارات والتذكير
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.1
+
+  # الاهتزاز
   vibration: ^1.8.4
+
+  # البوصلة (لتحديد القبلة)
+  flutter_compass: ^0.7.3
+  sensors_plus: ^4.0.2
+
+  # مشاركة النصوص
+  share_plus: ^7.2.0
 
 dev_dependencies:
   flutter_test:
