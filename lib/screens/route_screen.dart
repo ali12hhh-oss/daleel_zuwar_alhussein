@@ -477,7 +477,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                   ],
                                   color: Colors.grey,
                                   strokeWidth: 3,
-                                  pattern: StrokePattern.dashed(segments: const [10, 10]),
+                                  strokeCap: StrokeCap.round,
                                 ),
                             ],
                           ),
