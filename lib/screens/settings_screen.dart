@@ -171,11 +171,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // جميع المناسبات
                       _buildEventsList(allEvents),
-                      // الولادات فقط
                       _buildEventsList(births),
-                      // الوفيات فقط
                       _buildEventsList(deaths),
                     ],
                   ),
@@ -238,11 +235,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// ✅ الحصول على جميع مناسبات أهل البيت (ولادات ووفيات)
   List<AhlulBaytEvent> _getUpcomingEvents() {
-    // عرض جميع المناسبات بدون تقييد
     return ahlulBaytEvents.toList();
   }
 
-  /// ✅ خيارات مشاركة التطبيق
+  // ==================== دوال المشاركة (مركزة في مكان واحد) ====================
+
+  /// ✅ مشاركة عبر واتساب
+  Future<void> _shareToWhatsApp() async {
+    final text = Uri.encodeComponent(
+      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
+      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
+      'حصراً على المذهب الشيعي الاثني عشري'
+    );
+    final url = Uri.parse('https://wa.me/?text=$text');
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
+  /// ✅ مشاركة عبر تليجرام
+  Future<void> _shareToTelegram() async {
+    final text = Uri.encodeComponent(
+      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
+      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
+      'حصراً على المذهب الشيعي الاثني عشري'
+    );
+    final url = Uri.parse('https://t.me/share/url?url=&text=$text');
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
+  /// ✅ مشاركة عامة (نسخ النص)
+  void _shareGeneral() {
+    Clipboard.setData(const ClipboardData(
+      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
+            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
+            'حصراً على المذهب الشيعي الاثني عشري\n'
+            'https://github.com/daleelzuwar/alhussein',
+    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ تم نسخ نص المشاركة - الصقه في أي تطبيق'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// ✅ خيارات مشاركة التطبيق (BottomSheet)
   void _showShareOptions() {
     showModalBottomSheet(
       context: context,
@@ -275,12 +311,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: const Text('انسخ الرابط والصقه في أي مكان'),
               onTap: () {
                 Clipboard.setData(const ClipboardData(
-                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-                        'حصراً على المذهب الشيعي الاثني عشري
-'
+                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
+                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
+                        'حصراً على المذهب الشيعي الاثني عشري\n'
                         'https://github.com/daleelzuwar/alhussein',
                 ));
                 Navigator.pop(context);
@@ -329,142 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ مشاركة عبر واتساب
-  void _shareToWhatsApp() {
-    final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-      'حصراً على المذهب الشيعي الاثني عشري'
-    );
-    final url = Uri.parse('https://wa.me/?text=$text');
-    launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  /// ✅ مشاركة عبر تليجرام
-  void _shareToTelegram() {
-    final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-      'حصراً على المذهب الشيعي الاثني عشري'
-    );
-    final url = Uri.parse('https://t.me/share/url?url=&text=$text');
-    launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  /// ✅ مشاركة عامة
-  void _shareGeneral() {
-    Clipboard.setData(const ClipboardData(
-      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-            'حصراً على المذهب الشيعي الاثني عشري
-'
-            'https://github.com/daleelzuwar/alhussein',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ تم نسخ نص المشاركة - الصقه في أي تطبيق'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  /// ✅ خيارات مشاركة التطبيق
-  void _showShareOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'شارك التطبيق',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'انشر دليل زوار الحسين مع أصدقائك',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // نص المشاركة
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'تطبيق "دليل زوار الحسين" - تطبيق ديني حسيني شامل '
-                'يحتوي على مواقيت الصلاة، أقوال الإمام الحسين، '
-                'خطب السبايا، خريطة العراق، والمزيد.
-
-'
-                'حمله الآن!',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // أزرار المشاركة
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _ShareButton(
-                  icon: Icons.message,
-                  label: 'واتساب',
-                  color: Colors.green,
-                  onTap: () {
-                    // TODO: فتح واتساب مع النص
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ النص - الصقه في واتساب')),
-                    );
-                  },
-                ),
-                _ShareButton(
-                  icon: Icons.telegram,
-                  label: 'تيليجرام',
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ النص - الصقه في تيليجرام')),
-                    );
-                  },
-                ),
-                _ShareButton(
-                  icon: Icons.copy,
-                  label: 'نسخ',
-                  color: Colors.grey[700]!,
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ نص المشاركة')),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
+  // ============================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -511,22 +409,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          _SettingTile(
+          const _SettingTile(
             icon: Icons.directions_walk,
             title: 'طريق زائر الحسين',
             subtitle: 'حدد موقعك لمعرفة المسافة إلى كربلاء وفتح الخريطة',
           ),
-          _SettingTile(
+          const _SettingTile(
             icon: Icons.menu_book,
             title: 'أسئلة شرعية',
             subtitle: 'اختر مرجعك الديني واطلع على الفتاوى',
           ),
-          _SettingTile(
+          const _SettingTile(
             icon: Icons.format_quote,
             title: 'أقوال وخطب',
             subtitle: 'اقرأ أقوال الإمام الحسين وخطب السبايا',
           ),
-          _SettingTile(
+          const _SettingTile(
             icon: Icons.calendar_month,
             title: 'التواريخ',
             subtitle: 'تعرف على مواليد ووفيات أهل البيت',
@@ -645,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 16),
 
-          // ✅ معلومات التطبيق - تعريف كامل
+          // ✅ معلومات التطبيق
           const Text(
             'عن التطبيق',
             style: TextStyle(
@@ -655,7 +553,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
 
-          // تعريف كامل بالتطبيق
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             color: Colors.grey[50],
@@ -685,18 +582,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'المميزات:
-'
-                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله
-'
-                    '• أقوال وخطب الإمام الحسين عليه السلام
-'
-                    '• أسئلة شرعية وفتاوى
-'
-                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام
-'
-                    '• خريطة تفاعلية للأماكن المقدسة
-'
+                    'المميزات:\n'
+                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله\n'
+                    '• أقوال وخطب الإمام الحسين عليه السلام\n'
+                    '• أسئلة شرعية وفتاوى\n'
+                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام\n'
+                    '• خريطة تفاعلية للأماكن المقدسة\n'
                     '• إشعارات وتذكير بالمناسبات',
                     style: TextStyle(fontSize: 12, height: 1.8),
                   ),
@@ -719,7 +610,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // تواصل معنا - إضافة إيميل
+          // تواصل معنا
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -735,15 +626,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'subject': 'اقتراح/ملاحظة - دليل زوار الحسين',
                   },
                 );
-                // TODO: استخدام url_launcher لفتح الإيميل
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('mhtraf6@gmail.com')),
-                );
+                await launchUrl(emailUri);
               },
             ),
           ),
 
-          // ✅ مشاركة التطبيق
+          // ✅ مشاركة التطبيق (مرة واحدة فقط)
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             color: AppColors.lightGold.withOpacity(0.3),
@@ -752,24 +640,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('شارك التطبيق'),
               subtitle: const Text('انشر التطبيق مع الأصدقاء والعائلة'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-              onTap: () {
-                _showShareOptions();
-              },
-            ),
-          ),
-
-          // ✅ مشاركة التطبيق مع الأصدقاء
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            color: AppColors.lightGold.withOpacity(0.3),
-            child: ListTile(
-              leading: Icon(Icons.share, color: AppColors.primaryGreen),
-              title: const Text('شارك التطبيق'),
-              subtitle: const Text('انشر التطبيق مع أصدقائك وعائلتك'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-              onTap: () {
-                _showShareOptions();
-              },
+              onTap: _showShareOptions,
             ),
           ),
         ],
@@ -778,7 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ✅ بطاقة إعداد
+// ✅ بطاقة إعداد (بسيطة - بدون دوال مشاركة)
 class _SettingTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -789,230 +660,6 @@ class _SettingTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
   });
-
-  /// ✅ خيارات مشاركة التطبيق
-  void _showShareOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'شارك التطبيق',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'انشر دليل زوار الحسين مع أصدقائك وعائلتك',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // نسخ الرابط
-            ListTile(
-              leading: const Icon(Icons.link, color: AppColors.primaryGreen),
-              title: const Text('نسخ رابط التطبيق'),
-              subtitle: const Text('انسخ الرابط والصقه في أي مكان'),
-              onTap: () {
-                Clipboard.setData(const ClipboardData(
-                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-                        'حصراً على المذهب الشيعي الاثني عشري
-'
-                        'https://github.com/daleelzuwar/alhussein',
-                ));
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ تم نسخ نص المشاركة')),
-                );
-              },
-            ),
-
-            const Divider(),
-
-            // مشاركة عبر واتساب
-            ListTile(
-              leading: const Icon(Icons.message, color: Color(0xFF25D366)),
-              title: const Text('واتساب'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareToWhatsApp();
-              },
-            ),
-
-            // مشاركة عبر تليجرام
-            ListTile(
-              leading: const Icon(Icons.send, color: Color(0xFF0088cc)),
-              title: const Text('تليجرام'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareToTelegram();
-              },
-            ),
-
-            // مشاركة عامة
-            ListTile(
-              leading: const Icon(Icons.share, color: AppColors.primaryGreen),
-              title: const Text('مشاركة عامة'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareGeneral();
-              },
-            ),
-
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// ✅ مشاركة عبر واتساب
-  void _shareToWhatsApp() {
-    final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-      'حصراً على المذهب الشيعي الاثني عشري'
-    );
-    final url = Uri.parse('https://wa.me/?text=$text');
-    launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  /// ✅ مشاركة عبر تليجرام
-  void _shareToTelegram() {
-    final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-      'حصراً على المذهب الشيعي الاثني عشري'
-    );
-    final url = Uri.parse('https://t.me/share/url?url=&text=$text');
-    launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  /// ✅ مشاركة عامة
-  void _shareGeneral() {
-    Clipboard.setData(const ClipboardData(
-      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-            'حصراً على المذهب الشيعي الاثني عشري
-'
-            'https://github.com/daleelzuwar/alhussein',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ تم نسخ نص المشاركة - الصقه في أي تطبيق'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  /// ✅ خيارات مشاركة التطبيق
-  void _showShareOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'شارك التطبيق',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'انشر دليل زوار الحسين مع أصدقائك',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // نص المشاركة
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'تطبيق "دليل زوار الحسين" - تطبيق ديني حسيني شامل '
-                'يحتوي على مواقيت الصلاة، أقوال الإمام الحسين، '
-                'خطب السبايا، خريطة العراق، والمزيد.
-
-'
-                'حمله الآن!',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // أزرار المشاركة
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _ShareButton(
-                  icon: Icons.message,
-                  label: 'واتساب',
-                  color: Colors.green,
-                  onTap: () {
-                    // TODO: فتح واتساب مع النص
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ النص - الصقه في واتساب')),
-                    );
-                  },
-                ),
-                _ShareButton(
-                  icon: Icons.telegram,
-                  label: 'تيليجرام',
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ النص - الصقه في تيليجرام')),
-                    );
-                  },
-                ),
-                _ShareButton(
-                  icon: Icons.copy,
-                  label: 'نسخ',
-                  color: Colors.grey[700]!,
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ نص المشاركة')),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1076,7 +723,7 @@ class _ShareButton extends StatelessWidget {
   }
 }
 
-// ✅ بطاقة إشعار
+// ✅ بطاقة إشعار (بسيطة - بدون دوال مشاركة)
 class _NotificationTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -1091,230 +738,6 @@ class _NotificationTile extends StatelessWidget {
     required this.enabled,
     this.onChanged,
   });
-
-  /// ✅ خيارات مشاركة التطبيق
-  void _showShareOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'شارك التطبيق',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'انشر دليل زوار الحسين مع أصدقائك وعائلتك',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // نسخ الرابط
-            ListTile(
-              leading: const Icon(Icons.link, color: AppColors.primaryGreen),
-              title: const Text('نسخ رابط التطبيق'),
-              subtitle: const Text('انسخ الرابط والصقه في أي مكان'),
-              onTap: () {
-                Clipboard.setData(const ClipboardData(
-                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-                        'حصراً على المذهب الشيعي الاثني عشري
-'
-                        'https://github.com/daleelzuwar/alhussein',
-                ));
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ تم نسخ نص المشاركة')),
-                );
-              },
-            ),
-
-            const Divider(),
-
-            // مشاركة عبر واتساب
-            ListTile(
-              leading: const Icon(Icons.message, color: Color(0xFF25D366)),
-              title: const Text('واتساب'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareToWhatsApp();
-              },
-            ),
-
-            // مشاركة عبر تليجرام
-            ListTile(
-              leading: const Icon(Icons.send, color: Color(0xFF0088cc)),
-              title: const Text('تليجرام'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareToTelegram();
-              },
-            ),
-
-            // مشاركة عامة
-            ListTile(
-              leading: const Icon(Icons.share, color: AppColors.primaryGreen),
-              title: const Text('مشاركة عامة'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareGeneral();
-              },
-            ),
-
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// ✅ مشاركة عبر واتساب
-  void _shareToWhatsApp() {
-    final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-      'حصراً على المذهب الشيعي الاثني عشري'
-    );
-    final url = Uri.parse('https://wa.me/?text=$text');
-    launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  /// ✅ مشاركة عبر تليجرام
-  void _shareToTelegram() {
-    final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-      'حصراً على المذهب الشيعي الاثني عشري'
-    );
-    final url = Uri.parse('https://t.me/share/url?url=&text=$text');
-    launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  /// ✅ مشاركة عامة
-  void _shareGeneral() {
-    Clipboard.setData(const ClipboardData(
-      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
-'
-            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-'
-            'حصراً على المذهب الشيعي الاثني عشري
-'
-            'https://github.com/daleelzuwar/alhussein',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ تم نسخ نص المشاركة - الصقه في أي تطبيق'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  /// ✅ خيارات مشاركة التطبيق
-  void _showShareOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'شارك التطبيق',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'انشر دليل زوار الحسين مع أصدقائك',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // نص المشاركة
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'تطبيق "دليل زوار الحسين" - تطبيق ديني حسيني شامل '
-                'يحتوي على مواقيت الصلاة، أقوال الإمام الحسين، '
-                'خطب السبايا، خريطة العراق، والمزيد.
-
-'
-                'حمله الآن!',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // أزرار المشاركة
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _ShareButton(
-                  icon: Icons.message,
-                  label: 'واتساب',
-                  color: Colors.green,
-                  onTap: () {
-                    // TODO: فتح واتساب مع النص
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ النص - الصقه في واتساب')),
-                    );
-                  },
-                ),
-                _ShareButton(
-                  icon: Icons.telegram,
-                  label: 'تيليجرام',
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ النص - الصقه في تيليجرام')),
-                    );
-                  },
-                ),
-                _ShareButton(
-                  icon: Icons.copy,
-                  label: 'نسخ',
-                  color: Colors.grey[700]!,
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم نسخ نص المشاركة')),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
