@@ -41,7 +41,7 @@ dependencies:
   vibration: ^1.8.4
 
   # البوصلة (لتحديد القبلة)
-  flutter_compass: ^0.7.3
+  flutter_compass: ^0.8.1
   sensors_plus: ^4.0.2
 
   # مشاركة النصوص
