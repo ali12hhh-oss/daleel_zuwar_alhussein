@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme.dart';
 import '../data/ahlulbayt_dates_data.dart';
 import '../models/models.dart';
@@ -23,11 +24,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _prayerTimeReminder = false;
   bool _eventsReminder = false;
   bool _muharramReminder = false;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _initNotifications();
+    _loadSettings();
+  }
+
+  /// ✅ تحميل الإعدادات المحفوظة من SharedPreferences
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _prayerTimeReminder = prefs.getBool('prayerTimeReminder') ?? false;
+      _eventsReminder = prefs.getBool('eventsReminder') ?? false;
+      _muharramReminder = prefs.getBool('muharramReminder') ?? false;
+      _loading = false;
+    });
+  }
+
+  /// ✅ حفظ الإعدادات في SharedPreferences
+  Future<void> _saveSetting(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
   }
 
   Future<void> _initNotifications() async {
@@ -144,7 +164,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// ✅ الحصول على التاريخ الهجري من الروايات
   String _getHijriDate(AhlulBaytEvent event) {
     if (event.narrations.isEmpty) return '';
-    // استخدام الرواية الأشهر إن وجدت، وإلا أول رواية
     final famousNarration = event.narrations.firstWhere(
       (n) => n.isMostFamous,
       orElse: () => event.narrations.first,
@@ -152,11 +171,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return famousNarration.hijriDate;
   }
 
-  /// ✅ التذكير اليدوي بمناسبة معينة - عرض جميع المناسبات مع تصنيف
+  /// ✅ التذكير اليدوي بمناسبة معينة
   void _showReminderDialog() {
     final allEvents = _getUpcomingEvents();
-
-    // تصنيف المناسبات
     final births = allEvents.where((e) => e.kind == EventKind.birth).toList();
     final deaths = allEvents.where((e) => e.kind == EventKind.death).toList();
 
@@ -245,41 +262,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ الحصول على جميع مناسبات أهل البيت (ولادات ووفيات)
+  /// ✅ الحصول على جميع مناسبات أهل البيت
   List<AhlulBaytEvent> _getUpcomingEvents() {
     return ahlulBaytEvents.toList();
   }
 
-  // ==================== دوال المشاركة (مركزة في مكان واحد) ====================
+  // ==================== دوال المشاركة ====================
 
-  /// ✅ مشاركة عبر واتساب
   Future<void> _shareToWhatsApp() async {
     final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-      'حصراً على المذهب الشيعي الاثني عشري'
+      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+'
+      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+'
+      'حصراً على المذهب الشيعي الإثني عشري'
     );
     final url = Uri.parse('https://wa.me/?text=$text');
     await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
-  /// ✅ مشاركة عبر تليجرام
   Future<void> _shareToTelegram() async {
     final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-      'حصراً على المذهب الشيعي الاثني عشري'
+      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+'
+      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+'
+      'حصراً على المذهب الشيعي الإثني عشري'
     );
     final url = Uri.parse('https://t.me/share/url?url=&text=$text');
     await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
-  /// ✅ مشاركة عامة (نسخ النص)
   void _shareGeneral() {
     Clipboard.setData(const ClipboardData(
-      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-            'حصراً على المذهب الشيعي الاثني عشري\n'
+      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+'
+            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+'
+            'حصراً على المذهب الشيعي الإثني عشري
+'
             'https://github.com/daleelzuwar/alhussein',
     ));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -290,7 +311,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ خيارات مشاركة التطبيق (BottomSheet)
   void _showShareOptions() {
     showModalBottomSheet(
       context: context,
@@ -315,17 +335,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 20),
-
-            // نسخ الرابط
             ListTile(
               leading: const Icon(Icons.link, color: AppColors.primaryGreen),
               title: const Text('نسخ رابط التطبيق'),
               subtitle: const Text('انسخ الرابط والصقه في أي مكان'),
               onTap: () {
                 Clipboard.setData(const ClipboardData(
-                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-                        'حصراً على المذهب الشيعي الاثني عشري\n'
+                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+'
+                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+'
+                        'حصراً على المذهب الشيعي الإثني عشري
+'
                         'https://github.com/daleelzuwar/alhussein',
                 ));
                 Navigator.pop(context);
@@ -334,10 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
             ),
-
             const Divider(),
-
-            // مشاركة عبر واتساب
             ListTile(
               leading: const Icon(Icons.message, color: Color(0xFF25D366)),
               title: const Text('واتساب'),
@@ -346,8 +364,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _shareToWhatsApp();
               },
             ),
-
-            // مشاركة عبر تليجرام
             ListTile(
               leading: const Icon(Icons.send, color: Color(0xFF0088cc)),
               title: const Text('تليجرام'),
@@ -356,8 +372,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _shareToTelegram();
               },
             ),
-
-            // مشاركة عامة
             ListTile(
               leading: const Icon(Icons.share, color: AppColors.primaryGreen),
               title: const Text('مشاركة عامة'),
@@ -366,7 +380,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _shareGeneral();
               },
             ),
-
             const SizedBox(height: 10),
           ],
         ),
@@ -374,33 +387,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ============================================================================
+  // ========================================================
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('الإعدادات')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ✅ تعريف بالتطبيق
+          // تعريف بالتطبيق
           Card(
             color: AppColors.lightGold.withOpacity(0.3),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            child: const Padding(
+              padding: EdgeInsets.all(16),
               child: Column(
                 children: [
                   Icon(Icons.mosque, size: 48, color: AppColors.primaryGreen),
-                  const SizedBox(height: 12),
-                  const Text(
+                  SizedBox(height: 12),
+                  Text(
                     'دليل زوار الحسين',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'تطبيق ديني حسيني شامل يهدف إلى خدمة زوار الإمام الحسين عليه السلام '
                     'وتوفير المعلومات الشرعية والتاريخية والخدمية لهم.',
                     textAlign: TextAlign.center,
@@ -412,7 +431,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ✅ كيفية الاستخدام
+          // كيفية الاستخدام
           const Text(
             'كيفية الاستخدام',
             style: TextStyle(
@@ -443,7 +462,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ✅ الإشعارات
+          // الإشعارات
           const Text(
             'الإشعارات',
             style: TextStyle(
@@ -453,7 +472,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
 
-          // ✅ تفعيل الإشعارات الرئيسي
+          // تفعيل الإشعارات الرئيسي
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -482,6 +501,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _eventsReminder = false;
                       _muharramReminder = false;
                     });
+                    _saveSetting('prayerTimeReminder', false);
+                    _saveSetting('eventsReminder', false);
+                    _saveSetting('muharramReminder', false);
                     _cancelAllNotifications();
                   }
                 },
@@ -490,14 +512,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ✅ تذكير مواقيت الصلاة
+          // ✅ تذكير مواقيت الصلاة - مع حفظ في SharedPreferences
           _NotificationTile(
             icon: Icons.access_time,
             title: 'تذكير مواقيت الصلاة',
-            subtitle: 'إشعار عند دخول وقت الصلاة',
+            subtitle: 'إشعار عند دخول وقت الأذان',
             enabled: _notificationsEnabled && _prayerTimeReminder,
             onChanged: _notificationsEnabled
-                ? (value) => setState(() => _prayerTimeReminder = value)
+                ? (value) async {
+                    setState(() => _prayerTimeReminder = value);
+                    await _saveSetting('prayerTimeReminder', value);
+                  }
                 : null,
           ),
 
@@ -508,11 +533,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: 'ولادات ووفيات أهل البيت حسب التاريخ',
             enabled: _notificationsEnabled && _eventsReminder,
             onChanged: _notificationsEnabled
-                ? (value) => setState(() => _eventsReminder = value)
+                ? (value) async {
+                    setState(() => _eventsReminder = value);
+                    await _saveSetting('eventsReminder', value);
+                  }
                 : null,
           ),
 
-          // ✅ تذكير يدوي بمناسبة
+          // تذكير يدوي بمناسبة
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -542,20 +570,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ✅ تذكير أيام محرم
+          // ✅ تذكير أيام محرم - مع حفظ في SharedPreferences
           _NotificationTile(
             icon: Icons.mosque,
             title: 'تذكير أيام محرم',
             subtitle: 'إشعار قبل أيام عاشوراء',
             enabled: _notificationsEnabled && _muharramReminder,
             onChanged: _notificationsEnabled
-                ? (value) => setState(() => _muharramReminder = value)
+                ? (value) async {
+                    setState(() => _muharramReminder = value);
+                    await _saveSetting('muharramReminder', value);
+                  }
                 : null,
           ),
 
           const SizedBox(height: 16),
 
-          // ✅ معلومات التطبيق
+          // معلومات التطبيق
           const Text(
             'عن التطبيق',
             style: TextStyle(
@@ -594,12 +625,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'المميزات:\n'
-                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله\n'
-                    '• أقوال وخطب الإمام الحسين عليه السلام\n'
-                    '• أسئلة شرعية وفتاوى\n'
-                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام\n'
-                    '• خريطة تفاعلية للأماكن المقدسة\n'
+                    'المميزات:
+'
+                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله
+'
+                    '• أقوال وخطب الإمام الحسين عليه السلام
+'
+                    '• أسئلة شرعية وفتاوى
+'
+                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام
+'
+                    '• خريطة تفاعلية للأماكن المقدسة
+'
                     '• إشعارات وتذكير بالمناسبات',
                     style: TextStyle(fontSize: 12, height: 1.8),
                   ),
@@ -643,7 +680,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ✅ مشاركة التطبيق (مرة واحدة فقط)
+          // مشاركة التطبيق
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             color: AppColors.lightGold.withOpacity(0.3),
@@ -661,7 +698,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ✅ بطاقة إعداد (بسيطة - بدون دوال مشاركة)
+// بطاقة إعداد
 class _SettingTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -686,56 +723,7 @@ class _SettingTile extends StatelessWidget {
   }
 }
 
-// ✅ زر مشاركة
-class _ShareButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ShareButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 80,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ✅ بطاقة إشعار (بسيطة - بدون دوال مشاركة)
+// بطاقة إشعار مع حفظ الحالة
 class _NotificationTile extends StatelessWidget {
   final IconData icon;
   final String title;
