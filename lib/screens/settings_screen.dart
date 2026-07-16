@@ -261,9 +261,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _shareToWhatsApp() async {
     final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-      'حصراً على المذهب الشيعي الإثني عشري'
+      '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+حصراً على المذهب الشيعي الإثني عشري'''
     );
     final url = Uri.parse('https://wa.me/?text=$text');
     await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -271,9 +271,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _shareToTelegram() async {
     final text = Uri.encodeComponent(
-      'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-      'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-      'حصراً على المذهب الشيعي الإثني عشري'
+      '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+حصراً على المذهب الشيعي الإثني عشري'''
     );
     final url = Uri.parse('https://t.me/share/url?url=&text=$text');
     await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -281,10 +281,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _shareGeneral() {
     Clipboard.setData(const ClipboardData(
-      text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-            'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-            'حصراً على المذهب الشيعي الإثني عشري\n'
-            'https://github.com/daleelzuwar/alhussein',
+      text: '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+حصراً على المذهب الشيعي الإثني عشري
+https://github.com/daleelzuwar/alhussein''',
     ));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -324,10 +324,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: const Text('انسخ الرابط والصقه في أي مكان'),
               onTap: () {
                 Clipboard.setData(const ClipboardData(
-                  text: 'حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل\n'
-                        'يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة\n'
-                        'حصراً على المذهب الشيعي الإثني عشري\n'
-                        'https://github.com/daleelzuwar/alhussein',
+                  text: '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+حصراً على المذهب الشيعي الإثني عشري
+https://github.com/daleelzuwar/alhussein''',
                 ));
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
