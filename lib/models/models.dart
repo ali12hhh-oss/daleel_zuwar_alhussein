@@ -118,3 +118,20 @@ class IraqiCity {
     required this.approxDistanceKm,
   });
 }
+
+/// استفتاء من RSS
+class FatwaItem {
+  final String title;
+  final String link;
+  final String description;
+  final DateTime pubDate;
+  final String scholarId;
+
+  const FatwaItem({
+    required this.title,
+    required this.link,
+    required this.description,
+    required this.pubDate,
+    required this.scholarId,
+  });
+}
