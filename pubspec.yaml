@@ -51,6 +51,9 @@ dependencies:
   html_unescape: ^2.0.0
   xml: ^6.5.0
 
+  # ✅ حفظ الإعدادات
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
