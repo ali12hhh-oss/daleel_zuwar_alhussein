@@ -2,12 +2,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_compass/flutter_compass.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import '../theme.dart';
-
-// Note: Add flutter_compass to pubspec.yaml:
-// dependencies:
-//   flutter_compass: ^0.7.3
-//   sensors_plus: ^4.0.2
 
 class QiblaScreen extends StatefulWidget {
   const QiblaScreen({super.key});
@@ -16,13 +13,20 @@ class QiblaScreen extends StatefulWidget {
   State<QiblaScreen> createState() => _QiblaScreenState();
 }
 
-class _QiblaScreenState extends State<QiblaScreen> {
+class _QiblaScreenState extends State<QiblaScreen>
+    with SingleTickerProviderStateMixin {
   bool _loading = true;
   String? _error;
-  double? _qiblaDirection; // زاوية القبلة من الشمال
-  double? _deviceHeading; // اتجاه الجهاز من الشمال
+  double? _qiblaDirection; // زاوية القبلة من الشمال (ثابتة)
+  double _deviceHeading = 0; // اتجاه الجهاز من الشمال (يتغير مع الحركة)
+  double _smoothHeading = 0; // للتنعيم
   Position? _position;
   bool _hasCompass = false;
+  bool _usingGpsFallback = false;
+
+  StreamSubscription<CompassEvent>? _compassSubscription;
+  StreamSubscription<MagnetometerEvent>? _magnetometerSubscription;
+  AnimationController? _animationController;
 
   /// إحداثيات الكعبة المشرفة
   static const double kaabaLat = 21.4225;
@@ -31,25 +35,77 @@ class _QiblaScreenState extends State<QiblaScreen> {
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
     _getLocationAndCalculate();
     _initCompass();
   }
 
-  Future<void> _initCompass() async {
-    // Check if compass is available
-    try {
-      // flutter_compass availability check
-      // CompassEvent? event = await FlutterCompass.events?.first;
-      // if (event != null) {
-      //   setState(() => _hasCompass = true);
-      // }
+  @override
+  void dispose() {
+    _compassSubscription?.cancel();
+    _magnetometerSubscription?.cancel();
+    _animationController?.dispose();
+    super.dispose();
+  }
 
-      // For now, simulate compass availability
-      // In real implementation, use flutter_compass
-      setState(() => _hasCompass = true);
+  /// ✅ محاولة تشغيل البوصلة الحقيقية
+  Future<void> _initCompass() async {
+    try {
+      // محاولة استخدام flutter_compass
+      final compassEvents = FlutterCompass.events;
+      if (compassEvents != null) {
+        _compassSubscription = compassEvents.listen((event) {
+          if (mounted && event.heading != null) {
+            setState(() {
+              _hasCompass = true;
+              _usingGpsFallback = false;
+              // تنعيم الحركة
+              _smoothHeading = _lerpAngle(_smoothHeading, event.heading!, 0.15);
+              _deviceHeading = _smoothHeading;
+            });
+          }
+        });
+      }
     } catch (e) {
-      setState(() => _hasCompass = false);
+      // إذا فشلت البوصلة، استخدم Magnetometer كبديل
+      _tryMagnetometerFallback();
     }
+  }
+
+  /// ✅ بديل: استخدام Magnetometer إذا لم تكن البوصلة متوفرة
+  void _tryMagnetometerFallback() {
+    try {
+      _magnetometerSubscription = magnetometerEvents.listen((event) {
+        if (mounted) {
+          // حساب الزاوية من المغناطيسي
+          final heading = math.atan2(event.y, event.x) * 180 / math.pi;
+          final normalizedHeading = (heading < 0) ? heading + 360 : heading;
+          setState(() {
+            _hasCompass = true;
+            _usingGpsFallback = false;
+            _smoothHeading = _lerpAngle(_smoothHeading, normalizedHeading, 0.15);
+            _deviceHeading = _smoothHeading;
+          });
+        }
+      });
+    } catch (e) {
+      // إذا فشل كل شيء، استخدم GPS كبديل أخير
+      setState(() {
+        _hasCompass = false;
+        _usingGpsFallback = true;
+      });
+    }
+  }
+
+  /// ✅ تنعيم الزاوية (Smoothing)
+  double _lerpAngle(double current, double target, double factor) {
+    var diff = target - current;
+    while (diff < -180) diff += 360;
+    while (diff > 180) diff -= 360;
+    return current + diff * factor;
   }
 
   Future<void> _getLocationAndCalculate() async {
@@ -90,7 +146,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
     }
   }
 
-  /// ✅ حساب اتجاه القبلة رياضياً (معادلة spherical trigonometry)
+  /// ✅ حساب اتجاه القبلة رياضياً (Spherical Trigonometry)
   double _calculateQiblaDirection(double lat, double lng) {
     final latRad = lat * math.pi / 180.0;
     final lngRad = lng * math.pi / 180.0;
@@ -100,7 +156,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
     final dLng = kaabaLngRad - lngRad;
 
     final y = math.sin(dLng);
-    final x = math.cos(latRad) * math.tan(kaabaLatRad) - math.sin(latRad) * math.cos(dLng);
+    final x = math.cos(latRad) * math.tan(kaabaLatRad) -
+        math.sin(latRad) * math.cos(dLng);
 
     var qibla = math.atan2(y, x) * 180.0 / math.pi;
     if (qibla < 0) qibla += 360.0;
@@ -108,14 +165,27 @@ class _QiblaScreenState extends State<QiblaScreen> {
     return qibla;
   }
 
-  /// ✅ حساب زاوية القبلة بالنسبة للجهاز
+  /// ✅ حساب زاوية القبلة بالنسبة للجهاز (للدوران)
   double _getQiblaAngle() {
-    if (_qiblaDirection == null || _deviceHeading == null) return 0;
-    var angle = _qiblaDirection! - _deviceHeading!;
-    // Normalize to 0-360
+    if (_qiblaDirection == null) return 0;
+    var angle = _qiblaDirection! - _deviceHeading;
     angle = angle % 360;
     if (angle < 0) angle += 360;
     return angle;
+  }
+
+  /// ✅ حساب الفرق بين اتجاه الجهاز والقبلة
+  double _getAngleDifference() {
+    if (_qiblaDirection == null) return 0;
+    var diff = _qiblaDirection! - _deviceHeading;
+    while (diff < -180) diff += 360;
+    while (diff > 180) diff -= 360;
+    return diff.abs();
+  }
+
+  /// ✅ هل الجهاز متجه نحو القبلة؟
+  bool _isFacingQibla() {
+    return _getAngleDifference() < 5;
   }
 
   @override
@@ -127,7 +197,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // ✅ تعريف
+            // تعريف
             Card(
               color: AppColors.lightGold.withOpacity(0.3),
               child: const Padding(
@@ -145,8 +215,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'يتم حساب اتجاه القبلة تلقائياً حسب موقعك الجغرافي\n'
-                      'حصراً على المذهب الشيعي الاثني عشري',
+                      'حرك جهازك لتحديد اتجاه القبلة\n'
+                      'حصراً على المذهب الشيعي الإثني عشري',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 13),
                     ),
@@ -156,7 +226,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ✅ حالة التحميل
+            // حالة التحميل
             if (_loading)
               const Center(
                 child: Padding(
@@ -165,7 +235,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 ),
               ),
 
-            // ✅ خطأ
+            // خطأ
             if (_error != null)
               Card(
                 color: Colors.red[50],
@@ -184,9 +254,37 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 ),
               ),
 
-            // ✅ البوصلة الاحترافية
+            // البوصلة الاحترافية
             if (!_loading && _error == null && _qiblaDirection != null) ...[
-              // ✅ الدائرة البوصلة الاحترافية
+              // حالة البوصلة
+              if (_isFacingQibla())
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.green, width: 2),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text(
+                        '✅ أنت متجه نحو القبلة',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // الدائرة البوصلة الاحترافية
               Center(
                 child: SizedBox(
                   width: 320,
@@ -233,13 +331,19 @@ class _QiblaScreenState extends State<QiblaScreen> {
                         ),
                       ),
 
-                      // علامات الاتجاهات الرئيسية
-                      ..._buildDirectionMarkers(),
+                      // علامات الاتجاهات الرئيسية (تدور مع الجهاز)
+                      Transform.rotate(
+                        angle: -_deviceHeading * math.pi / 180,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ..._buildDirectionMarkers(),
+                            ..._buildDegreeMarkers(),
+                          ],
+                        ),
+                      ),
 
-                      // علامات الدرجات
-                      ..._buildDegreeMarkers(),
-
-                      // السهم الرئيسي (القبلة)
+                      // السهم الرئيسي (القبلة) - ثابت في اتجاه القبلة
                       Transform.rotate(
                         angle: _getQiblaAngle() * math.pi / 180,
                         child: Column(
@@ -276,20 +380,27 @@ class _QiblaScreenState extends State<QiblaScreen> {
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 80),
                           ],
                         ),
                       ),
 
-                      // مؤشر الشمال
-                      Transform.rotate(
-                        angle: -(_deviceHeading ?? 0) * math.pi / 180,
+                      // مؤشر الشمال (ثابت في الأعلى)
+                      Positioned(
+                        top: 20,
                         child: Container(
-                          width: 60,
-                          height: 60,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.red.withOpacity(0.9),
                             border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 5,
+                              ),
+                            ],
                           ),
                           child: const Center(
                             child: Text(
@@ -297,7 +408,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 20,
+                                fontSize: 18,
                               ),
                             ),
                           ),
@@ -326,7 +437,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ✅ معلومات القبلة
+              // معلومات القبلة
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -342,13 +453,13 @@ class _QiblaScreenState extends State<QiblaScreen> {
                           ),
                           _InfoBox(
                             label: 'اتجاه الجهاز',
-                            value: '${(_deviceHeading ?? 0).toStringAsFixed(1)}°',
+                            value: '${_deviceHeading.toStringAsFixed(1)}°',
                             color: Colors.blue,
                           ),
                           _InfoBox(
                             label: 'الفرق',
-                            value: '${_getQiblaAngle().toStringAsFixed(1)}°',
-                            color: AppColors.gold,
+                            value: '${_getAngleDifference().toStringAsFixed(1)}°',
+                            color: _isFacingQibla() ? Colors.green : AppColors.gold,
                           ),
                         ],
                       ),
@@ -358,7 +469,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ✅ الموقع
+              // الموقع
               if (_position != null)
                 Card(
                   child: Padding(
@@ -384,7 +495,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
 
               const SizedBox(height: 16),
 
-              // ✅ ملاحظات
+              // ملاحظات
               Card(
                 color: Colors.grey[100],
                 child: const Padding(
@@ -399,10 +510,11 @@ class _QiblaScreenState extends State<QiblaScreen> {
                       SizedBox(height: 8),
                       Text(
                         '• حرك الجهاز حتى يتجه السهم الأخضر نحو القبلة\n'
+                        '• عندما يصبح الفرق أقل من 5°، ستظهر رسالة التأكيد\n'
                         '• وقف بعيداً عن الأجسام المعدنية\n'
                         '• حافظ على الجهاز أفقياً\n'
                         '• الزاوية محسوبة من الشمال نحو الشرق\n'
-                        '• حصراً على المذهب الشيعي الاثني عشري',
+                        '• حصراً على المذهب الشيعي الإثني عشري',
                         style: TextStyle(fontSize: 12, height: 1.8),
                       ),
                     ],
@@ -427,8 +539,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
 
     return directions.map((d) {
       final angle = (d['angle'] as num) * math.pi / 180;
-      final x = 140 * math.sin(angle);
-      final y = -140 * math.cos(angle);
+      final x = 120 * math.sin(angle);
+      final y = -120 * math.cos(angle);
 
       return Positioned(
         left: 160 + x - 20,
@@ -452,19 +564,17 @@ class _QiblaScreenState extends State<QiblaScreen> {
       final angle = i * math.pi / 180;
       final x1 = 130 * math.sin(angle);
       final y1 = -130 * math.cos(angle);
-      final x2 = 140 * math.sin(angle);
-      final y2 = -140 * math.cos(angle);
 
       markers.add(
         Positioned(
           left: 160 + x1 - 1,
           top: 160 + y1 - 1,
           child: Container(
-            width: 2,
-            height: 2,
-            decoration: const BoxDecoration(
+            width: i % 90 == 0 ? 4 : 2,
+            height: i % 90 == 0 ? 4 : 2,
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey,
+              color: i % 90 == 0 ? Colors.black : Colors.grey,
             ),
           ),
         ),
@@ -503,7 +613,7 @@ class _TrianglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 /// ✅ صندوق معلومات
