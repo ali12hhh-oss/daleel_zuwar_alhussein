@@ -47,15 +47,28 @@ class ScholarQuestionsScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 13),
                     ),
                     const SizedBox(height: 10),
-                    // ✅ زر الاستفتاء الرئيسي
+                    // ✅ زر الاستفتاءات (RSS أو موقع)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => _launchUrl(context, scholar.istiftaUrl),
-                        icon: const Icon(Icons.search),
-                        label: const Text('البحث في الاستفتاءات'),
+                        onPressed: () {
+                          if (scholar.hasRss) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FatwasScreen(scholar: scholar),
+                              ),
+                            );
+                          } else {
+                            _launchUrl(context, scholar.istiftaUrl);
+                          }
+                        },
+                        icon: Icon(scholar.hasRss ? Icons.rss_feed : Icons.open_in_new),
+                        label: Text(scholar.hasRss 
+                            ? 'استفتاءات ${scholar.name}' 
+                            : 'البحث في الاستفتاءات'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
+                          backgroundColor: scholar.hasRss ? Colors.orange : AppColors.primaryGreen,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
