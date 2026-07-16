@@ -47,6 +47,10 @@ dependencies:
   # مشاركة النصوص
   share_plus: ^7.2.0
 
+  # معالجة RSS و XML
+  html_unescape: ^2.0.0
+  xml: ^6.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
