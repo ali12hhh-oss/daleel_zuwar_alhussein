@@ -6,6 +6,8 @@ class Scholar {
   final String officialSite; // الموقع الرسمي العام
   final String istiftaUrl; // رابط صفحة الاستفتاءات/البحث الشرعي مباشرة
   final bool isLiving; // هل المرجع حي (توجد استفتاءات جديدة) أم لا
+  final bool hasRss; // هل يوجد RSS للاستفتاءات
+  final String? rssUrl; // رابط RSS إن وجد
 
   const Scholar({
     required this.id,
@@ -14,6 +16,8 @@ class Scholar {
     required this.officialSite,
     required this.istiftaUrl,
     this.isLiving = true,
+    this.hasRss = false,
+    this.rssUrl,
   });
 }
 
