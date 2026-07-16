@@ -3,7 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/questions_data.dart';
 import '../models/models.dart';
 import '../theme.dart';
-import 'fatwas_screen.dart';
 
 class ScholarQuestionsScreen extends StatelessWidget {
   final Scholar scholar;
@@ -48,28 +47,15 @@ class ScholarQuestionsScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 13),
                     ),
                     const SizedBox(height: 10),
-                    // زر الاستفتاءات (RSS أو موقع)
+                    // زر الاستفتاءات
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          if (scholar.hasRss) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FatwasScreen(scholar: scholar),
-                              ),
-                            );
-                          } else {
-                            _launchUrl(context, scholar.istiftaUrl);
-                          }
-                        },
-                        icon: Icon(scholar.hasRss ? Icons.rss_feed : Icons.open_in_new),
-                        label: Text(scholar.hasRss 
-                            ? 'استفتاءات ${scholar.name}' 
-                            : 'البحث في الاستفتاءات'),
+                        onPressed: () => _launchUrl(context, scholar.istiftaUrl),
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('البحث في الاستفتاءات'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: scholar.hasRss ? Colors.orange : AppColors.primaryGreen,
+                          backgroundColor: AppColors.primaryGreen,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -128,12 +114,13 @@ class ScholarQuestionsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار من المواقع الرسمية للمراجع',
+                  Text(
+                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار
+من المواقع الرسمية للمراجع',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
