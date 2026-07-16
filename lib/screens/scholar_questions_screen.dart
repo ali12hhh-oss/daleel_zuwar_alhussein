@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/questions_data.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import 'fatwas_screen.dart';
 
 class ScholarQuestionsScreen extends StatelessWidget {
   final Scholar scholar;
@@ -18,7 +19,7 @@ class ScholarQuestionsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
-          // ✅ بطاقة المعلومات
+          // بطاقة المعلومات
           Card(
             color: AppColors.lightGold.withOpacity(0.4),
             child: Padding(
@@ -47,7 +48,7 @@ class ScholarQuestionsScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 13),
                     ),
                     const SizedBox(height: 10),
-                    // ✅ زر الاستفتاءات (RSS أو موقع)
+                    // زر الاستفتاءات (RSS أو موقع)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -84,7 +85,7 @@ class ScholarQuestionsScreen extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 8),
-                  // ✅ زر الموقع الرسمي
+                  // زر الموقع الرسمي
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -105,10 +106,10 @@ class ScholarQuestionsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
-          // ✅ قسم الأسئلة الشائعة
+
+          // قسم الأسئلة الشائعة
           if (questions.isEmpty) ...[
-            // ✅ عرض "قريباً" إذا لا توجد أسئلة
+            // عرض "قريباً" إذا لا توجد أسئلة
             Center(
               child: Column(
                 children: [
@@ -128,7 +129,8 @@ class ScholarQuestionsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار\nمن المواقع الرسمية للمراجع',
+                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار
+من المواقع الرسمية للمراجع',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -139,7 +141,7 @@ class ScholarQuestionsScreen extends StatelessWidget {
               ),
             ),
           ] else ...[
-            // ✅ عرض الأسئلة إذا موجودة
+            // عرض الأسئلة إذا موجودة
             const Text(
               'أسئلة شائعة',
               style: TextStyle(
@@ -170,7 +172,7 @@ class ScholarQuestionsScreen extends StatelessWidget {
   }
 }
 
-// ✅ بطاقة السؤال والجواب
+// بطاقة السؤال والجواب
 class _QuestionCard extends StatelessWidget {
   final ShariQuestion question;
   const _QuestionCard({required this.question});
