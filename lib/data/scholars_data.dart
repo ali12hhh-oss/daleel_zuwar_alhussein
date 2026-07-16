@@ -12,6 +12,8 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://www.sistani.org/arabic/',
     istiftaUrl: 'https://www.sistani.org/arabic/qa/',
     isLiving: true,
+    hasRss: true,
+    rssUrl: 'https://www.sistani.org/arabic/qa/feed/',
   ),
   Scholar(
     id: 'sadr',
@@ -20,6 +22,7 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://www.google.com/search?q=مكتب+الشهيد+محمد+صادق+الصدر+الاستفتاءات',
     istiftaUrl: 'https://www.google.com/search?q=مكتب+الشهيد+محمد+صادق+الصدر+الاستفتاءات',
     isLiving: false,
+    hasRss: false,
   ),
   Scholar(
     id: 'khamenei',
@@ -28,6 +31,7 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://arabic.khamenei.ir',
     istiftaUrl: 'https://arabic.khamenei.ir/others/toziholmasael',
     isLiving: true,
+    hasRss: false,
   ),
   Scholar(
     id: 'shirazi',
@@ -36,6 +40,7 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://alshirazi.org/?langs=AR',
     istiftaUrl: 'https://alshirazi.org/estefta?langs=AR',
     isLiving: true,
+    hasRss: false,
   ),
   Scholar(
     id: 'khoei',
@@ -44,5 +49,6 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://www.google.com/search?q=مؤسسة+الخوئي+الخيرية',
     istiftaUrl: 'https://www.google.com/search?q=مؤسسة+الخوئي+الخيرية',
     isLiving: false,
+    hasRss: false,
   ),
 ];
