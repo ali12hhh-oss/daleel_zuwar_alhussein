@@ -21,7 +21,6 @@ class _QiblaScreenState extends State<QiblaScreen>
   double _deviceHeading = 0;
   double _smoothHeading = 0;
   Position? _position;
-  bool _hasCompass = false;
 
   StreamSubscription<CompassEvent>? _compassSubscription;
   StreamSubscription<MagnetometerEvent>? _magnetometerSubscription;
@@ -56,7 +55,6 @@ class _QiblaScreenState extends State<QiblaScreen>
         _compassSubscription = compassEvents.listen((event) {
           if (mounted && event.heading != null) {
             setState(() {
-              _hasCompass = true;
               _smoothHeading = _lerpAngle(_smoothHeading, event.heading!, 0.15);
               _deviceHeading = _smoothHeading;
             });
@@ -70,21 +68,18 @@ class _QiblaScreenState extends State<QiblaScreen>
 
   void _tryMagnetometerFallback() {
     try {
-      _magnetometerSubscription = magnetometerEvents.listen((event) {
+      _magnetometerSubscription = magnetometerEventStream().listen((event) {
         if (mounted) {
           final heading = math.atan2(event.y, event.x) * 180 / math.pi;
           final normalizedHeading = (heading < 0) ? heading + 360 : heading;
           setState(() {
-            _hasCompass = true;
             _smoothHeading = _lerpAngle(_smoothHeading, normalizedHeading, 0.15);
             _deviceHeading = _smoothHeading;
           });
         }
       });
     } catch (e) {
-      setState(() {
-        _hasCompass = false;
-      });
+      // Magnetometer not available
     }
   }
 
