@@ -33,7 +33,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
-  /// ✅ تحميل الإعدادات المحفوظة من SharedPreferences
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -44,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  /// ✅ حفظ الإعدادات في SharedPreferences
   Future<void> _saveSetting(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
@@ -102,7 +100,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// ✅ إشعار فوري (للتذكير اليدوي)
   Future<void> _showInstantNotification(String title, String body) async {
     if (!_notificationsEnabled) {
       await _requestPermission();
@@ -127,7 +124,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ جدولة إشعار (للتذكير التلقائي)
   Future<void> _scheduleNotification({
     required int id,
     required String title,
@@ -161,7 +157,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ الحصول على التاريخ الهجري من الروايات
   String _getHijriDate(AhlulBaytEvent event) {
     if (event.narrations.isEmpty) return '';
     final famousNarration = event.narrations.firstWhere(
@@ -171,7 +166,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return famousNarration.hijriDate;
   }
 
-  /// ✅ التذكير اليدوي بمناسبة معينة
   void _showReminderDialog() {
     final allEvents = _getUpcomingEvents();
     final births = allEvents.where((e) => e.kind == EventKind.birth).toList();
@@ -219,7 +213,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ بناء قائمة المناسبات
   Widget _buildEventsList(List<AhlulBaytEvent> events) {
     if (events.isEmpty) {
       return const Center(
@@ -262,12 +255,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// ✅ الحصول على جميع مناسبات أهل البيت
   List<AhlulBaytEvent> _getUpcomingEvents() {
     return ahlulBaytEvents.toList();
   }
-
-  // ==================== دوال المشاركة ====================
 
   Future<void> _shareToWhatsApp() async {
     final text = Uri.encodeComponent(
@@ -305,7 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('✅ تم نسخ نص المشاركة - الصقه في أي تطبيق'),
+        content: Text('تم نسخ نص المشاركة - الصقه في أي تطبيق'),
         duration: Duration(seconds: 3),
       ),
     );
@@ -351,7 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ));
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ تم نسخ نص المشاركة')),
+                  const SnackBar(content: Text('تم نسخ نص المشاركة')),
                 );
               },
             ),
@@ -387,8 +377,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ========================================================
-
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -402,7 +390,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // تعريف بالتطبيق
           Card(
             color: AppColors.lightGold.withOpacity(0.3),
             child: const Padding(
@@ -431,7 +418,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // كيفية الاستخدام
           const Text(
             'كيفية الاستخدام',
             style: TextStyle(
@@ -462,7 +448,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // الإشعارات
           const Text(
             'الإشعارات',
             style: TextStyle(
@@ -472,7 +457,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
 
-          // تفعيل الإشعارات الرئيسي
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -512,7 +496,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ✅ تذكير مواقيت الصلاة - مع حفظ في SharedPreferences
           _NotificationTile(
             icon: Icons.access_time,
             title: 'تذكير مواقيت الصلاة',
@@ -526,7 +509,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : null,
           ),
 
-          // ✅ تذكير المناسبات (تلقائي)
           _NotificationTile(
             icon: Icons.calendar_today,
             title: 'تذكير المناسبات التلقائي',
@@ -540,7 +522,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : null,
           ),
 
-          // تذكير يدوي بمناسبة
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -570,7 +551,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ✅ تذكير أيام محرم - مع حفظ في SharedPreferences
           _NotificationTile(
             icon: Icons.mosque,
             title: 'تذكير أيام محرم',
@@ -586,7 +566,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 16),
 
-          // معلومات التطبيق
           const Text(
             'عن التطبيق',
             style: TextStyle(
@@ -625,18 +604,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'المميزات:
-'
-                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله
-'
-                    '• أقوال وخطب الإمام الحسين عليه السلام
-'
-                    '• أسئلة شرعية وفتاوى
-'
-                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام
-'
-                    '• خريطة تفاعلية للأماكن المقدسة
-'
+                    'المميزات:',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const Text(
+                    '• مواقيت الصلاة حسب كراس السيد السيستاني دام ظله',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const Text(
+                    '• أقوال وخطب الإمام الحسين عليه السلام',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const Text(
+                    '• أسئلة شرعية وفتاوى',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const Text(
+                    '• تواريخ ولادات ووفيات أهل البيت عليهم السلام',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const Text(
+                    '• خريطة تفاعلية للأماكن المقدسة',
+                    style: TextStyle(fontSize: 12, height: 1.8),
+                  ),
+                  const Text(
                     '• إشعارات وتذكير بالمناسبات',
                     style: TextStyle(fontSize: 12, height: 1.8),
                   ),
@@ -659,7 +650,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // تواصل معنا
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -680,7 +670,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // مشاركة التطبيق
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             color: AppColors.lightGold.withOpacity(0.3),
@@ -698,7 +687,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// بطاقة إعداد
 class _SettingTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -723,7 +711,6 @@ class _SettingTile extends StatelessWidget {
   }
 }
 
-// بطاقة إشعار مع حفظ الحالة
 class _NotificationTile extends StatelessWidget {
   final IconData icon;
   final String title;
