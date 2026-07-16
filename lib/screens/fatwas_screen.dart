@@ -43,10 +43,10 @@ class _FatwasScreenState extends State<FatwasScreen> {
       final items = document.findAllElements('item');
 
       final fatwas = items.map((item) {
-        final title = item.findElements('title').firstOrNull?.text ?? '';
-        final link = item.findElements('link').firstOrNull?.text ?? '';
-        final description = item.findElements('description').firstOrNull?.text ?? '';
-        final pubDateStr = item.findElements('pubDate').firstOrNull?.text ?? '';
+        final title = _getXmlText(item, 'title');
+        final link = _getXmlText(item, 'link');
+        final description = _getXmlText(item, 'description');
+        final pubDateStr = _getXmlText(item, 'pubDate');
         final pubDate = DateTime.tryParse(pubDateStr) ?? DateTime.now();
 
         return FatwaItem(
@@ -68,6 +68,13 @@ class _FatwasScreenState extends State<FatwasScreen> {
         _loading = false;
       });
     }
+  }
+
+  /// Helper to safely get text from XML element
+  String _getXmlText(XmlElement item, String elementName) {
+    final elements = item.findElements(elementName);
+    if (elements.isEmpty) return '';
+    return elements.first.value ?? '';
   }
 
   Future<void> _openLink(String url) async {
