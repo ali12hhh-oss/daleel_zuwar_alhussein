@@ -17,15 +17,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   String? _error;
   String? _cityName;
 
-  // 3 أوقات أذان فقط
-  DateTime? _fajrAdhan;    // أذان الفجر (الفجر الصادق)
-  DateTime? _dhuhrAdhan;   // أذان الظهر (الزوال)
-  DateTime? _maghribAdhan; // أذان المغرب (غياب الحمرة المشرقية)
-
-  // أوقات انتهاء الصلاة
-  DateTime? _sunrise;      // الشروق = انتهاء وقت الفجر
-  DateTime? _sunset;       // الغروب = انتهاء وقت الظهرين
-  DateTime? _midnight;     // منتصف الليل = انتهاء وقت العشائين
+  DateTime? _fajrAdhan;
+  DateTime? _dhuhrAdhan;
+  DateTime? _maghribAdhan;
+  DateTime? _sunrise;
+  DateTime? _sunset;
+  DateTime? _midnight;
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -43,7 +40,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     await _notificationsPlugin.initialize(initSettings);
   }
 
-  /// ✅ تشغيل صوت الأذان كإشعار
   Future<void> _showAdhanNotification(String prayerName, String time) async {
     const androidDetails = AndroidNotificationDetails(
       'adhan_channel',
@@ -88,10 +84,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // تحديد أقرب مدينة
       final city = _findNearestCity(position.latitude, position.longitude);
-
-      // حساب أوقات الصلاة
       final times = _calculateShiaPrayerTimes(
         position.latitude,
         position.longitude,
@@ -117,7 +110,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
-  /// ✅ قائمة محافظات العراق مع الإحداثيات الدقيقة
   String _findNearestCity(double lat, double lng) {
     final cities = [
       {'name': 'بغداد', 'lat': 33.3152, 'lng': 44.3661},
@@ -174,33 +166,18 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return nearest;
   }
 
-  /// ✅ حساب أوقات الصلاة للشيعة الإثني عشرية (حسب كراس السيد السيستاني)
-  /// 
-  /// المعايير:
-  /// - الفجر: 18° تحت الأفق (الفجر الصادق)
-  /// - الظهر: زوال الشمس (المركز على السمت)
-  /// - المغرب: غياب الحمرة المشرقية (≈ 4-6° تحت الأفق بعد الغروب)
   Map<String, DateTime> _calculateShiaPrayerTimes(double lat, double lng, DateTime date) {
-    // اليوم من السنة (1-365)
     final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-
-    // خط الطول المرجعي (GMT)
     final lngHour = lng / 15.0;
-
-    // زاوية الميل الشمسي (declination)
     final sunDeclination = 23.45 * math.sin((360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0);
-
-    // معادلة الزمن (Equation of Time) - دقيقة
     final equationOfTime = 9.87 * math.sin(2 * (360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0)
         - 7.53 * math.cos((360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0)
         - 1.5 * math.sin((360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0);
 
-    // ========== أذان الظهر (الزوال) ==========
     final dhuhrMinutes = 4 * lngHour + equationOfTime;
     final dhuhrAdhan = DateTime(date.year, date.month, date.day, 12, 0)
         .add(Duration(minutes: dhuhrMinutes.round()));
 
-    // ========== الشروق والغروب ==========
     final hourAngleSunrise = math.acos(
         -math.tan(lat * math.pi / 180.0) * math.tan(sunDeclination * math.pi / 180.0)
     ) * 180.0 / math.pi;
@@ -208,7 +185,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final sunrise = dhuhrAdhan.subtract(Duration(minutes: (hourAngleSunrise * 4).round()));
     final sunset = dhuhrAdhan.add(Duration(minutes: (hourAngleSunrise * 4).round()));
 
-    // ========== أذان الفجر (18° تحت الأفق) ==========
     final fajrAngle = 18.0;
     final fajrHourAngle = math.acos(
         (-math.sin(fajrAngle * math.pi / 180.0) +
@@ -220,11 +196,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final fajrAdhan = dhuhrAdhan.subtract(
         Duration(minutes: ((hourAngleSunrise + fajrHourAngle) * 4).round()));
 
-    // ========== ✅ أذان المغرب (غياب الحمرة المشرقية) ==========
-    // في المذهب الشيعي: المغرب = غياب الحمرة المشرقية
-    // تقريباً: 4° إلى 6° تحت الأفق بعد الغروب
-    // نستخدم 4.5° كمتوسط دقيق
-    final maghribAngle = 4.5; // درجة غياب الحمرة المشرقية
+    final maghribAngle = 4.5;
     final maghribHourAngle = math.acos(
         (-math.sin(maghribAngle * math.pi / 180.0) +
          math.sin(lat * math.pi / 180.0) * math.sin(sunDeclination * math.pi / 180.0))
@@ -235,7 +207,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final maghribAdhan = dhuhrAdhan.add(
         Duration(minutes: ((hourAngleSunrise + maghribHourAngle) * 4).round()));
 
-    // ========== منتصف الليل ==========
     final nextSunrise = sunrise.add(const Duration(days: 1));
     final midnight = sunset.add(
         Duration(minutes: (nextSunrise.difference(sunset).inMinutes ~/ 2)));
@@ -263,7 +234,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return R * c;
   }
 
-  /// ✅ تنسيق الوقت بنظام 12 ساعة (ص/م)
   String _formatTime12Hour(DateTime time) {
     final hour = time.hour;
     final minute = time.minute.toString().padLeft(2, '0');
@@ -272,27 +242,22 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return '$hour12:$minute $period';
   }
 
-  /// ✅ التحقق مما إذا كان الوقت الحالي ضمن وقت الصلاة
   bool _isCurrentPrayer(String prayerName) {
     final now = DateTime.now();
     if (_fajrAdhan == null || _dhuhrAdhan == null || _maghribAdhan == null) return false;
 
     switch (prayerName) {
       case 'fajr':
-        // الفجر: من طلوع الفجر الصادق إلى طلوع الشمس
         return now.isAfter(_fajrAdhan!) && now.isBefore(_sunrise!);
       case 'dhuhr':
-        // الظهر: من الزوال إلى غياب الحمرة المشرقية
         return now.isAfter(_dhuhrAdhan!) && now.isBefore(_maghribAdhan!);
       case 'maghrib':
-        // المغرب: من غياب الحمرة المشرقية إلى منتصف الليل
         return now.isAfter(_maghribAdhan!) && now.isBefore(_midnight!);
       default:
         return false;
     }
   }
 
-  /// ✅ الحصول على الوقت المتبقي للأذان القادم
   String _getNextAdhan() {
     final now = DateTime.now();
     if (_fajrAdhan == null || _dhuhrAdhan == null || _maghribAdhan == null) return '';
@@ -310,12 +275,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       nextAdhan = _maghribAdhan;
       nextName = 'أذان المغرب';
     } else {
-      // بعد المغرب، الأذان القادم هو فجر الغد
       nextAdhan = _fajrAdhan!.add(const Duration(days: 1));
       nextName = 'أذان الفجر (غداً)';
     }
 
-    final diff = nextAdhan.difference(now);
+    final diff = nextAdhan!.difference(now);
     final hours = diff.inHours;
     final minutes = diff.inMinutes % 60;
 
@@ -335,7 +299,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // بطاقة المعلومات
             Card(
               color: AppColors.lightGold.withOpacity(0.3),
               child: Padding(
@@ -352,12 +315,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'حسب كراس توقيتات الصلاة للسيد السيستاني دام ظله
-'
+                    const Text(
+                      'حسب كراس توقيتات الصلاة للسيد السيستاني دام ظله',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    const Text(
                       'للشيعة الإثني عشرية - يتحدد تلقائياً حسب موقعك',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 13),
+                      style: TextStyle(fontSize: 13),
                     ),
                     if (_cityName != null) ...[
                       const SizedBox(height: 8),
@@ -379,7 +345,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             ),
             const SizedBox(height: 16),
 
-            // حالة التحميل
             if (_loading)
               const Center(
                 child: Padding(
@@ -388,7 +353,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
               ),
 
-            // خطأ
             if (_error != null)
               Card(
                 color: Colors.red[50],
@@ -407,7 +371,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
               ),
 
-            // الأذان القادم
             if (!_loading && _error == null && _fajrAdhan != null) ...[
               Card(
                 color: AppColors.primaryGreen.withOpacity(0.1),
@@ -434,7 +397,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               const SizedBox(height: 16),
             ],
 
-            // 3 أذانات فقط
             if (!_loading && _error == null && _fajrAdhan != null) ...[
               const Text(
                 'أوقات الأذان اليوم',
@@ -445,7 +407,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
               const SizedBox(height: 12),
 
-              // أذان الفجر
               _AdhanCard(
                 name: 'أذان الفجر',
                 time: _formatTime12Hour(_fajrAdhan!),
@@ -457,7 +418,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 onAdhan: () => _showAdhanNotification('الفجر', _formatTime12Hour(_fajrAdhan!)),
               ),
 
-              // أذان الظهر
               _AdhanCard(
                 name: 'أذان الظهر',
                 time: _formatTime12Hour(_dhuhrAdhan!),
@@ -469,7 +429,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 onAdhan: () => _showAdhanNotification('الظهر', _formatTime12Hour(_dhuhrAdhan!)),
               ),
 
-              // ✅ أذان المغرب (غياب الحمرة المشرقية)
               _AdhanCard(
                 name: 'أذان المغرب',
                 time: _formatTime12Hour(_maghribAdhan!),
@@ -484,7 +443,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
             const SizedBox(height: 16),
 
-            // ملاحظات مهمة للشيعة
             Card(
               color: Colors.grey[100],
               child: const Padding(
@@ -498,18 +456,30 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      '• أذان الفجر: وقت صلاة الصبح من طلوع الفجر الصادق (18°) إلى طلوع الشمس
-'
-                      '• أذان الظهر: وقت صلاة الظهرين من الزوال إلى غياب الحمرة المشرقية
-'
-                      '  - يستحب تأخير صلاة العصر قليلاً
-'
-                      '• أذان المغرب: وقت صلاة العشائين من غياب الحمرة المشرقية إلى منتصف الليل
-'
-                      '  - يستحب تأخير صلاة العشاء إلى ثلث الليل
-'
-                      '• الأوقات تقريبية وتحدد حسب رؤية الهلال والموقع الجغرافي
-'
+                      '• أذان الفجر: وقت صلاة الصبح من طلوع الفجر الصادق (18°) إلى طلوع الشمس',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
+                      '• أذان الظهر: وقت صلاة الظهرين من الزوال إلى غياب الحمرة المشرقية',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
+                      '  - يستحب تأخير صلاة العصر قليلاً',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
+                      '• أذان المغرب: وقت صلاة العشائين من غياب الحمرة المشرقية إلى منتصف الليل',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
+                      '  - يستحب تأخير صلاة العشاء إلى ثلث الليل',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
+                      '• الأوقات تقريبية وتحدد حسب رؤية الهلال والموقع الجغرافي',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
                       '• يُفضل الرجوع إلى التقويم الرسمي للسيد السيستاني دام ظله',
                       style: TextStyle(fontSize: 12, height: 1.8),
                     ),
@@ -524,7 +494,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 }
 
-// ✅ بطاقة الأذان
 class _AdhanCard extends StatelessWidget {
   final String name;
   final String time;
@@ -636,7 +605,6 @@ class _AdhanCard extends StatelessWidget {
                 ],
               ),
             ),
-            // زر تشغيل صوت الأذان
             if (onAdhan != null)
               Column(
                 children: [
