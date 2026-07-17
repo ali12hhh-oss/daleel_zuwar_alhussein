@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/models.dart';
@@ -15,7 +14,6 @@ class FatwaCacheService {
   static Future<Database> _initDB() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'fatwas_cache.db');
-
     return openDatabase(
       path,
       version: 1,
@@ -39,7 +37,6 @@ class FatwaCacheService {
   static Future<void> saveFatwas(List<FatwaItem> fatwas) async {
     final db = await database;
     final batch = db.batch();
-
     for (final fatwa in fatwas) {
       batch.insert('fatwas', {
         'title': fatwa.title,
@@ -50,7 +47,6 @@ class FatwaCacheService {
         'cached_at': DateTime.now().toIso8601String(),
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
-
     await batch.commit(noResult: true);
   }
 
@@ -63,7 +59,6 @@ class FatwaCacheService {
       whereArgs: [scholarId],
       orderBy: 'pub_date DESC',
     );
-
     return maps.map((map) => FatwaItem(
       title: map['title'] as String,
       link: map['link'] as String,
