@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:html_unescape/html_unescape.dart';
 import 'package:xml/xml.dart';
@@ -12,7 +14,6 @@ class RssService {
       final response = await http.get(
         Uri.parse(rssUrl),
       ).timeout(const Duration(seconds: 15));
-
       if (response.statusCode == 200) {
         return _parseRss(response.body, scholarId);
       }
@@ -24,17 +25,14 @@ class RssService {
 
   static List<FatwaItem> _parseRss(String xmlString, String scholarId) {
     final items = <FatwaItem>[];
-
     try {
       final document = XmlDocument.parse(xmlString);
       final rssItems = document.findAllElements('item');
-
       for (final item in rssItems) {
         final title = _getText(item, 'title');
         final link = _getText(item, 'link');
         final description = _getText(item, 'description');
         final pubDateStr = _getText(item, 'pubDate');
-
         if (title.isNotEmpty && link.isNotEmpty) {
           items.add(FatwaItem(
             title: _cleanText(title),
@@ -49,13 +47,12 @@ class RssService {
       // إذا فشل XML parsing، نحاول طريقة بديلة
       items.addAll(_parseRssFallback(xmlString, scholarId));
     }
-
     return items;
   }
 
   static String _getText(XmlElement item, String tagName) {
     final element = item.findElements(tagName).firstOrNull;
-    return element?.text ?? '';
+    return element?.innerText ?? '';
   }
 
   static String _cleanText(String text) {
@@ -69,19 +66,7 @@ class RssService {
 
   static DateTime _parseDate(String dateStr) {
     try {
-      // محاولة تنسيقات مختلفة
-      final formats = [
-        'EEE, dd MMM yyyy HH:mm:ss Z',
-        'EEE, dd MMM yyyy HH:mm:ss zzz',
-      ];
-
-      for (final format in formats) {
-        try {
-          return HttpDate.parse(dateStr);
-        } catch (_) {}
-      }
-
-      return DateTime.now();
+      return HttpDate.parse(dateStr);
     } catch (_) {
       return DateTime.now();
     }
@@ -93,13 +78,10 @@ class RssService {
     final titleRegex = RegExp(r'<title>(.*?)</title>', dotAll: true);
     final linkRegex = RegExp(r'<link>(.*?)</link>', dotAll: true);
     final descRegex = RegExp(r'<description>(.*?)</description>', dotAll: true);
-
     final titles = titleRegex.allMatches(xmlString).toList();
     final links = linkRegex.allMatches(xmlString).toList();
     final descs = descRegex.allMatches(xmlString).toList();
-
     final count = [titles.length, links.length, descs.length].reduce((a, b) => a < b ? a : b);
-
     for (int i = 0; i < count; i++) {
       items.add(FatwaItem(
         title: _cleanText(titles[i].group(1) ?? ''),
@@ -109,7 +91,6 @@ class RssService {
         scholarId: scholarId,
       ));
     }
-
     return items;
   }
 }
