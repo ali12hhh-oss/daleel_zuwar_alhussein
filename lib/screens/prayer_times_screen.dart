@@ -21,7 +21,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   DateTime? _dhuhrAdhan;
   DateTime? _maghribAdhan;
   DateTime? _sunrise;
-  DateTime? _sunset;
   DateTime? _midnight;
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -98,7 +97,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _dhuhrAdhan = times['dhuhrAdhan'];
         _maghribAdhan = times['maghribAdhan'];
         _sunrise = times['sunrise'];
-        _sunset = times['sunset'];
         _midnight = times['midnight'];
         _loading = false;
       });
