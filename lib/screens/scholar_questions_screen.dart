@@ -115,8 +115,8 @@ class ScholarQuestionsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار
-من المواقع الرسمية للمراجع',
+                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار '
+                    'من المواقع الرسمية للمراجع',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
