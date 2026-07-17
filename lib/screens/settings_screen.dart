@@ -124,6 +124,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ملاحظة: هذه الدالة جاهزة لجدولة إشعارات مستقبلية (مثل مواقيت الصلاة
+  // أو المناسبات تلقائيًا) ولم تُربط بواجهة المستخدم بعد.
+  // ignore: unused_element
   Future<void> _scheduleNotification({
     required int id,
     required String title,
