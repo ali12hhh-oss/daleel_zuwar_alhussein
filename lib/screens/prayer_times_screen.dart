@@ -21,6 +21,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   DateTime? _dhuhrAdhan;
   DateTime? _maghribAdhan;
   DateTime? _sunrise;
+  DateTime? _sunset;
   DateTime? _midnight;
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -97,6 +98,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _dhuhrAdhan = times['dhuhrAdhan'];
         _maghribAdhan = times['maghribAdhan'];
         _sunrise = times['sunrise'];
+        _sunset = times['sunset'];
         _midnight = times['midnight'];
         _loading = false;
       });
@@ -164,50 +166,44 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return nearest;
   }
 
+  // ==================== محرك حساب مواقيت الصلاة ====================
+  //
+  // يعتمد على حساب الموقع الفلكي الحقيقي للشمس (اليوم اليولياني + معادلة
+  // الزمن + ميل الشمس)، ثم يحسب كل وقت بتوقيت UTC أولاً، ويحوَّل بعدها
+  // تلقائياً لتوقيت الجهاز المحلي عبر toLocal() لتفادي أي خلط يدوي بين
+  // التوقيتات (وهو سبب فرق الساعات الذي كان يحدث سابقاً).
+  //
+  // زاوية الفجر (18°) وزاوية المغرب (4.5°) لم تتغيّر - هي نفس القيم
+  // المعتمدة أصلاً حسب كراس مواقيت السيد السيستاني دام ظله.
+
   Map<String, DateTime> _calculateShiaPrayerTimes(double lat, double lng, DateTime date) {
-    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-    final lngHour = lng / 15.0;
-    final sunDeclination = 23.45 * math.sin((360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0);
-    final equationOfTime = 9.87 * math.sin(2 * (360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0)
-        - 7.53 * math.cos((360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0)
-        - 1.5 * math.sin((360.0 / 365.0) * (dayOfYear - 81) * math.pi / 180.0);
+    const fajrAngle = 18.0;
+    const maghribAngle = 4.5;
+    const sunriseSunsetAngle = 0.833; // زاوية الشروق/الغروب الظاهري (مع الانكسار الجوي)
 
-    final dhuhrMinutes = 4 * lngHour + equationOfTime;
-    final dhuhrAdhan = DateTime(date.year, date.month, date.day, 12, 0)
-        .add(Duration(minutes: dhuhrMinutes.round()));
+    final sunToday = _sunPosition(_julianDate(date.year, date.month, date.day));
+    final dhuhrUtc = 12.0 - (lng / 15.0) - sunToday.equationOfTime;
 
-    final hourAngleSunrise = math.acos(
-        -math.tan(lat * math.pi / 180.0) * math.tan(sunDeclination * math.pi / 180.0)
-    ) * 180.0 / math.pi;
+    final fajrT = _sunAngleTime(fajrAngle, lat, sunToday.declination);
+    final riseSetT = _sunAngleTime(sunriseSunsetAngle, lat, sunToday.declination);
+    final maghribT = _sunAngleTime(maghribAngle, lat, sunToday.declination);
 
-    final sunrise = dhuhrAdhan.subtract(Duration(minutes: (hourAngleSunrise * 4).round()));
-    final sunset = dhuhrAdhan.add(Duration(minutes: (hourAngleSunrise * 4).round()));
+    final fajrAdhan = _utcHoursToLocalDateTime(date, dhuhrUtc - fajrT);
+    final dhuhrAdhan = _utcHoursToLocalDateTime(date, dhuhrUtc);
+    final sunrise = _utcHoursToLocalDateTime(date, dhuhrUtc - riseSetT);
+    final sunset = _utcHoursToLocalDateTime(date, dhuhrUtc + riseSetT);
+    final maghribAdhan = _utcHoursToLocalDateTime(date, dhuhrUtc + maghribT);
 
-    final fajrAngle = 18.0;
-    final fajrHourAngle = math.acos(
-        (-math.sin(fajrAngle * math.pi / 180.0) +
-         math.sin(lat * math.pi / 180.0) * math.sin(sunDeclination * math.pi / 180.0))
-        /
-        (math.cos(lat * math.pi / 180.0) * math.cos(sunDeclination * math.pi / 180.0))
-    ) * 180.0 / math.pi;
+    // شروق اليوم التالي، لحساب منتصف الليل (بين الغروب وشروق اليوم التالي)
+    final tomorrow = date.add(const Duration(days: 1));
+    final sunTomorrow = _sunPosition(_julianDate(tomorrow.year, tomorrow.month, tomorrow.day));
+    final dhuhrTomorrowUtc = 12.0 - (lng / 15.0) - sunTomorrow.equationOfTime;
+    final riseSetTomorrowT = _sunAngleTime(sunriseSunsetAngle, lat, sunTomorrow.declination);
+    final nextSunrise = _utcHoursToLocalDateTime(tomorrow, dhuhrTomorrowUtc - riseSetTomorrowT);
 
-    final fajrAdhan = dhuhrAdhan.subtract(
-        Duration(minutes: ((hourAngleSunrise + fajrHourAngle) * 4).round()));
-
-    final maghribAngle = 4.5;
-    final maghribHourAngle = math.acos(
-        (-math.sin(maghribAngle * math.pi / 180.0) +
-         math.sin(lat * math.pi / 180.0) * math.sin(sunDeclination * math.pi / 180.0))
-        /
-        (math.cos(lat * math.pi / 180.0) * math.cos(sunDeclination * math.pi / 180.0))
-    ) * 180.0 / math.pi;
-
-    final maghribAdhan = dhuhrAdhan.add(
-        Duration(minutes: ((hourAngleSunrise + maghribHourAngle) * 4).round()));
-
-    final nextSunrise = sunrise.add(const Duration(days: 1));
     final midnight = sunset.add(
-        Duration(minutes: (nextSunrise.difference(sunset).inMinutes ~/ 2)));
+      Duration(minutes: nextSunrise.difference(sunset).inMinutes ~/ 2),
+    );
 
     return {
       'fajrAdhan': fajrAdhan,
@@ -217,6 +213,76 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       'sunset': sunset,
       'midnight': midnight,
     };
+  }
+
+  /// اليوم اليولياني (Julian Day) لتاريخ ميلادي معيّن عند الساعة 00:00 UT
+  double _julianDate(int year, int month, int day) {
+    var y = year;
+    var m = month;
+    if (m <= 2) {
+      y -= 1;
+      m += 12;
+    }
+    final a = (y / 100).floor();
+    final b = 2 - a + (a / 4).floor();
+    return (365.25 * (y + 4716)).floor() +
+        (30.6001 * (m + 1)).floor() +
+        day + b - 1524.5;
+  }
+
+  /// موقع الشمس: ميل الشمس (declination) ومعادلة الزمن (equation of time)
+  _SunPosition _sunPosition(double jd) {
+    final d = jd - 2451545.0;
+    final g = _fixAngle(357.529 + 0.98560028 * d);
+    final q = _fixAngle(280.459 + 0.98564736 * d);
+    final l = _fixAngle(
+      q + 1.915 * math.sin(g * math.pi / 180.0) + 0.020 * math.sin(2 * g * math.pi / 180.0),
+    );
+
+    final e = 23.439 - 0.00000036 * d;
+
+    var ra = math.atan2(
+          math.cos(e * math.pi / 180.0) * math.sin(l * math.pi / 180.0),
+          math.cos(l * math.pi / 180.0),
+        ) *
+        180.0 /
+        math.pi /
+        15.0;
+    ra = _fixHour(ra);
+
+    final eqt = q / 15.0 - ra;
+    final decl = math.asin(math.sin(e * math.pi / 180.0) * math.sin(l * math.pi / 180.0)) *
+        180.0 /
+        math.pi;
+
+    return _SunPosition(decl, eqt);
+  }
+
+  double _fixAngle(double a) {
+    final r = a % 360.0;
+    return r < 0 ? r + 360.0 : r;
+  }
+
+  double _fixHour(double h) {
+    final r = h % 24.0;
+    return r < 0 ? r + 24.0 : r;
+  }
+
+  /// الفارق الزمني (بالساعات) بين الزوال وبين لحظة وصول الشمس لزاوية معيّنة تحت الأفق
+  double _sunAngleTime(double angle, double lat, double decl) {
+    final numerator = -math.sin(angle * math.pi / 180.0) -
+        math.sin(lat * math.pi / 180.0) * math.sin(decl * math.pi / 180.0);
+    final denominator = math.cos(lat * math.pi / 180.0) * math.cos(decl * math.pi / 180.0);
+    final ratio = (numerator / denominator).clamp(-1.0, 1.0);
+    return math.acos(ratio) * 180.0 / math.pi / 15.0;
+  }
+
+  /// يحوّل عدد ساعات بتوقيت UTC (قد يكون كسرياً) إلى DateTime بتوقيت الجهاز المحلي
+  DateTime _utcHoursToLocalDateTime(DateTime date, double hours) {
+    final totalMinutes = (hours * 60).round();
+    return DateTime.utc(date.year, date.month, date.day)
+        .add(Duration(minutes: totalMinutes))
+        .toLocal();
   }
 
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
@@ -437,6 +503,37 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 color: Colors.deepPurple,
                 onAdhan: () => _showAdhanNotification('المغرب', _formatTime12Hour(_maghribAdhan!)),
               ),
+
+              const SizedBox(height: 6),
+
+              // صف الشروق / الغروب / منتصف الليل
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _SunTimeInfo(
+                        icon: Icons.wb_sunny_outlined,
+                        label: 'الشروق',
+                        time: _formatTime12Hour(_sunrise!),
+                      ),
+                      Container(width: 1, height: 40, color: Colors.grey[300]),
+                      _SunTimeInfo(
+                        icon: Icons.wb_twilight,
+                        label: 'الغروب',
+                        time: _formatTime12Hour(_sunset!),
+                      ),
+                      Container(width: 1, height: 40, color: Colors.grey[300]),
+                      _SunTimeInfo(
+                        icon: Icons.bedtime_outlined,
+                        label: 'منتصف الليل',
+                        time: _formatTime12Hour(_midnight!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
 
             const SizedBox(height: 16),
@@ -488,6 +585,47 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SunPosition {
+  final double declination;
+  final double equationOfTime;
+  const _SunPosition(this.declination, this.equationOfTime);
+}
+
+class _SunTimeInfo extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String time;
+
+  const _SunTimeInfo({
+    required this.icon,
+    required this.label,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 22, color: AppColors.primaryGreen),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          time,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      ],
     );
   }
 }
