@@ -1,0 +1,16 @@
+{
+  "hijriMonths": [
+    { "name": "صفر", "number": 2, "hijriYear": 1448, "startDate": "2026-07-16", "days": 30 },
+    { "name": "ربيع الأول", "number": 3, "hijriYear": 1448, "startDate": "2026-08-15", "days": 29 },
+    { "name": "ربيع الآخر", "number": 4, "hijriYear": 1448, "startDate": "2026-09-13", "days": 30 },
+    { "name": "جمادى الأولى", "number": 5, "hijriYear": 1448, "startDate": "2026-10-13", "days": 30 },
+    { "name": "جمادى الآخرة", "number": 6, "hijriYear": 1448, "startDate": "2026-11-12", "days": 29 },
+    { "name": "رجب", "number": 7, "hijriYear": 1448, "startDate": "2026-12-11", "days": 30 },
+    { "name": "شعبان", "number": 8, "hijriYear": 1448, "startDate": "2027-01-10", "days": 30 },
+    { "name": "رمضان", "number": 9, "hijriYear": 1448, "startDate": "2027-02-09", "days": 29 },
+    { "name": "شوال", "number": 10, "hijriYear": 1448, "startDate": "2027-03-10", "days": 30 },
+    { "name": "ذو القعدة", "number": 11, "hijriYear": 1448, "startDate": "2027-04-09", "days": 29 },
+    { "name": "ذو الحجة", "number": 12, "hijriYear": 1448, "startDate": "2027-05-08", "days": 29 }
+  ],
+  "lastUpdated": "2026-07-20"
+}
