@@ -2,7 +2,7 @@ import '../models/models.dart';
 
 /// قائمة أبرز مراجع ورموز الشيعة (للاختيار منها في قسم الأسئلة الشرعية).
 /// جميع المراجع المذكورة هنا من المذهب الشيعي حصراً، بحسب طلب المستخدم.
-/// ملاحظة: الروابط أدناه تم التحقق من بعضها عبر البحث، لكن يجب مراجعتها
+/// ملاحظة: الروابط أدناه تم التحقق منها عبر البحث، لكن يجب مراجعتها
 /// دورياً لأن مواقع المكاتب قد تتغيّر.
 const List<Scholar> scholarsList = [
   Scholar(
@@ -19,8 +19,11 @@ const List<Scholar> scholarsList = [
     id: 'sadr',
     name: 'السيد محمد محمد صادق الصدر',
     title: 'المرجع الديني (الشهيد الصدر الثاني)',
-    officialSite: 'https://www.google.com/search?q=مكتب+الشهيد+محمد+صادق+الصدر+الاستفتاءات',
-    istiftaUrl: 'https://www.google.com/search?q=مكتب+الشهيد+محمد+صادق+الصدر+الاستفتاءات',
+    // موقع هيئة تراث الشهيد السعيد السيد محمد الصدر (قدس سره) - الموقع
+    // الرسمي الذي يحتوي قسم الاستفتاءات
+    officialSite: 'https://alturaath.com/',
+    istiftaUrl:
+        'https://alturaath.com/questions/الشهيد%20السعيد%20آية%20الله%20العظمى%20السيد%20محمد%20الصدر?id=37d6e68b-e45b-45a2-866a-a2c1cbcba2b4',
     isLiving: false,
     hasRss: false,
   ),
@@ -46,8 +49,9 @@ const List<Scholar> scholarsList = [
     id: 'khoei',
     name: 'السيد أبو القاسم الخوئي',
     title: 'المرجع الديني الراحل',
-    officialSite: 'https://www.google.com/search?q=مؤسسة+الخوئي+الخيرية',
-    istiftaUrl: 'https://www.google.com/search?q=مؤسسة+الخوئي+الخيرية',
+    // الموقع الرسمي لمؤسسة الإمام الخوئي الخيرية
+    officialSite: 'https://www.alkhoei.org/ar',
+    istiftaUrl: 'https://www.alkhoei.org/ar',
     isLiving: false,
     hasRss: false,
   ),
