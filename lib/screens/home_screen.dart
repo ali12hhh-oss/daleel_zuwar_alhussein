@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/section_card.dart';
+import '../widgets/hijri_date_badge.dart';
 import 'route_screen.dart';
 import 'scholars_screen.dart';
 import 'hussein_quotes_screen.dart';
@@ -45,6 +46,10 @@ class HomeScreen extends StatelessWidget {
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
             onPressed: onToggleTheme,
           ),
+          // في واجهة عربية (RTL) هذا العنصر الأخير بالقائمة يظهر في أقصى
+          // يسار الشاشة (أبعد نقطة عن العنوان)، بعد أيقونتي الإعدادات والوضع
+          // الليلي/النهاري.
+          const HijriDateBadge(),
         ],
       ),
       body: ListView(
