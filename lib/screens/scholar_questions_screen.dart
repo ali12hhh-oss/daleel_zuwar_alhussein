@@ -93,41 +93,8 @@ class ScholarQuestionsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // قسم الأسئلة الشائعة
-          if (questions.isEmpty) ...[
-            // عرض "قريباً" إذا لا توجد أسئلة
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'قريباً',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'سيتم إضافة أسئلة وأجوبة خاصة بالزوار '
-                    'من المواقع الرسمية للمراجع',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            // عرض الأسئلة إذا موجودة
+          // قسم الأسئلة الشائعة (يظهر فقط إذا كانت هناك أسئلة فعلية)
+          if (questions.isNotEmpty) ...[
             const Text(
               'أسئلة شائعة',
               style: TextStyle(
