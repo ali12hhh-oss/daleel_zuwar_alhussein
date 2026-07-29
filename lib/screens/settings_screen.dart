@@ -570,7 +570,6 @@ https://github.com/daleelzuwar/alhussein''',
 
           Card(
             margin: const EdgeInsets.only(bottom: 8),
-            color: Colors.grey[50],
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
