@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import '../data/cities_data.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import '../services/offline_map_service.dart';
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -30,19 +31,32 @@ class _RouteScreenState extends State<RouteScreen> {
   String _cacheStatus = '';
   bool _calculatingRoute = false;
 
+  int _downloadedTiles = 0;
+  int _totalTiles = 0;
+  double? _cachedSizeMb;
+
   static const double hussainShrineLat = 32.6163;
   static const double hussainShrineLng = 44.0326;
   static const double iraqCenterLat = 33.2232;
   static const double iraqCenterLng = 43.6793;
 
   // ✅ خريطة احترافية - CartoDB Voyager (أوضح وأجمل)
-  static const String _tileUrl = 
+  static const String _tileUrl =
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   @override
   void initState() {
     super.initState();
+    OfflineMapService.init();
     _detectLocation();
+    _loadCachedSize();
+  }
+
+  Future<void> _loadCachedSize() async {
+    final size = await OfflineMapService.getCacheSizeMb();
+    if (mounted && size > 0) {
+      setState(() => _cachedSizeMb = size);
+    }
   }
 
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
@@ -209,32 +223,80 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  /// ✅ تحميل حقيقي: خريطة عامة للعراق كامل + تفاصيل واضحة حول كربلاء والضريح
   Future<void> _cacheIraqMap() async {
     setState(() {
       _isCaching = true;
-      _cacheStatus = 'جاري تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين...';
+      _downloadedTiles = 0;
+      _totalTiles = 0;
+      _cacheStatus = 'جاري تحضير قائمة التحميل...';
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 3));
+      // المرحلة 1: خريطة عامة لكل العراق (مدن وطرق رئيسية)
+      await OfflineMapService.downloadRegion(
+        minLat: 29.0,
+        maxLat: 37.4,
+        minLng: 38.7,
+        maxLng: 48.8,
+        minZoom: 5,
+        maxZoom: 10,
+        onProgress: (downloaded, total, failed) {
+          if (!mounted) return;
+          setState(() {
+            _downloadedTiles = downloaded;
+            _totalTiles = total;
+            _cacheStatus = 'خريطة العراق العامة: $downloaded من $total';
+          });
+        },
+      );
+
+      // المرحلة 2: تفاصيل واضحة حول كربلاء والضريح (مفيدة للمشي)
+      await OfflineMapService.downloadRegion(
+        minLat: hussainShrineLat - 0.35,
+        maxLat: hussainShrineLat + 0.35,
+        minLng: hussainShrineLng - 0.35,
+        maxLng: hussainShrineLng + 0.35,
+        minZoom: 11,
+        maxZoom: 15,
+        onProgress: (downloaded, total, failed) {
+          if (!mounted) return;
+          setState(() {
+            _downloadedTiles = downloaded;
+            _totalTiles = total;
+            _cacheStatus = 'تفاصيل كربلاء والضريح: $downloaded من $total';
+          });
+        },
+      );
+
+      final sizeMb = await OfflineMapService.getCacheSizeMb();
+
+      if (!mounted) return;
       setState(() {
         _isCaching = false;
-        _cacheStatus = 'تم تحميل الخريطة للاستخدام بدون نت';
+        _cachedSizeMb = sizeMb;
+        _cacheStatus =
+            'تم تحميل الخريطة بنجاح (${sizeMb.toStringAsFixed(1)} م.ب) - جاهزة للاستخدام بدون إنترنت';
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تحميل خريطة العراق والطريق إلى ضريح الإمام الحسين للاستخدام بدون نت'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isCaching = false;
-        _cacheStatus = 'فشل التحميل';
+        _cacheStatus = 'فشل التحميل، تأكد من الاتصال بالإنترنت وحاول مجدداً';
       });
     }
+  }
+
+  Future<void> _clearCachedMap() async {
+    await OfflineMapService.clearCache();
+    if (!mounted) return;
+    setState(() {
+      _cachedSizeMb = null;
+      _cacheStatus = '';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم حذف الخريطة المحفوظة')),
+    );
   }
 
   @override
@@ -422,14 +484,49 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                       ),
                     ),
+                    if (_isCaching && _totalTiles > 0) ...[
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _downloadedTiles / _totalTiles,
+                          minHeight: 8,
+                          backgroundColor: Colors.grey[300],
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${((_downloadedTiles / _totalTiles) * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                    ],
                     if (_cacheStatus.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         _cacheStatus,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: _cacheStatus.contains('تم') ? Colors.green : Colors.orange,
+                          color: _cacheStatus.contains('تم')
+                              ? Colors.green
+                              : (_cacheStatus.contains('فشل')
+                                  ? Colors.red
+                                  : Colors.orange),
                         ),
+                      ),
+                    ],
+                    if (!_isCaching && _cachedSizeMb != null) ...[
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: _clearCachedMap,
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        label: Text(
+                          'حذف الخريطة المحفوظة (${_cachedSizeMb!.toStringAsFixed(1)} م.ب)',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
                       ),
                     ],
                   ],
@@ -442,7 +539,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
-                    height: 450,
+                    height: 550,
                     child: FlutterMap(
                       options: const MapOptions(
                         initialCenter: LatLng(iraqCenterLat, iraqCenterLng),
@@ -453,6 +550,7 @@ class _RouteScreenState extends State<RouteScreen> {
                           urlTemplate: _tileUrl,
                           subdomains: const ['a', 'b', 'c', 'd'],
                           userAgentPackageName: 'com.daleelzuwar.alhussein',
+                          tileProvider: OfflineFirstTileProvider(),
                         ),
                         if (_position != null)
                           PolylineLayer(
