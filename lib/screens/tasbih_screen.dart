@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:vibration/vibration.dart';
 import '../theme.dart';
 
+enum _TasbihMode { zahra, other }
+
 class TasbihScreen extends StatefulWidget {
   const TasbihScreen({super.key});
 
@@ -10,46 +12,83 @@ class TasbihScreen extends StatefulWidget {
 }
 
 class _TasbihScreenState extends State<TasbihScreen> {
+  _TasbihMode _mode = _TasbihMode.zahra;
+
   int _counter = 0;
   int _target = 34;
   String _currentDhikr = 'الله أكبر';
   int _round = 1;
 
   // ✅ تسبيح الزهراء عليها السلام بالترتيب الشرعي: تكبير ثم تحميد ثم تسبيح
-  final List<Map<String, dynamic>> _adhkar = [
+  final List<Map<String, dynamic>> _zahraAdhkar = [
     {'text': 'الله أكبر', 'target': 34, 'round': 1},
     {'text': 'الحمد لله', 'target': 33, 'round': 2},
     {'text': 'سبحان الله', 'target': 33, 'round': 3},
   ];
+
+  // ✅ أذكار أخرى مستقلة، كل ذكر 100 مرة بشكل منفصل (لا ترتبط بتسبيح الزهراء)
+  final List<Map<String, dynamic>> _otherAdhkar = [
+    {'text': 'أستغفر الله', 'target': 100},
+    {'text': 'لا حول ولا قوة إلا بالله', 'target': 100},
+    {'text': 'سبحان الله وبحمده سبحان الله العظيم', 'target': 100},
+    {'text': 'اللهم صل على محمد وآل محمد', 'target': 100},
+  ];
+
+  List<Map<String, dynamic>> get _activeList =>
+      _mode == _TasbihMode.zahra ? _zahraAdhkar : _otherAdhkar;
+
+  void _switchMode(_TasbihMode mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _mode = mode;
+      final first = _activeListFor(mode).first;
+      _currentDhikr = first['text'];
+      _target = first['target'];
+      _round = first['round'] ?? 1;
+      _counter = 0;
+    });
+  }
+
+  List<Map<String, dynamic>> _activeListFor(_TasbihMode mode) =>
+      mode == _TasbihMode.zahra ? _zahraAdhkar : _otherAdhkar;
 
   void _increment() {
     setState(() {
       _counter++;
       if (_counter >= _target) {
         _vibrate();
-        _nextDhikr();
+        if (_mode == _TasbihMode.zahra) {
+          _nextZahraDhikr();
+        } else {
+          _counter = 0;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تم إكمال 100 من: $_currentDhikr')),
+          );
+        }
       }
     });
   }
 
-  void _nextDhikr() {
-    final currentIndex = _adhkar.indexWhere((a) => a['text'] == _currentDhikr);
-    if (currentIndex < _adhkar.length - 1) {
+  void _nextZahraDhikr() {
+    final currentIndex =
+        _zahraAdhkar.indexWhere((a) => a['text'] == _currentDhikr);
+    if (currentIndex < _zahraAdhkar.length - 1) {
       setState(() {
-        _currentDhikr = _adhkar[currentIndex + 1]['text'];
-        _target = _adhkar[currentIndex + 1]['target'];
-        _round = _adhkar[currentIndex + 1]['round'];
+        _currentDhikr = _zahraAdhkar[currentIndex + 1]['text'];
+        _target = _zahraAdhkar[currentIndex + 1]['target'];
+        _round = _zahraAdhkar[currentIndex + 1]['round'];
         _counter = 0;
       });
     } else {
       setState(() {
         _counter = 0;
-        _currentDhikr = _adhkar[0]['text'];
-        _target = _adhkar[0]['target'];
+        _currentDhikr = _zahraAdhkar[0]['text'];
+        _target = _zahraAdhkar[0]['target'];
         _round = 1;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إكمال تسبيح الزهراء عليها السلام - بدء جولة جديدة')),
+        const SnackBar(
+            content: Text('تم إكمال تسبيح الزهراء عليها السلام - بدء جولة جديدة')),
       );
     }
   }
@@ -57,9 +96,10 @@ class _TasbihScreenState extends State<TasbihScreen> {
   void _reset() {
     setState(() {
       _counter = 0;
-      _currentDhikr = _adhkar[0]['text'];
-      _target = _adhkar[0]['target'];
-      _round = 1;
+      final first = _activeList.first;
+      _currentDhikr = first['text'];
+      _target = first['target'];
+      _round = first['round'] ?? 1;
     });
   }
 
@@ -70,10 +110,11 @@ class _TasbihScreenState extends State<TasbihScreen> {
   }
 
   void _selectDhikr(int index) {
+    final item = _activeList[index];
     setState(() {
-      _currentDhikr = _adhkar[index]['text'];
-      _target = _adhkar[index]['target'];
-      _round = _adhkar[index]['round'];
+      _currentDhikr = item['text'];
+      _target = item['target'];
+      _round = item['round'] ?? 1;
       _counter = 0;
     });
   }
@@ -84,7 +125,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تسبيح الزهراء عليها السلام'),
+        title: const Text('المسبحة الإلكترونية'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -97,6 +138,32 @@ class _TasbihScreenState extends State<TasbihScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // ✅ مفتاح التبديل بين تسبيح الزهراء والأذكار الأخرى
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<_TasbihMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: _TasbihMode.zahra,
+                    label: Text('تسبيح الزهراء'),
+                    icon: Icon(Icons.spa_outlined),
+                  ),
+                  ButtonSegment(
+                    value: _TasbihMode.other,
+                    label: Text('أذكار أخرى'),
+                    icon: Icon(Icons.menu_book_outlined),
+                  ),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (selection) => _switchMode(selection.first),
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: AppColors.primaryGreen,
+                  selectedForegroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // ✅ بطاقة الذكر الحالي
             Card(
               color: AppColors.primaryGreen,
@@ -104,14 +171,15 @@ class _TasbihScreenState extends State<TasbihScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    Text(
-                      'الجولة $_round / ${_adhkar.length}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                    if (_mode == _TasbihMode.zahra)
+                      Text(
+                        'الجولة $_round / ${_zahraAdhkar.length}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
+                    if (_mode == _TasbihMode.zahra) const SizedBox(height: 12),
                     Text(
                       _currentDhikr,
                       style: const TextStyle(
@@ -222,10 +290,10 @@ class _TasbihScreenState extends State<TasbihScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ✅ قائمة أقسام التسبيح
-            const Text(
-              'اختر قسماً:',
-              style: TextStyle(
+            // ✅ قائمة أقسام التسبيح الحالية (تتغيّر حسب الوضع المختار)
+            Text(
+              _mode == _TasbihMode.zahra ? 'أقسام تسبيح الزهراء:' : 'اختر ذكراً:',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -235,7 +303,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
               spacing: 8,
               runSpacing: 8,
               alignment: WrapAlignment.center,
-              children: _adhkar.asMap().entries.map((entry) {
+              children: _activeList.asMap().entries.map((entry) {
                 final index = entry.key;
                 final adhkar = entry.value;
                 final isSelected = _currentDhikr == adhkar['text'];
