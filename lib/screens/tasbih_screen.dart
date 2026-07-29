@@ -11,18 +11,15 @@ class TasbihScreen extends StatefulWidget {
 
 class _TasbihScreenState extends State<TasbihScreen> {
   int _counter = 0;
-  int _target = 33;
-  String _currentDhikr = 'سبحان الله';
+  int _target = 34;
+  String _currentDhikr = 'الله أكبر';
   int _round = 1;
 
+  // ✅ تسبيح الزهراء عليها السلام بالترتيب الشرعي: تكبير ثم تحميد ثم تسبيح
   final List<Map<String, dynamic>> _adhkar = [
-    {'text': 'سبحان الله', 'target': 33, 'round': 1},
+    {'text': 'الله أكبر', 'target': 34, 'round': 1},
     {'text': 'الحمد لله', 'target': 33, 'round': 2},
-    {'text': 'الله أكبر', 'target': 34, 'round': 3},
-    {'text': 'أستغفر الله', 'target': 33, 'round': 4},
-    {'text': 'لا حول ولا قوة إلا بالله', 'target': 33, 'round': 5},
-    {'text': 'سبحان الله وبحمده سبحان الله العظيم', 'target': 33, 'round': 6},
-    {'text': 'اللهم صل على محمد وآل محمد', 'target': 33, 'round': 7},
+    {'text': 'سبحان الله', 'target': 33, 'round': 3},
   ];
 
   void _increment() {
@@ -52,7 +49,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
         _round = 1;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إكمال جميع الأذكار - بدء جديد')),
+        const SnackBar(content: Text('تم إكمال تسبيح الزهراء عليها السلام - بدء جولة جديدة')),
       );
     }
   }
@@ -87,7 +84,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('المسبحة الإلكترونية'),
+        title: const Text('تسبيح الزهراء عليها السلام'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -225,9 +222,9 @@ class _TasbihScreenState extends State<TasbihScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ✅ قائمة الأذكار
+            // ✅ قائمة أقسام التسبيح
             const Text(
-              'اختر ذكراً:',
+              'اختر قسماً:',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -243,12 +240,12 @@ class _TasbihScreenState extends State<TasbihScreen> {
                 final adhkar = entry.value;
                 final isSelected = _currentDhikr == adhkar['text'];
                 return ChoiceChip(
-                  label: Text(adhkar['text']),
+                  label: Text('${adhkar['text']} (${adhkar['target']})'),
                   selected: isSelected,
                   onSelected: (_) => _selectDhikr(index),
                   selectedColor: AppColors.primaryGreen,
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black,
+                    color: isSelected ? Colors.white : null,
                   ),
                 );
               }).toList(),
