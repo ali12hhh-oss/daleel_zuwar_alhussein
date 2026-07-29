@@ -54,6 +54,9 @@ dependencies:
   # حفظ الإعدادات
   shared_preferences: ^2.2.2
 
+  # نص القرآن الكريم الكامل (بدون إنترنت)
+  quran: ^1.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
