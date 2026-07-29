@@ -15,6 +15,7 @@ import 'qibla_screen.dart';
 import 'ziarat_screen.dart';
 import 'prayer_times_screen.dart';
 import 'crescent_screen.dart';
+import 'books_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ThemeMode themeMode;
@@ -147,6 +148,15 @@ class HomeScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const CrescentScreen())),
+          ),
+          SectionCard(
+            title: 'الكتب الدينية',
+            subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
+            icon: Icons.library_books,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const BooksScreen())),
           ),
           SectionCard(
             title: 'المسبحة الإلكترونية',
