@@ -38,7 +38,7 @@ dependencies:
   timezone: ^0.10.1
 
   # الاهتزاز
-  vibration: ^1.8.4
+  vibration: ^3.1.4
 
   # البوصلة (لتحديد القبلة)
   flutter_compass: ^0.8.1
