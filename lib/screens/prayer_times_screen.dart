@@ -42,7 +42,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   Future<void> _showAdhanNotification(String prayerName, String time) async {
     const androidDetails = AndroidNotificationDetails(
-      'adhan_channel',
+      'adhan_channel_v2',
       'أذان الصلاة',
       channelDescription: 'تذكير بأوقات الأذان',
       importance: Importance.high,
@@ -182,7 +182,14 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     const sunriseSunsetAngle = 0.833; // زاوية الشروق/الغروب الظاهري (مع الانكسار الجوي)
 
     final sunToday = _sunPosition(_julianDate(date.year, date.month, date.day));
-    final dhuhrUtc = 12.0 - (lng / 15.0) - sunToday.equationOfTime;
+    // معايرة يدوية: -2 دقيقة، بناءً على مقارنة فعلية مع التقويم الرسمي
+    // (الفرق كان موحّداً بكل الأوقات لأنها كلها تُحسب من نفس نقطة الظهر
+    // الفلكي، فالتصحيح هنا ينعكس تلقائياً على الفجر والظهر والمغرب معاً)
+    const calibrationMinutes = -2.0;
+    final dhuhrUtc = 12.0 -
+        (lng / 15.0) -
+        sunToday.equationOfTime +
+        (calibrationMinutes / 60.0);
 
     final fajrT = _sunAngleTime(fajrAngle, lat, sunToday.declination);
     final riseSetT = _sunAngleTime(sunriseSunsetAngle, lat, sunToday.declination);
@@ -197,7 +204,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     // شروق اليوم التالي، لحساب منتصف الليل (بين الغروب وشروق اليوم التالي)
     final tomorrow = date.add(const Duration(days: 1));
     final sunTomorrow = _sunPosition(_julianDate(tomorrow.year, tomorrow.month, tomorrow.day));
-    final dhuhrTomorrowUtc = 12.0 - (lng / 15.0) - sunTomorrow.equationOfTime;
+    final dhuhrTomorrowUtc = 12.0 -
+        (lng / 15.0) -
+        sunTomorrow.equationOfTime +
+        (calibrationMinutes / 60.0);
     final riseSetTomorrowT = _sunAngleTime(sunriseSunsetAngle, lat, sunTomorrow.declination);
     final nextSunrise = _utcHoursToLocalDateTime(tomorrow, dhuhrTomorrowUtc - riseSetTomorrowT);
 
