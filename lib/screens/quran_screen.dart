@@ -10,35 +10,39 @@ class QuranScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('القرآن الكريم')),
-      body: ListView.separated(
-        itemCount: 114,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final surahNumber = index + 1;
-          final name = quran.getSurahNameArabic(surahNumber);
-          final verseCount = quran.getVerseCount(surahNumber);
-          final place = quran.getPlaceOfRevelation(surahNumber);
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: ListView.separated(
+          itemCount: 114,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final surahNumber = index + 1;
+            final name = quran.getSurahNameArabic(surahNumber);
+            final verseCount = quran.getVerseCount(surahNumber);
+            final place = quran.getPlaceOfRevelation(surahNumber);
 
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primaryGreen,
-              foregroundColor: Colors.white,
-              child: Text('$surahNumber', style: const TextStyle(fontSize: 13)),
-            ),
-            title: Text(
-              name,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Text('$place · $verseCount آية'),
-            trailing: const Icon(Icons.chevron_left),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SurahReadingScreen(surahNumber: surahNumber),
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: Colors.white,
+                child: Text('$surahNumber', style: const TextStyle(fontSize: 13)),
               ),
-            ),
-          );
-        },
+              title: Text(
+                name,
+                textDirection: TextDirection.rtl,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              subtitle: Text('$place · $verseCount آية', textDirection: TextDirection.rtl),
+              trailing: const Icon(Icons.chevron_left),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SurahReadingScreen(surahNumber: surahNumber),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -53,42 +57,48 @@ class SurahReadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = quran.getSurahNameArabic(surahNumber);
     final verseCount = quran.getVerseCount(surahNumber);
-    // البسملة تُعرض منفصلة لكل السور ما عدا الفاتحة (تحتويها ضمن آياتها
-    // أصلاً) وسورة التوبة (لا بسملة فيها حسب المصحف الشريف)
-    final showBasmalaSeparately = surahNumber != 1 && surahNumber != 9;
+    // البسملة سطر مستقل غير مرقّم في بداية كل سورة، ما عدا سورة التوبة
+    // (لا بسملة فيها حسب المصحف الشريف). لا نستثني الفاتحة: بحسب توثيق
+    // مكتبة القرآن المستخدمة، البسملة منفصلة تمامًا عن نص الآيات لكل السور.
+    final showBasmala = surahNumber != 9;
 
     return Scaffold(
       appBar: AppBar(title: Text(name)),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: verseCount + (showBasmalaSeparately ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (showBasmalaSeparately && index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Text(
-                quran.basmala,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryGreen,
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: verseCount + (showBasmala ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (showBasmala && index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(
+                  quran.basmala,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
+              );
+            }
+            final verseNumber = showBasmala ? index : index + 1;
+            final verseText =
+                quran.getVerse(surahNumber, verseNumber, verseEndSymbol: true);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Text(
+                verseText,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.justify,
+                style: const TextStyle(fontSize: 20, height: 2),
               ),
             );
-          }
-          final verseNumber = showBasmalaSeparately ? index : index + 1;
-          final verseText =
-              quran.getVerse(surahNumber, verseNumber, verseEndSymbol: true);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Text(
-              verseText,
-              textAlign: TextAlign.justify,
-              style: const TextStyle(fontSize: 20, height: 2),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
