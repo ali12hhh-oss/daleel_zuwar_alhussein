@@ -48,7 +48,8 @@ ThemeData buildLightTheme() {
         color: Colors.white,
       ),
     ),
-    cardTheme: CardTheme( // ✅ CardTheme بدل CardThemeData
+    // ✅ CardThemeData (Flutter الحديث يتطلب هذا النوع بدل CardTheme)
+    cardTheme: CardThemeData(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: AppColors.lightCard,
@@ -86,7 +87,8 @@ ThemeData buildDarkTheme() {
         color: AppColors.darkText,
       ),
     ),
-    cardTheme: CardTheme( // ✅ CardTheme بدل CardThemeData
+    // ✅ CardThemeData (Flutter الحديث يتطلب هذا النوع بدل CardTheme)
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: AppColors.darkCard,
