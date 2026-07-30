@@ -32,7 +32,7 @@ class BooksScreen extends StatelessWidget {
                 builder: (_) => const RemoteBookViewerScreen(
                   title: 'مفاتيح الجنان',
                   remoteUrl:
-                      'https://raw.githubusercontent.com/ali12hhh-oss/daleel_zuwar_alhussein/main/assets/books/mafatih_al_jinan.pdf',
+                      'https://github.com/ali12hhh-oss/daleel_zuwar_alhussein/releases/download/books-v1/mafatih_al_jinan.pdf',
                   cacheFileName: 'mafatih_al_jinan.pdf',
                 ),
               ),
