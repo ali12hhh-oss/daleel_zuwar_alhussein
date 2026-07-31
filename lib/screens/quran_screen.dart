@@ -86,8 +86,15 @@ class SurahReadingScreen extends StatelessWidget {
               );
             }
             final verseNumber = showBasmala ? index : index + 1;
-            final verseText =
+            final rawVerseText =
                 quran.getVerse(surahNumber, verseNumber, verseEndSymbol: true);
+            // إزالة دفاعية: لو المكتبة ضمّنت نص البسملة داخل الآية الأولى
+            // نفسها (تكرار مع السطر المستقل أعلاه)، نحذفه هنا
+            final verseText = (showBasmala &&
+                    verseNumber == 1 &&
+                    rawVerseText.startsWith(quran.basmala))
+                ? rawVerseText.substring(quran.basmala.length).trimLeft()
+                : rawVerseText;
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: Text(
