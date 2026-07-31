@@ -139,28 +139,46 @@ class _TasbihScreenState extends State<TasbihScreen> {
         child: Column(
           children: [
             // ✅ مفتاح التبديل بين تسبيح الزهراء والأذكار الأخرى
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<_TasbihMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: _TasbihMode.zahra,
-                    label: Text('تسبيح الزهراء'),
-                    icon: Icon(Icons.spa_outlined),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _switchMode(_TasbihMode.zahra),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _mode == _TasbihMode.zahra
+                          ? AppColors.primaryGreen
+                          : null,
+                      foregroundColor:
+                          _mode == _TasbihMode.zahra ? Colors.white : null,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'تسبيح الزهراء',
+                      style: TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  ButtonSegment(
-                    value: _TasbihMode.other,
-                    label: Text('أذكار أخرى'),
-                    icon: Icon(Icons.menu_book_outlined),
-                  ),
-                ],
-                selected: {_mode},
-                onSelectionChanged: (selection) => _switchMode(selection.first),
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: AppColors.primaryGreen,
-                  selectedForegroundColor: Colors.white,
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _switchMode(_TasbihMode.other),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _mode == _TasbihMode.other
+                          ? AppColors.primaryGreen
+                          : null,
+                      foregroundColor:
+                          _mode == _TasbihMode.other ? Colors.white : null,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'أذكار أخرى',
+                      style: TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
 
