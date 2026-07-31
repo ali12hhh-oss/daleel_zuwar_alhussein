@@ -185,7 +185,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     // معايرة يدوية: -2 دقيقة، بناءً على مقارنة فعلية مع التقويم الرسمي
     // (الفرق كان موحّداً بكل الأوقات لأنها كلها تُحسب من نفس نقطة الظهر
     // الفلكي، فالتصحيح هنا ينعكس تلقائياً على الفجر والظهر والمغرب معاً)
-    const calibrationMinutes = -1.0;
+    const calibrationMinutes = 2.0;
     final dhuhrUtc = 12.0 -
         (lng / 15.0) -
         sunToday.equationOfTime +
