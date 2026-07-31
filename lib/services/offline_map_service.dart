@@ -11,8 +11,8 @@ import 'package:path_provider/path_provider.dart';
 /// تجنباً لمشاكل تراخيص بعض مكتبات الخرائط الأوفلاين الجاهزة (GPL).
 class OfflineMapService {
   static const String tileUrlTemplate =
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  static const List<String> subdomains = ['a', 'b', 'c', 'd'];
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const List<String> subdomains = [];
 
   static String? _tilesDirPath;
 
@@ -92,7 +92,9 @@ class OfflineMapService {
           return;
         }
         try {
-          final subdomain = subdomains[(x + y) % subdomains.length];
+          final subdomain = subdomains.isNotEmpty
+              ? subdomains[(x + y) % subdomains.length]
+              : '';
           final url = tileUrlTemplate
               .replaceAll('{s}', subdomain)
               .replaceAll('{z}', '$z')
