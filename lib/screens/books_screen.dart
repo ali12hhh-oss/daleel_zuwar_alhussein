@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/section_card.dart';
 import 'quran_screen.dart';
-import 'remote_book_viewer_screen.dart';
+import 'book_viewer_screen.dart';
 
 class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
@@ -24,16 +24,14 @@ class BooksScreen extends StatelessWidget {
           ),
           SectionCard(
             title: 'مفاتيح الجنان',
-            subtitle: 'كتاب الأدعية والزيارات للشيخ عباس القمي (يُحمَّل عند أول فتح)',
+            subtitle: 'كتاب الأدعية والزيارات للشيخ عباس القمي',
             icon: Icons.auto_stories,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const RemoteBookViewerScreen(
+                builder: (_) => const BookViewerScreen(
                   title: 'مفاتيح الجنان',
-                  remoteUrl:
-                      'https://github.com/ali12hhh-oss/daleel_zuwar_alhussein/releases/download/books-v1/mafatih_al_jinan.pdf',
-                  cacheFileName: 'mafatih_al_jinan.pdf',
+                  assetPath: 'assets/books/mafatih_al_jinan.pdf',
                 ),
               ),
             ),
