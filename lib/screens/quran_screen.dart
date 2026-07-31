@@ -61,11 +61,15 @@ class SurahReadingScreen extends StatelessWidget {
   bool get _showBasmala => surahNumber != _tawbah;
 
   /// يتحقق إذا كان الحرف من علامات التشكيل العربي (حركات، تنوين، شدة...)
+  /// أو حرف التطويل الزخرفي (ـ) المستخدم أحياناً في تنسيق النص القرآني
+  /// (بدونه، مقارنة البسملة كانت تفشل لأن حرف التطويل يقع أحياناً وسط
+  /// كلمة "الرَّحْمَـٰنِ" داخل نص الآية ولا يوجد بنص quran.basmala نفسه)
   static bool _isDiacritic(String ch) {
     final code = ch.codeUnitAt(0);
     return (code >= 0x064B && code <= 0x065F) ||
         code == 0x0670 ||
-        (code >= 0x06D6 && code <= 0x06ED);
+        (code >= 0x06D6 && code <= 0x06ED) ||
+        code == 0x0640; // تطويل/كشيدة
   }
 
   /// يحذف بداية النص إذا كانت تطابق نص البسملة (كلياً أو جزئياً في البداية)،
