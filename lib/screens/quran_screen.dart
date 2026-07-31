@@ -53,6 +53,45 @@ class SurahReadingScreen extends StatelessWidget {
   final int surahNumber;
   const SurahReadingScreen({super.key, required this.surahNumber});
 
+  /// يتحقق إذا كان الحرف من علامات التشكيل العربي (حركات، تنوين، شدة...)
+  static bool _isDiacritic(String ch) {
+    final code = ch.codeUnitAt(0);
+    return (code >= 0x064B && code <= 0x065F) ||
+        code == 0x0670 ||
+        (code >= 0x06D6 && code <= 0x06ED);
+  }
+
+  /// يحذف بداية النص إذا كانت تطابق نص البسملة، بتجاهل أي فروقات بالتشكيل
+  /// بين النصين (لتفادي ظهور البسملة مكررة في الآية الأولى لبعض السور)
+  static String _removeLeadingBasmala(String verseText) {
+    final basmalaLetters = quran.basmala
+        .split('')
+        .where((c) => !_isDiacritic(c))
+        .join();
+
+    int verseIndex = 0;
+    int basmalaIndex = 0;
+
+    while (verseIndex < verseText.length && basmalaIndex < basmalaLetters.length) {
+      final ch = verseText[verseIndex];
+      if (_isDiacritic(ch)) {
+        verseIndex++;
+        continue;
+      }
+      if (ch == basmalaLetters[basmalaIndex]) {
+        verseIndex++;
+        basmalaIndex++;
+      } else {
+        return verseText; // مو بسملة مكررة، رجّع النص كما هو
+      }
+    }
+
+    if (basmalaIndex == basmalaLetters.length) {
+      return verseText.substring(verseIndex).trimLeft();
+    }
+    return verseText;
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = quran.getSurahNameArabic(surahNumber);
@@ -88,12 +127,8 @@ class SurahReadingScreen extends StatelessWidget {
             final verseNumber = showBasmala ? index : index + 1;
             final rawVerseText =
                 quran.getVerse(surahNumber, verseNumber, verseEndSymbol: true);
-            // إزالة دفاعية: لو المكتبة ضمّنت نص البسملة داخل الآية الأولى
-            // نفسها (تكرار مع السطر المستقل أعلاه)، نحذفه هنا
-            final verseText = (showBasmala &&
-                    verseNumber == 1 &&
-                    rawVerseText.startsWith(quran.basmala))
-                ? rawVerseText.substring(quran.basmala.length).trimLeft()
+            final verseText = (showBasmala && verseNumber == 1)
+                ? _removeLeadingBasmala(rawVerseText)
                 : rawVerseText;
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
