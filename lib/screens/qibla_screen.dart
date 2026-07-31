@@ -155,12 +155,9 @@ class _QiblaScreenState extends State<QiblaScreen>
   double _calculateDeclination(double lat, double lng) {
     try {
       final geoMag = GeoMag();
-      final result = geoMag.calculate(
-        lat: lat,
-        lon: lng,
-        alt: 0,
-        time: DateTime.now(),
-      );
+      // ملاحظة: calculate() تستقبل معاملات موضعية (lat, lng, heightFeet, date)
+      // وليست معاملات مسماة (lat:, lon:, alt:, time:)
+      final result = geoMag.calculate(lat, lng, 0, DateTime.now());
       return result.dec;
     } catch (e) {
       return 0.0;
