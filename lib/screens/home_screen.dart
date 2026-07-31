@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
           ),
           SectionCard(
             title: 'أسئلة شرعية',
-            subtitle: 'اختر المرجع الديني واطّلع على الأجوبة الشرعية',
+            subtitle: 'اختر المرجع الديني الشيعي واطّلع على الأجوبة الشرعية',
             icon: Icons.menu_book,
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ScholarsScreen())),
@@ -133,7 +133,7 @@ class HomeScreen extends StatelessWidget {
           ),
           SectionCard(
             title: 'مواقيت الصلاة',
-            subtitle: 'حسب كراس مواقيت الصلاة للسيد السيستاني',
+            subtitle: 'حسب كتيب مواقيت الصلاة للسيد السيستاني',
             icon: Icons.access_time_filled,
             onTap: () => Navigator.push(
                 context,
@@ -142,7 +142,7 @@ class HomeScreen extends StatelessWidget {
           ),
           SectionCard(
             title: 'الأهلة',
-            subtitle: 'حسب كراس الأهلة للسيد السيستاني',
+            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
             icon: Icons.nightlight_round,
             onTap: () => Navigator.push(
                 context,
