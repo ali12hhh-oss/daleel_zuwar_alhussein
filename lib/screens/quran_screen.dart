@@ -48,10 +48,17 @@ class QuranScreen extends StatelessWidget {
   }
 }
 
-/// شاشة قراءة سورة كاملة، آية آية
+/// شاشة قراءة سورة كاملة، نصاً متصلاً كتدفق واحد (وليس آية بكل سطر)
 class SurahReadingScreen extends StatelessWidget {
   final int surahNumber;
   const SurahReadingScreen({super.key, required this.surahNumber});
+
+  static const int _tawbah = 9;
+
+  /// كل السور تُعرض لها البسملة كسطر مستقل أعلى الصفحة ما عدا سورة التوبة.
+  /// البسملة ليست آية في أي سورة (ولا حتى الفاتحة)، ولا تُرقَّم ولا تُحسب
+  /// ضمن نص الآيات إطلاقاً.
+  bool get _showBasmala => surahNumber != _tawbah;
 
   /// يتحقق إذا كان الحرف من علامات التشكيل العربي (حركات، تنوين، شدة...)
   static bool _isDiacritic(String ch) {
@@ -61,8 +68,11 @@ class SurahReadingScreen extends StatelessWidget {
         (code >= 0x06D6 && code <= 0x06ED);
   }
 
-  /// يحذف بداية النص إذا كانت تطابق نص البسملة، بتجاهل أي فروقات بالتشكيل
-  /// بين النصين (لتفادي ظهور البسملة مكررة في الآية الأولى لبعض السور)
+  /// يحذف بداية النص إذا كانت تطابق نص البسملة (كلياً أو جزئياً في البداية)،
+  /// بتجاهل أي فروقات بالتشكيل بين النصين. هذا يعمل بشكل صحيح بغضّ النظر عن
+  /// كون البسملة مدمجة مع نص الآية الأولى (أغلب السور)، أو كون الآية بأكملها
+  /// هي البسملة نفسها (حالة سورة الفاتحة) — وفي هذه الحالة الأخيرة يرجع نصاً
+  /// فارغاً، ما يسمح لنا بتجاهل هذه "الآية" تماماً وعدم ترقيمها.
   static String _removeLeadingBasmala(String verseText) {
     final basmalaLetters = quran.basmala
         .split('')
@@ -82,7 +92,7 @@ class SurahReadingScreen extends StatelessWidget {
         verseIndex++;
         basmalaIndex++;
       } else {
-        return verseText; // مو بسملة مكررة، رجّع النص كما هو
+        return verseText; // مو بسملة، رجّع النص كما هو
       }
     }
 
@@ -92,54 +102,72 @@ class SurahReadingScreen extends StatelessWidget {
     return verseText;
   }
 
+  /// يبني نص السورة كاملاً كتيار واحد متصل (بدون فصل كل آية بسطر مستقل)،
+  /// مع إضافة رمز نهاية الآية ورقمها الصحيح بعد كل آية، ومع حذف البسملة
+  /// من بداية النص إن وُجدت، وعدم احتسابها كآية إطلاقاً.
+  String _buildSurahBody() {
+    final rawVerseCount = quran.getVerseCount(surahNumber);
+    final buffer = StringBuffer();
+    int displayNumber = 0;
+
+    for (int v = 1; v <= rawVerseCount; v++) {
+      var text = quran.getVerse(surahNumber, v, verseEndSymbol: false);
+
+      if (_showBasmala && v == 1) {
+        text = _removeLeadingBasmala(text).trim();
+        if (text.isEmpty) {
+          // هذه الآية في بيانات المكتبة هي البسملة نفسها فقط (حالة الفاتحة)
+          // فلا تُعرض ولا تُحسب كآية مستقلة
+          continue;
+        }
+      }
+
+      displayNumber++;
+      buffer
+        ..write(text)
+        ..write(' ')
+        ..write(quran.getVerseEndSymbol(displayNumber, arabicNumeral: true))
+        ..write(' ');
+    }
+
+    return buffer.toString().trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = quran.getSurahNameArabic(surahNumber);
-    final verseCount = quran.getVerseCount(surahNumber);
-    // البسملة سطر مستقل غير مرقّم في بداية كل سورة، ما عدا سورة التوبة
-    // (لا بسملة فيها حسب المصحف الشريف). لا نستثني الفاتحة: بحسب توثيق
-    // مكتبة القرآن المستخدمة، البسملة منفصلة تمامًا عن نص الآيات لكل السور.
-    final showBasmala = surahNumber != 9;
 
     return Scaffold(
       appBar: AppBar(title: Text(name)),
       body: Directionality(
         textDirection: TextDirection.rtl,
-        child: ListView.builder(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          itemCount: verseCount + (showBasmala ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (showBasmala && index == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Text(
-                  quran.basmala,
-                  textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryGreen,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_showBasmala)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Text(
+                    quran.basmala,
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ),
-              );
-            }
-            final verseNumber = showBasmala ? index : index + 1;
-            final rawVerseText =
-                quran.getVerse(surahNumber, verseNumber, verseEndSymbol: true);
-            final verseText = (showBasmala && verseNumber == 1)
-                ? _removeLeadingBasmala(rawVerseText)
-                : rawVerseText;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Text(
-                verseText,
+              Text(
+                _buildSurahBody(),
                 textDirection: TextDirection.rtl,
                 textAlign: TextAlign.justify,
                 style: const TextStyle(fontSize: 20, height: 2),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );
