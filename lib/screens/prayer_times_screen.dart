@@ -549,7 +549,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             const SizedBox(height: 16),
 
             Card(
-              color: Colors.grey[100],
               child: const Padding(
                 padding: EdgeInsets.all(14),
                 child: Column(
