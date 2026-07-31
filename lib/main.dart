@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:quran_library/quran_library.dart';
 import 'screens/home_screen.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await QuranLibrary.init();
   runApp(const DaleelApp());
 }
 
@@ -18,7 +21,8 @@ class _DaleelAppState extends State<DaleelApp> {
 
   void _toggleTheme() {
     setState(() {
-      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode =
+          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
