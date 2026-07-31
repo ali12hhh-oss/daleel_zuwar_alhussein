@@ -134,7 +134,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
