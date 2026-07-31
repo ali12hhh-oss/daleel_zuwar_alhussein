@@ -450,29 +450,43 @@ class _RouteScreenState extends State<RouteScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isCaching ? null : _cacheIraqMap,
-                        icon: _isCaching
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.download),
-                        label: Text(_isCaching
-                            ? 'جاري التحميل...'
-                            : 'تحميل الخريطة للاستخدام بدون نت'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                    if (_cachedSizeMb == null) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isCaching ? null : _cacheIraqMap,
+                          icon: _isCaching
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.download),
+                          label: Text(_isCaching
+                              ? 'جاري التحميل...'
+                              : 'تحميل الخريطة للاستخدام بدون نت'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
+                    ] else ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.check_circle, color: Colors.green, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'الخريطة محمّلة للاستخدام بدون نت',
+                            style: TextStyle(fontSize: 13, color: Colors.green),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (_isCaching && _totalTiles > 0) ...[
                       const SizedBox(height: 10),
                       ClipRRect(
