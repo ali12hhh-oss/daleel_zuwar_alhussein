@@ -40,9 +40,10 @@ class _RouteScreenState extends State<RouteScreen> {
   static const double iraqCenterLat = 33.2232;
   static const double iraqCenterLng = 43.6793;
 
-  // ✅ خريطة احترافية - CartoDB Voyager (أوضح وأجمل)
+  // ✅ خريطة OpenStreetMap القياسية - تعرض أسماء الأماكن باللغة المحلية
+  // (عربي للعراق) تلقائياً، بخلاف CartoDB اللي كانت تعرضها بالإنكليزي دائماً
   static const String _tileUrl =
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   @override
   void initState() {
@@ -287,18 +288,6 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  Future<void> _clearCachedMap() async {
-    await OfflineMapService.clearCache();
-    if (!mounted) return;
-    setState(() {
-      _cachedSizeMb = null;
-      _cacheStatus = '';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم حذف الخريطة المحفوظة')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -517,18 +506,6 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                       ),
                     ],
-                    if (!_isCaching && _cachedSizeMb != null) ...[
-                      const SizedBox(height: 6),
-                      TextButton.icon(
-                        onPressed: _clearCachedMap,
-                        icon: const Icon(Icons.delete_outline, size: 18),
-                        label: Text(
-                          'حذف الخريطة المحفوظة (${_cachedSizeMb!.toStringAsFixed(1)} م.ب)',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -548,7 +525,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       children: [
                         TileLayer(
                           urlTemplate: _tileUrl,
-                          subdomains: const ['a', 'b', 'c', 'd'],
+                          subdomains: const [],
                           userAgentPackageName: 'com.daleelzuwar.alhussein',
                           tileProvider: OfflineFirstTileProvider(),
                         ),
