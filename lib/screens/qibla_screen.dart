@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:geomag/geomag.dart';
 import '../theme.dart';
 
 class QiblaScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _QiblaScreenState extends State<QiblaScreen>
   double? _qiblaDirection;
   double _deviceHeading = 0;
   double _smoothHeading = 0;
+  double _magneticDeclination = 0.0;
   Position? _position;
 
   StreamSubscription<CompassEvent>? _compassSubscription;
@@ -114,10 +116,12 @@ class _QiblaScreenState extends State<QiblaScreen>
       );
 
       final qibla = _calculateQiblaDirection(position.latitude, position.longitude);
+      final declination = _calculateDeclination(position.latitude, position.longitude);
 
       setState(() {
         _position = position;
         _qiblaDirection = qibla;
+        _magneticDeclination = declination;
         _loading = false;
       });
     } catch (e) {
@@ -146,9 +150,33 @@ class _QiblaScreenState extends State<QiblaScreen>
     return qibla;
   }
 
+  /// يحسب الانحراف المغناطيسي (الفرق بين الشمال المغناطيسي والشمال الحقيقي)
+  /// لموقع معيّن باستخدام نموذج WMM. يُرجع 0.0 في حال فشل الحساب بدل تعطيل التطبيق.
+  double _calculateDeclination(double lat, double lng) {
+    try {
+      final geoMag = GeoMag();
+      final result = geoMag.calculate(
+        lat: lat,
+        lon: lng,
+        alt: 0,
+        time: DateTime.now(),
+      );
+      return result.dec;
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  /// الاتجاه الحقيقي (بالنسبة للشمال الجغرافي) بعد تصحيح قراءة البوصلة
+  /// المغناطيسية بإضافة الانحراف المغناطيسي المحسوب لموقع المستخدم.
+  double get _trueHeading {
+    final t = _deviceHeading + _magneticDeclination;
+    return (t + 360) % 360;
+  }
+
   double _getQiblaAngle() {
     if (_qiblaDirection == null) return 0;
-    var angle = _qiblaDirection! - _deviceHeading;
+    var angle = _qiblaDirection! - _trueHeading;
     angle = angle % 360;
     if (angle < 0) angle += 360;
     return angle;
@@ -156,7 +184,7 @@ class _QiblaScreenState extends State<QiblaScreen>
 
   double _getAngleDifference() {
     if (_qiblaDirection == null) return 0;
-    var diff = _qiblaDirection! - _deviceHeading;
+    var diff = _qiblaDirection! - _trueHeading;
     while (diff < -180) diff += 360;
     while (diff > 180) diff -= 360;
     return diff.abs();
@@ -421,7 +449,7 @@ class _QiblaScreenState extends State<QiblaScreen>
                           ),
                           _InfoBox(
                             label: 'اتجاه الجهاز',
-                            value: '${_deviceHeading.toStringAsFixed(1)}°',
+                            value: '${_trueHeading.toStringAsFixed(1)}°',
                             color: Colors.blue,
                           ),
                           _InfoBox(
@@ -454,6 +482,11 @@ class _QiblaScreenState extends State<QiblaScreen>
                         Text(
                           '${_position!.latitude.toStringAsFixed(4)}°N, ${_position!.longitude.toStringAsFixed(4)}°E',
                           style: const TextStyle(fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'الانحراف المغناطيسي: ${_magneticDeclination.toStringAsFixed(2)}°',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                         ),
                       ],
                     ),
