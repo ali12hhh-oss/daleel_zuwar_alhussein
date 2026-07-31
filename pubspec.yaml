@@ -1,3 +1,4 @@
+هذا الملف عدل عليه
 name: daleel_zuwar_alhussein
 description: "دليل زوار الحسين - تطبيق ديني حسيني شامل"
 publish_to: 'none'
@@ -43,9 +44,6 @@ dependencies:
   # البوصلة (لتحديد القبلة)
   flutter_compass: ^0.8.1
   sensors_plus: ^4.0.2
-
-  # الانحراف المغناطيسي (لتصحيح اتجاه القبلة الحقيقي)
-  geomag: ^0.3.0
 
   # مشاركة النصوص
   share_plus: ^7.2.0
