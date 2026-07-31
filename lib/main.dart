@@ -17,7 +17,7 @@ class DaleelApp extends StatefulWidget {
 }
 
 class _DaleelAppState extends State<DaleelApp> {
-  ThemeMode _themeMode = ThemeMode.light;
+  ThemeMode _themeMode = ThemeMode.dark;
 
   void _toggleTheme() {
     setState(() {
