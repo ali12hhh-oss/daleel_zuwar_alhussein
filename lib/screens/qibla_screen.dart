@@ -259,7 +259,7 @@ class _QiblaScreenState extends State<QiblaScreen>
                       child: Text(
                         'حساس البوصلة يحتاج معايرة: حرّك جهازك بشكل رقم ٨ بالهواء عدة مرات، وابتعد عن الأجسام المعدنية والإلكترونيات',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(fontSize: 12.5),
+                        style: TextStyle(fontSize: 12.5, color: Colors.black87),
                       ),
                     ),
                   ],
@@ -548,7 +548,7 @@ class _QiblaScreenState extends State<QiblaScreen>
                     children: [
                       Text(
                         'كيفية الاستخدام:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -573,10 +573,6 @@ class _QiblaScreenState extends State<QiblaScreen>
                       ),
                       Text(
                         '• الزاوية محسوبة من الشمال نحو الشرق',
-                        style: TextStyle(fontSize: 12, height: 1.8),
-                      ),
-                      Text(
-                        '• حصراً على المذهب الشيعي الاثني عشري',
                         style: TextStyle(fontSize: 12, height: 1.8),
                       ),
                     ],
