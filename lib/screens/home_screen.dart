@@ -141,7 +141,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const PrayerTimesScreen())),
           ),
           SectionCard(
-            title: 'الأهلة',
+            title: 'مواقيت الأهلة',
             subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
             icon: Icons.nightlight_round,
             onTap: () => Navigator.push(
