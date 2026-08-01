@@ -102,7 +102,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const HusseinQuotesScreen())),
           ),
           SectionCard(
-            title: 'خطب السبايا',
+            title: 'خطب اهل البيت ',
             subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
             icon: Icons.record_voice_over,
             onTap: () => Navigator.push(context,
