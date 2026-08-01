@@ -48,9 +48,17 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   void initState() {
     super.initState();
-    OfflineMapService.init();
+    // ✅ ننتظر اكتمال init() فعلياً قبل قراءة حجم التخزين المؤقت، وإلا
+    // getCacheSizeMb() السابقة كانت ترجع 0 دائماً (لأن مسار المجلد لم
+    // يكن جاهزاً بعد)، فيبقى زر "تحميل الخريطة" ظاهراً حتى لو الخريطة
+    // محمّلة فعلياً على الجهاز.
+    _initMapAndCache();
     _detectLocation();
-    _loadCachedSize();
+  }
+
+  Future<void> _initMapAndCache() async {
+    await OfflineMapService.init();
+    await _loadCachedSize();
   }
 
   Future<void> _loadCachedSize() async {
@@ -76,6 +84,9 @@ class _RouteScreenState extends State<RouteScreen> {
   double _deg2rad(double deg) => deg * (pi / 180);
 
   /// ✅ حساب المسافة على الطريق باستخدام OSRM API (مجاني ودقيق)
+  /// نستخدم بروفايل foot (مشي) وليس driving (قيادة)، لأن التطبيق
+  /// مخصص لمسار زائر الحسين سيراً على الأقدام. خادم OSRM التجريبي
+  /// الرسمي يدعم car/foot/bike معاً.
   Future<void> _calculateRoadDistance() async {
     if (_position == null) return;
 
@@ -86,7 +97,7 @@ class _RouteScreenState extends State<RouteScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://router.project-osrm.org/route/v1/driving/'
+          'https://router.project-osrm.org/route/v1/foot/'
           '${_position!.longitude},${_position!.latitude};'
           '$hussainShrineLng,$hussainShrineLat'
           '?overview=full&geometries=geojson',
@@ -122,12 +133,12 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  /// ✅ حساب مسافة الطريق من أي مدينة إلى كربلاء
+  /// ✅ حساب مسافة الطريق (مشياً) من أي مدينة إلى كربلاء
   Future<double> _getRoadDistanceFromCity(double lat, double lng) async {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://router.project-osrm.org/route/v1/driving/'
+          'https://router.project-osrm.org/route/v1/foot/'
           '$lng,$lat;'
           '$hussainShrineLng,$hussainShrineLat'
           '?overview=false',
@@ -396,7 +407,7 @@ class _RouteScreenState extends State<RouteScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  '✅ المسافة على الطريق محسوبة بدقة عبر خدمة OSRM العالمية\n'
+                  '✅ المسافة على الطريق محسوبة بدقة عبر خدمة OSRM العالمية (مسار مشي)\n'
                   '✅ الخريطة احترافية وتوضح المسار الفعلي والمناطق التي يمر بها\n'
                   '✅ اضغط زر "عرض مسار المشي" لفتح Google Maps بخط سير تفصيلي',
                   style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.6),
@@ -541,12 +552,16 @@ class _RouteScreenState extends State<RouteScreen> {
                           urlTemplate: _tileUrl,
                           subdomains: const [],
                           userAgentPackageName: 'com.daleelzuwar.alhussein',
+                          // ملاحظة: ترويسة User-Agent الفعلية للطلبات تُرسَل
+                          // من داخل OfflineFirstTileProvider (عبر NetworkImage
+                          // headers)، وليس من هنا، لأن tileProvider هو من
+                          // يتحكم فعلياً بجلب الصور.
                           tileProvider: OfflineFirstTileProvider(),
                         ),
                         if (_position != null)
                           PolylineLayer(
                             polylines: [
-                              // ✅ المسار الفعلي على الطريق
+                              // ✅ المسار الفعلي على الطريق (مشياً)
                               if (_routePoints.isNotEmpty)
                                 Polyline(
                                   points: _routePoints,
@@ -556,7 +571,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                   borderColor: Colors.white,
                                 )
                               else
-                                // fallback: خط مستقيم أثناء التحميل
+                                // fallback: خط مستقيم أثناء التحميل أو
+                                // عند فشل الاتصال بخدمة التوجيه
                                 Polyline(
                                   points: [
                                     LatLng(_position!.latitude, _position!.longitude),
