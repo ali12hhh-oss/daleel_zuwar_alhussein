@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quran/quran.dart' as quran;
 import '../theme.dart';
 
-/// شاشة قائمة سور القرآن الكريم (114 سورة) مع خانة بحث بالاسم.
+/// شاشة قائمة سور القرآن الكريم (114 سورة) مع خاصية البحث
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
 
@@ -14,6 +14,28 @@ class _QuranScreenState extends State<QuranScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
+  // نبني قائمة كل السور مرة واحدة فقط (بدل استدعاء المكتبة داخل كل itemBuilder)
+  late final List<_SurahInfo> _allSurahs = List.generate(114, (index) {
+    final surahNumber = index + 1;
+    return _SurahInfo(
+      number: surahNumber,
+      name: quran.getSurahNameArabic(surahNumber),
+      verseCount: quran.getVerseCount(surahNumber),
+      place: quran.getPlaceOfRevelation(surahNumber),
+    );
+  });
+
+  List<_SurahInfo> get _filteredSurahs {
+    if (_query.trim().isEmpty) return _allSurahs;
+
+    final numericQuery = int.tryParse(_query.trim());
+    if (numericQuery != null) {
+      return _allSurahs.where((s) => s.number == numericQuery).toList();
+    }
+
+    return _allSurahs.where((s) => s.name.contains(_query.trim())).toList();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -22,13 +44,7 @@ class _QuranScreenState extends State<QuranScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allSurahNumbers = List.generate(114, (i) => i + 1);
-    final filtered = _query.trim().isEmpty
-        ? allSurahNumbers
-        : allSurahNumbers.where((n) {
-            final name = quran.getSurahNameArabic(n);
-            return name.contains(_query.trim());
-          }).toList();
+    final results = _filteredSurahs;
 
     return Scaffold(
       appBar: AppBar(title: const Text('القرآن الكريم')),
@@ -38,69 +54,65 @@ class _QuranScreenState extends State<QuranScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      textDirection: TextDirection.rtl,
-                      decoration: InputDecoration(
-                        hintText: 'ابحث عن سورة...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+              child: TextField(
+                controller: _searchController,
+                textDirection: TextDirection.rtl,
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن سورة بالاسم أو الرقم',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
                         ),
-                        isDense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      onChanged: (v) => setState(() => _query = v),
-                    ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'بحث في الآيات',
-                    icon: const Icon(Icons.manage_search),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AyahSearchScreen(),
-                      ),
-                    ),
-                  ),
-                ],
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                ),
+                onChanged: (value) => setState(() => _query = value),
               ),
             ),
             Expanded(
-              child: filtered.isEmpty
-                  ? const Center(child: Text('لا توجد نتائج'))
+              child: results.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'لا توجد نتائج',
+                        style: TextStyle(fontSize: 15, color: Colors.grey),
+                      ),
+                    )
                   : ListView.separated(
-                      itemCount: filtered.length,
+                      itemCount: results.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final surahNumber = filtered[index];
-                        final name = quran.getSurahNameArabic(surahNumber);
-                        final verseCount = quran.getVerseCount(surahNumber);
-                        final place =
-                            quran.getPlaceOfRevelation(surahNumber);
+                        final surah = results[index];
 
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: AppColors.primaryGreen,
                             foregroundColor: Colors.white,
                             child: Text(
-                              '$surahNumber',
+                              '${surah.number}',
                               style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           title: Text(
-                            name,
+                            surah.name,
                             textDirection: TextDirection.rtl,
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           subtitle: Text(
-                            '$place · $verseCount آية',
+                            '${surah.place} · ${surah.verseCount} آية',
                             textDirection: TextDirection.rtl,
                           ),
                           trailing: const Icon(Icons.chevron_left),
@@ -108,7 +120,7 @@ class _QuranScreenState extends State<QuranScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  SurahReadingScreen(surahNumber: surahNumber),
+                                  SurahReadingScreen(surahNumber: surah.number),
                             ),
                           ),
                         );
@@ -122,37 +134,79 @@ class _QuranScreenState extends State<QuranScreen> {
   }
 }
 
-/// شاشة قراءة سورة كاملة، نصاً متصلاً كتدفق واحد (وليس آية بكل سطر).
-///
-/// ملاحظة: حزمة quran (من الإصدار 1.1.0 فأعلى) تحذف البسملة تلقائياً من
-/// نص الآية الأولى في كل سورة (ما عدا التوبة)، وتوفر quran.basmala كنص
-/// منفصل للعرض. لذلك لا حاجة إطلاقاً لأي معالجة يدوية لحذف البسملة من
-/// نص الآيات - المكتبة نفسها تضمن عدم التكرار.
+class _SurahInfo {
+  final int number;
+  final String name;
+  final int verseCount;
+  final String place;
+
+  const _SurahInfo({
+    required this.number,
+    required this.name,
+    required this.verseCount,
+    required this.place,
+  });
+}
+
+/// شاشة قراءة سورة كاملة، نصاً متصلاً كتدفق واحد (وليس آية بكل سطر)
 class SurahReadingScreen extends StatelessWidget {
   final int surahNumber;
-  final int? highlightAyah;
-  const SurahReadingScreen({
-    super.key,
-    required this.surahNumber,
-    this.highlightAyah,
-  });
+  const SurahReadingScreen({super.key, required this.surahNumber});
 
   static const int _tawbah = 9;
 
+  /// كل السور تُعرض لها البسملة كسطر مستقل أعلى الصفحة ما عدا سورة التوبة.
+  /// البسملة ليست آية في أي سورة (ولا حتى الفاتحة)، ولا تُرقَّم ولا تُحسب
+  /// ضمن نص الآيات إطلاقاً.
   bool get _showBasmala => surahNumber != _tawbah;
 
-  /// يبني نص السورة كاملاً كتيار واحد متصل، مع رمز نهاية الآية ورقمها
-  /// بعد كل آية. لا حاجة لأي معالجة للبسملة هنا لأن المكتبة تتكفل بذلك.
-  String _buildSurahBody() {
-    final verseCount = quran.getVerseCount(surahNumber);
-    final buffer = StringBuffer();
+  /// عدد كلمات البسملة الثابت. نعتمد عليه بدل مقارنة الحروف لأن أشكال
+  /// الحروف (ألف الوصل، رموز مدمجة للفظ الجلالة، فروقات تشكيل...) تختلف
+  /// أحياناً بين نص البسملة المستقل ونص الآية المدمج بنفس مصدر البيانات،
+  /// فتفشل أي مقارنة حرف-بحرف. عدّ الكلمات مضمون لأنه لا يعتمد على تطابق
+  /// الحروف إطلاقاً، فقط على وجود مسافات فاصلة بين الكلمات (وهذا ثابت دوماً
+  /// بالنص العربي).
+  static int get _basmalaWordCount =>
+      quran.basmala.trim().split(RegExp(r'\s+')).length;
 
-    for (int v = 1; v <= verseCount; v++) {
-      final text = quran.getVerse(surahNumber, v, verseEndSymbol: false);
+  /// يحذف أول N كلمة من بداية النص، حيث N = عدد كلمات البسملة، بشرط أن
+  /// يكون عدد كلمات الآية كافياً (أكبر من أو يساوي N). إذا كانت الآية
+  /// بأكملها هي البسملة (حالة الفاتحة)، يرجع نصاً فارغاً.
+  static String _removeLeadingBasmala(String verseText) {
+    final words = verseText.trim().split(RegExp(r'\s+'));
+    final n = _basmalaWordCount;
+
+    if (words.length < n) return verseText; // احتياط: نص أقصر من البسملة
+
+    final remaining = words.sublist(n);
+    return remaining.join(' ');
+  }
+
+  /// يبني نص السورة كاملاً كتيار واحد متصل (بدون فصل كل آية بسطر مستقل)،
+  /// مع إضافة رمز نهاية الآية ورقمها الصحيح بعد كل آية، ومع حذف البسملة
+  /// من بداية النص إن وُجدت، وعدم احتسابها كآية إطلاقاً.
+  String _buildSurahBody() {
+    final rawVerseCount = quran.getVerseCount(surahNumber);
+    final buffer = StringBuffer();
+    int displayNumber = 0;
+
+    for (int v = 1; v <= rawVerseCount; v++) {
+      var text = quran.getVerse(surahNumber, v, verseEndSymbol: false);
+
+      if (_showBasmala && v == 1) {
+        text = _removeLeadingBasmala(text).trim();
+        if (text.isEmpty) {
+          // هذه الآية في بيانات المكتبة هي البسملة نفسها فقط (حالة الفاتحة)
+          // فلا تُعرض ولا تُحسب كآية مستقلة
+          continue;
+        }
+      }
+
+      displayNumber++;
       buffer
         ..write(text)
         ..write(' ')
-        ..write(quran.getVerseEndSymbol(v, arabicNumeral: true))
+        ..write(quran.getVerseEndSymbol(displayNumber, arabicNumeral: true))
         ..write(' ');
     }
 
@@ -194,118 +248,6 @@ class SurahReadingScreen extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// شاشة بحث في نص جميع آيات القرآن الكريم (بالكلمات).
-class AyahSearchScreen extends StatefulWidget {
-  const AyahSearchScreen({super.key});
-
-  @override
-  State<AyahSearchScreen> createState() => _AyahSearchScreenState();
-}
-
-class _AyahSearchScreenState extends State<AyahSearchScreen> {
-  final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> _results = [];
-
-  void _search(String value) {
-    final word = value.trim();
-    if (word.isEmpty) {
-      setState(() => _results = []);
-      return;
-    }
-    final searchResult = quran.searchWords([word]);
-    final resultData = searchResult['result'];
-    final List<Map<String, dynamic>> parsed = [];
-    if (resultData is List) {
-      for (final item in resultData) {
-        if (item is Map) {
-          parsed.add(Map<String, dynamic>.from(item));
-        }
-      }
-    }
-    setState(() => _results = parsed);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('بحث في الآيات')),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _controller,
-                textDirection: TextDirection.rtl,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'اكتب كلمة من الآية...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onChanged: _search,
-              ),
-            ),
-            Expanded(
-              child: _results.isEmpty
-                  ? const Center(child: Text('اكتب كلمة للبحث عنها بالآيات'))
-                  : ListView.separated(
-                      itemCount: _results.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final item = _results[index];
-                        final surahNumber = item['surah'] as int;
-                        final verseNumber = item['verse'] as int;
-                        final text = quran.getVerse(
-                          surahNumber,
-                          verseNumber,
-                          verseEndSymbol: true,
-                        );
-                        final surahName =
-                            quran.getSurahNameArabic(surahNumber);
-
-                        return ListTile(
-                          title: Text(
-                            text,
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(fontSize: 16, height: 1.6),
-                          ),
-                          subtitle: Text(
-                            '$surahName - آية $verseNumber',
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(
-                                color: AppColors.primaryGreen,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SurahReadingScreen(
-                                surahNumber: surahNumber,
-                                highlightAyah: verseNumber,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
         ),
       ),
     );
