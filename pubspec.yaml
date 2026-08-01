@@ -74,7 +74,6 @@ flutter:
   assets:
     - assets/books/ahilla.pdf
     - assets/books/mafatih_al_jinan.json
-    - assets/books/mafatih_al_jinan.pdf
 
 flutter_launcher_icons:
   android: true
