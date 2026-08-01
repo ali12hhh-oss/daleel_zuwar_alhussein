@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../widgets/section_card.dart';
 import 'quran_screen.dart';
 import 'book_viewer_screen.dart';
+import 'mafatih_jinan_screen.dart';
 
 class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,10 +29,7 @@ class BooksScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const BookViewerScreen(
-                  title: 'مفاتيح الجنان',
-                  assetPath: 'assets/books/mafatih_al_jinan.pdf',
-                ),
+                builder: (_) => const MafatihJinanScreen(),
               ),
             ),
           ),
