@@ -22,6 +22,7 @@ class _QiblaScreenState extends State<QiblaScreen>
   double _deviceHeading = 0;
   double _smoothHeading = 0;
   double _magneticDeclination = 0.0;
+  double? _headingAccuracy; // من مستشعر البوصلة: قيمة أكبر = دقة أسوأ
   Position? _position;
 
   StreamSubscription<CompassEvent>? _compassSubscription;
@@ -59,6 +60,7 @@ class _QiblaScreenState extends State<QiblaScreen>
             setState(() {
               _smoothHeading = _lerpAngle(_smoothHeading, event.heading!, 0.15);
               _deviceHeading = _smoothHeading;
+              _headingAccuracy = event.accuracy;
             });
           }
         });
@@ -164,9 +166,6 @@ class _QiblaScreenState extends State<QiblaScreen>
 
   /// الاتجاه الحقيقي (بالنسبة للشمال الجغرافي) بعد تصحيح قراءة البوصلة
   /// المغناطيسية بإضافة الانحراف المغناطيسي المحسوب لموقع المستخدم.
-  ///
-  /// هذا هو المرجع الوحيد المستخدم في كل حسابات وعرض الاتجاهات بالشاشة
-  /// (قرص البوصلة وسهم القبلة معاً)، لضمان عدم وجود أي تعارض بينهما.
   double get _trueHeading {
     final t = _deviceHeading + _magneticDeclination;
     return (t + 360) % 360;
@@ -190,6 +189,16 @@ class _QiblaScreenState extends State<QiblaScreen>
 
   bool _isFacingQibla() {
     return _getAngleDifference() < 5;
+  }
+
+  /// إذا كان مستشعر البوصلة يبلّغ دقة منخفضة (قيمة كبيرة = دقة أسوأ بنظام
+  /// أندرويد)، هذا مؤشر قوي إن حساس المغناطيسية يحتاج معايرة (تحريك الجهاز
+  /// بشكل رقم ٨ بالهواء)، وهذا سبب شائع جداً لأخطاء كبيرة (قد تتجاوز
+  /// ٤٠-٦٠ درجة) بلا أي علاقة بالكود نفسه.
+  bool get _needsCalibration {
+    final acc = _headingAccuracy;
+    if (acc == null) return false;
+    return acc > 15; // درجة عدم اليقين بقراءة البوصلة
   }
 
   @override
@@ -231,7 +240,31 @@ class _QiblaScreenState extends State<QiblaScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            if (_needsCalibration)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange, width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'حساس البوصلة يحتاج معايرة: حرّك جهازك بشكل رقم ٨ بالهواء عدة مرات، وابتعد عن الأجسام المعدنية والإلكترونيات',
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             if (_loading)
               const Center(
@@ -331,10 +364,12 @@ class _QiblaScreenState extends State<QiblaScreen>
                         ),
                       ),
 
-                      // قرص البوصلة (الاتجاهات والدرجات) يدور بمرجع
-                      // _trueHeading نفسه المستخدم لسهم القبلة، لضمان
-                      // توافق الاتجاهات المعروضة مع اتجاه القبلة الفعلي
-                      // ومنع أي تعارض بينهما.
+                      // إصلاح: وردة البوصلة كانت تدور حسب _deviceHeading
+                      // الخام، بينما سهم القبلة يدور حسب _trueHeading (بعد
+                      // إضافة الانحراف المغناطيسي). هذا التضارب كان يسبب
+                      // فرقاً دائماً بمقدار الانحراف بين ما تعرضه وردة
+                      // البوصلة والاتجاه الفعلي للسهم. الآن كلاهما موحّد
+                      // على _trueHeading.
                       Transform.rotate(
                         angle: -_trueHeading * math.pi / 180,
                         child: Stack(
@@ -346,15 +381,16 @@ class _QiblaScreenState extends State<QiblaScreen>
                         ),
                       ),
 
-                      // مجسّم الكعبة المشرفة يشير دوماً لاتجاه القبلة
-                      // الصحيح، ويدور حسب حركة الجهاز.
                       Transform.rotate(
                         angle: _getQiblaAngle() * math.pi / 180,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const _KaabaIcon(size: 46),
-                            const SizedBox(height: 6),
+                            CustomPaint(
+                              size: const Size(40, 50),
+                              painter: _TrianglePainter(color: AppColors.primaryGreen),
+                            ),
+                            const SizedBox(height: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -380,21 +416,36 @@ class _QiblaScreenState extends State<QiblaScreen>
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 70),
+                            const SizedBox(height: 80),
                           ],
                         ),
                       ),
 
-                      // مؤشر ثابت لاتجاه مقدمة الجهاز (وليس للشمال، تجنباً
-                      // لأي التباس مع كلمة "شمال" الفعلية بالقرص الدوّار).
                       Positioned(
-                        top: 6,
+                        top: 20,
                         child: Container(
-                          width: 4,
-                          height: 18,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(2),
+                            shape: BoxShape.circle,
+                            color: Colors.red.withOpacity(0.9),
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'N',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -474,6 +525,13 @@ class _QiblaScreenState extends State<QiblaScreen>
                           'الانحراف المغناطيسي: ${_magneticDeclination.toStringAsFixed(2)}°',
                           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                         ),
+                        if (_headingAccuracy != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'دقة حساس البوصلة: ${_headingAccuracy!.toStringAsFixed(1)}°',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -494,7 +552,7 @@ class _QiblaScreenState extends State<QiblaScreen>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '• حرك الجهاز حتى يتجه مجسم الكعبة نحو الأعلى',
+                        '• حرك الجهاز حتى يتجه السهم الأخضر نحو القبلة',
                         style: TextStyle(fontSize: 12, height: 1.8),
                       ),
                       Text(
@@ -507,6 +565,10 @@ class _QiblaScreenState extends State<QiblaScreen>
                       ),
                       Text(
                         '• حافظ على الجهاز أفقياً',
+                        style: TextStyle(fontSize: 12, height: 1.8),
+                      ),
+                      Text(
+                        '• إذا ظهر تنبيه معايرة البوصلة، حرّك الجهاز بشكل رقم ٨ بالهواء',
                         style: TextStyle(fontSize: 12, height: 1.8),
                       ),
                       Text(
@@ -582,116 +644,34 @@ class _QiblaScreenState extends State<QiblaScreen>
   }
 }
 
-/// مجسّم مبسّط للكعبة المشرّفة بشكل ثلاثي الأبعاد (مكعب أسود بكسوة
-/// وحزام ذهبي)، يُستخدم كمؤشر لاتجاه القبلة بدل السهم المثلث السابق.
-class _KaabaIcon extends StatelessWidget {
-  final double size;
-  const _KaabaIcon({this.size = 46});
+class _TrianglePainter extends CustomPainter {
+  final Color color;
+
+  _TrianglePainter({required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    final depth = size * 0.32;
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
 
-    return SizedBox(
-      width: size + depth,
-      height: size + depth,
-      child: Stack(
-        children: [
-          // الوجه الجانبي (يعطي إحساس العمق/الثلاثية الأبعاد)
-          Positioned(
-            right: 0,
-            top: depth * 0.5,
-            child: Transform(
-              alignment: Alignment.topLeft,
-              transform: Matrix4.skewY(-0.55),
-              child: Container(
-                width: depth,
-                height: size,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF060606),
-                ),
-              ),
-            ),
-          ),
-          // السطح العلوي (يعطي إحساس العمق من الأعلى)
-          Positioned(
-            left: depth * 0.5,
-            top: 0,
-            child: Transform(
-              alignment: Alignment.bottomLeft,
-              transform: Matrix4.skewX(-0.55),
-              child: Container(
-                width: size,
-                height: depth,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1C1C1C),
-                ),
-              ),
-            ),
-          ),
-          // الواجهة الأمامية: الكسوة السوداء + الحزام الذهبي (الحزام
-          // المطرّز بالآيات القرآنية أعلى الكعبة تقليدياً)
-          Positioned(
-            left: 0,
-            top: depth,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B0B0B),
-                border: Border.all(color: Colors.black, width: 0.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.45),
-                    blurRadius: 6,
-                    offset: const Offset(1, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  SizedBox(height: size * 0.28),
-                  Container(
-                    width: size,
-                    height: size * 0.2,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFFD4AF37),
-                          Color(0xFFF4E5A1),
-                          Color(0xFFD4AF37),
-                        ],
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: size * 0.55,
-                        height: 1.4,
-                        color: Colors.black26,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // الباب الذهبي الصغير أسفل الواجهة (باب الكعبة)
-          Positioned(
-            left: size * 0.62,
-            top: depth + size * 0.62,
-            child: Container(
-              width: size * 0.16,
-              height: size * 0.3,
-              decoration: BoxDecoration(
-                color: const Color(0xFFC9A227),
-                borderRadius: BorderRadius.circular(1.5),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    final path = Path();
+    path.moveTo(size.width / 2, 0);
+    path.lineTo(0, size.height);
+    path.lineTo(size.width, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawPath(path, borderPaint);
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 class _InfoBox extends StatelessWidget {
