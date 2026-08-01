@@ -72,7 +72,7 @@ class _SabayaScreenState extends State<SabayaScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('خطب السبايا'),
+        title: const Text('خطب اهل البيت'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
