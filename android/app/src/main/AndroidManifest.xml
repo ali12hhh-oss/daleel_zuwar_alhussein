@@ -4,7 +4,14 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- مطلوب لفتح روابط المواقع الرسمية للمراجع ولفتح خرائط جوجل -->
     <uses-permission android:name="android.permission.INTERNET"/>
-
+    <!-- أذونات إشعارات أذان الصلاة: بدون هذي الثلاثة، لا يعمل أي إشعار
+         مجدول إطلاقاً على أندرويد 13+ (POST_NOTIFICATIONS)، ولا تنطلق
+         الجدولة بدقة الثانية على أندرويد 12+ بدون إذن التنبيهات الدقيقة -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:label="دليل زوار الحسين"
         android:name="${applicationName}"
@@ -32,7 +39,6 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-
     <!-- مطلوب على أندرويد 11+ لفتح تطبيق خرائط جوجل عبر url_launcher -->
     <queries>
         <intent>
