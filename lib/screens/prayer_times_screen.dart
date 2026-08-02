@@ -32,8 +32,19 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   @override
   void initState() {
     super.initState();
-    _initNotifications();
-    _getLocationAndCalculate();
+    _initApp();
+  }
+
+  /// ✅ يشغّل التهيئة بالتسلسل وليس بالتوازي. السبب: أندرويد لا يسمح
+  /// بعرض أكثر من نافذة صلاحية نظام (Permission Dialog) واحدة في نفس
+  /// اللحظة. سابقاً كانت _initNotifications() و_getLocationAndCalculate()
+  /// تُستدعيان معاً بدون انتظار، فيتصادم طلب إذن الإشعارات مع طلب إذن
+  /// الموقع في نفس اللحظة تقريباً، فيربح أحدهما "السباق" ويُرفض الآخر
+  /// تلقائياً بصمت (يرجع false فوراً دون أي نافذة تظهر للمستخدم إطلاقاً)
+  /// - وهذا كان سبب عدم ظهور طلب إذن الإشعارات عند أول فتح للتطبيق.
+  Future<void> _initApp() async {
+    await _initNotifications();
+    await _getLocationAndCalculate();
   }
 
   Future<void> _initNotifications() async {
