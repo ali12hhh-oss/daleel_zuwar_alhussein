@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'dart:math' as math;
 import '../theme.dart';
 
@@ -35,9 +37,75 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Future<void> _initNotifications() async {
+    // ✅ تهيئة التوقيت المحلي، مطلوبة لأي جدولة دقيقة عبر zonedSchedule
+    tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.local);
+
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
     await _notificationsPlugin.initialize(initSettings);
+
+    // ✅ طلب صلاحية الإشعارات صراحة (إلزامي بأندرويد 13+، بدونه لا يظهر
+    // أي إشعار إطلاقاً بغض النظر عن صحة باقي الكود)
+    final androidImpl = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl?.requestNotificationsPermission();
+    // ✅ إذن جدولة التنبيهات الدقيقة (Exact Alarms) - مطلوب بأندرويد 12+
+    // حتى تنطلق الجدولة بالثانية بدل ما تتأخر دقائق بسبب توفير الطاقة
+    await androidImpl?.requestExactAlarmsPermission();
+  }
+
+  /// يحوّل DateTime عادي إلى TZDateTime متوافق مع مكتبة الجدولة.
+  tz.TZDateTime _toTZDateTime(DateTime dt) {
+    return tz.TZDateTime.from(dt, tz.local);
+  }
+
+  /// يجدول إشعار أذان حقيقي في وقته بالضبط، يعمل حتى لو التطبيق مغلق
+  /// تماماً أو الجهاز نائم، لأن نظام أندرويد نفسه هو من يطلقه بالوقت
+  /// المحدد (بعكس مراقبة الوقت داخل التطبيق اللي تتوقف إذا انسكرت الشاشة).
+  Future<void> _scheduleAdhanNotification(
+    int id,
+    String prayerName,
+    DateTime time,
+  ) async {
+    // لا تجدول وقتاً فات بالفعل اليوم
+    if (time.isBefore(DateTime.now())) return;
+
+    const androidDetails = AndroidNotificationDetails(
+      'adhan_channel_v2',
+      'أذان الصلاة',
+      channelDescription: 'تذكير بأوقات الأذان',
+      importance: Importance.high,
+      priority: Priority.high,
+      sound: RawResourceAndroidNotificationSound('adhan'),
+      playSound: true,
+      enableVibration: true,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    await _notificationsPlugin.zonedSchedule(
+      id,
+      'حان وقت أذان $prayerName',
+      'الساعة ${_formatTime12Hour(time)}',
+      _toTZDateTime(time),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+  }
+
+  /// يجدول أذانات اليوم الثلاثة دفعة واحدة بعد ما تُحسب أوقاتها.
+  Future<void> _scheduleAllAdhans() async {
+    if (_fajrAdhan != null) {
+      await _scheduleAdhanNotification(1001, 'الفجر', _fajrAdhan!);
+    }
+    if (_dhuhrAdhan != null) {
+      await _scheduleAdhanNotification(1002, 'الظهر', _dhuhrAdhan!);
+    }
+    if (_maghribAdhan != null) {
+      await _scheduleAdhanNotification(1003, 'المغرب', _maghribAdhan!);
+    }
   }
 
   Future<void> _showAdhanNotification(String prayerName, String time) async {
@@ -102,6 +170,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _midnight = times['midnight'];
         _loading = false;
       });
+      // ✅ جدولة إشعارات الأذان الحقيقية فور توفر أوقات اليوم
+      await _scheduleAllAdhans();
     } catch (e) {
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
