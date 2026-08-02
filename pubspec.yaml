@@ -73,7 +73,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/books/ahilla.pdf
-    - assets/books/mafatih_al_jinan.json
 
 flutter_launcher_icons:
   android: true
