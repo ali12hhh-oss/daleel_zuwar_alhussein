@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'theme.dart';
 
 void main() {
@@ -8,14 +8,12 @@ void main() {
 
 class DaleelApp extends StatefulWidget {
   const DaleelApp({super.key});
-
   @override
   State<DaleelApp> createState() => _DaleelAppState();
 }
 
 class _DaleelAppState extends State<DaleelApp> {
   ThemeMode _themeMode = ThemeMode.dark;
-
   void _toggleTheme() {
     setState(() {
       _themeMode =
@@ -31,7 +29,9 @@ class _DaleelAppState extends State<DaleelApp> {
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: _themeMode,
-      home: HomeScreen(
+      // ✅ نبدأ الآن من شاشة splash (صورة الضريح + صوت + 3 ثوانٍ)
+      // بدل فتح الشاشة الرئيسية مباشرة
+      home: SplashScreen(
         themeMode: _themeMode,
         onToggleTheme: _toggleTheme,
       ),
