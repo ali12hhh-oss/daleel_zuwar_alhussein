@@ -557,7 +557,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               _AdhanCard(
                 name: 'أذان الظهر',
                 time: _formatTime12Hour(_dhuhrAdhan!),
-                subtitle: 'من زوال الشمس إلى غياب الحمرة المشرقية',
+                subtitle: 'من زوال الشمس إلى مغيب قرص الشمس',
                 endTime: 'ينتهي: ${_formatTime12Hour(_maghribAdhan!)}',
                 icon: Icons.sunny,
                 isCurrent: _isCurrentPrayer('dhuhr'),
@@ -626,7 +626,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       style: TextStyle(fontSize: 12, height: 1.8),
                     ),
                     Text(
-                      '• أذان الظهر: وقت صلاة الظهرين من الزوال إلى غياب الحمرة المشرقية',
+                      '• أذان الظهر: وقت صلاة الظهرين من الزوال إلى مغيب قرص الشمس',
                       style: TextStyle(fontSize: 12, height: 1.8),
                     ),
                     Text(
