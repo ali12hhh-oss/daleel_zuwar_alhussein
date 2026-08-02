@@ -38,8 +38,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   Future<void> _initNotifications() async {
     // ✅ تهيئة التوقيت المحلي، مطلوبة لأي جدولة دقيقة عبر zonedSchedule
+    // ملاحظة إصلاح: لا يجوز قراءة tz.local قبل تعيينه. كان الكود سابقاً
+    // tz.setLocalLocation(tz.local) وهذا خطأ دائري (يحاول قراءة قيمة لم
+    // تُعيَّن بعد)، فيرمي LateInitializationError فور استدعائه. هذا
+    // الاستثناء كان يُمسك لاحقاً داخل try/catch حساب الأوقات ويُظهر
+    // رسالة "إعادة المحاولة" رغم أن الأوقات كانت محسوبة بنجاح أصلاً.
+    // بما أن التطبيق مخصص للعراق (منطقة زمنية واحدة، بدون توقيت صيفي
+    // حالياً)، نحدد المنطقة صراحة بدل الاعتماد على قراءة ذاتية.
     tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.local);
+    tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
@@ -243,10 +250,19 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   // يعتمد على حساب الموقع الفلكي الحقيقي للشمس (اليوم اليولياني + معادلة
   // الزمن + ميل الشمس)، ثم يحسب كل وقت بتوقيت UTC أولاً، ويحوَّل بعدها
   // تلقائياً لتوقيت الجهاز المحلي عبر toLocal() لتفادي أي خلط يدوي بين
-  // التوقيتات (وهو سبب فرق الساعات الذي كان يحدث سابقاً).
+  // التوقيتات.
   //
   // زاوية الفجر (18°) وزاوية المغرب (4.5°) لم تتغيّر - هي نفس القيم
   // المعتمدة أصلاً حسب كراس مواقيت السيد السيستاني دام ظله.
+  //
+  // ✅ تصحيح فقهي 1: نهاية وقت الظهرين (الظهر والعصر) هي "مغيب قرص
+  // الشمس" (sunset، زاوية 0.833°)، وليست "غياب الحمرة المشرقية" (زاوية
+  // 4.5° وهي بداية وقت المغربين). لذلك _isCurrentPrayer ونهاية عرض وقت
+  // الظهر تعتمدان الآن على _sunset وليس _maghribAdhan.
+  //
+  // ✅ تصحيح فقهي 2: منتصف الليل الشرعي = منتصف المدة بين غروب الشمس
+  // وطلوع الفجر الصادق لليوم التالي (وليس شروق الشمس). لذلك نحسب الآن
+  // "فجر الغد" بزاوية الفجر (18°) بدل شروق الغد بزاوية الشروق.
 
   Map<String, DateTime> _calculateShiaPrayerTimes(double lat, double lng, DateTime date) {
     const fajrAngle = 18.0;
@@ -266,15 +282,16 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final sunset = _utcHoursToLocalDateTime(date, dhuhrUtc + riseSetT);
     final maghribAdhan = _utcHoursToLocalDateTime(date, dhuhrUtc + maghribT);
 
-    // شروق اليوم التالي، لحساب منتصف الليل (بين الغروب وشروق اليوم التالي)
+    // ✅ فجر الغد (وليس شروق الغد)، لحساب منتصف الليل الشرعي بشكل صحيح
+    // بين غروب اليوم وطلوع الفجر الصادق لليوم التالي
     final tomorrow = date.add(const Duration(days: 1));
     final sunTomorrow = _sunPosition(_julianDate(tomorrow.year, tomorrow.month, tomorrow.day));
     final dhuhrTomorrowUtc = 12.0 - (lng / 15.0) - sunTomorrow.equationOfTime;
-    final riseSetTomorrowT = _sunAngleTime(sunriseSunsetAngle, lat, sunTomorrow.declination);
-    final nextSunrise = _utcHoursToLocalDateTime(tomorrow, dhuhrTomorrowUtc - riseSetTomorrowT);
+    final fajrTomorrowT = _sunAngleTime(fajrAngle, lat, sunTomorrow.declination);
+    final nextFajr = _utcHoursToLocalDateTime(tomorrow, dhuhrTomorrowUtc - fajrTomorrowT);
 
     final midnight = sunset.add(
-      Duration(minutes: nextSunrise.difference(sunset).inMinutes ~/ 2),
+      Duration(minutes: nextFajr.difference(sunset).inMinutes ~/ 2),
     );
 
     return {
@@ -386,7 +403,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       case 'fajr':
         return now.isAfter(_fajrAdhan!) && now.isBefore(_sunrise!);
       case 'dhuhr':
-        return now.isAfter(_dhuhrAdhan!) && now.isBefore(_maghribAdhan!);
+        // ✅ تصحيح: وقت الظهرين ينتهي بغروب الشمس (مغيب قرص الشمس)،
+        // وليس بغياب الحمرة المشرقية (وهي بداية وقت المغربين لاحقاً)
+        return now.isAfter(_dhuhrAdhan!) && now.isBefore(_sunset!);
       case 'maghrib':
         return now.isAfter(_maghribAdhan!) && now.isBefore(_midnight!);
       default:
@@ -558,7 +577,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 name: 'أذان الظهر',
                 time: _formatTime12Hour(_dhuhrAdhan!),
                 subtitle: 'من زوال الشمس إلى مغيب قرص الشمس',
-                endTime: 'ينتهي: ${_formatTime12Hour(_maghribAdhan!)}',
+                // ✅ تصحيح: ينتهي وقت الظهرين بالغروب (_sunset)، وليس
+                // بوقت أذان المغرب (_maghribAdhan) الذي هو غياب الحمرة
+                endTime: 'ينتهي: ${_formatTime12Hour(_sunset!)}',
                 icon: Icons.sunny,
                 isCurrent: _isCurrentPrayer('dhuhr'),
                 color: Colors.amber.shade700,
@@ -639,6 +660,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     ),
                     Text(
                       '  - يستحب تأخير صلاة العشاء إلى ثلث الليل',
+                      style: TextStyle(fontSize: 12, height: 1.8),
+                    ),
+                    Text(
+                      '• منتصف الليل الشرعي = منتصف المدة بين غروب الشمس وطلوع الفجر الصادق لليوم التالي',
                       style: TextStyle(fontSize: 12, height: 1.8),
                     ),
                     Text(
