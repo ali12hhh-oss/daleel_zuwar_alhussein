@@ -11,6 +11,21 @@ import '../models/models.dart';
 import '../theme.dart';
 import '../services/offline_map_service.dart';
 
+/// ✅ يمثّل خياراً واحداً من خيارات المسار (مشي أو سيارة، مع بديل رقم N)
+class RouteOption {
+  final double distanceKm;
+  final double durationMin;
+  final List<LatLng> points;
+  final String profile; // 'foot' أو 'driving'
+
+  RouteOption({
+    required this.distanceKm,
+    required this.durationMin,
+    required this.points,
+    required this.profile,
+  });
+}
+
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
 
@@ -30,6 +45,10 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _isCaching = false;
   String _cacheStatus = '';
   bool _calculatingRoute = false;
+
+  // ✅ كل خيارات المسار المكتشفة (مشي: عدة بدائل + سيارة: بديل واحد للمقارنة)
+  List<RouteOption> _routeOptions = [];
+  int _selectedRouteIndex = 0;
 
   int _downloadedTiles = 0;
   int _totalTiles = 0;
@@ -83,77 +102,131 @@ class _RouteScreenState extends State<RouteScreen> {
 
   double _deg2rad(double deg) => deg * (pi / 180);
 
-  /// ✅ حساب المسافة على الطريق باستخدام OSRM API (مجاني ودقيق)
-  /// نستخدم بروفايل foot (مشي) وليس driving (قيادة)، لأن التطبيق
-  /// مخصص لمسار زائر الحسين سيراً على الأقدام. خادم OSRM التجريبي
-  /// الرسمي يدعم car/foot/bike معاً.
+  /// ✅ جلب كل بدائل المسار المتوفرة من OSRM لبروفايل معيّن (مشي أو سيارة)
+  /// alternatives=true تجعل OSRM يعيد حتى 3 مسارات مختلفة بدل مسار واحد فقط
+  Future<List<RouteOption>> _fetchRoutes({
+    required double fromLat,
+    required double fromLng,
+    required String profile,
+    int maxAlternatives = 3,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://router.project-osrm.org/route/v1/$profile/'
+          '$fromLng,$fromLat;'
+          '$hussainShrineLng,$hussainShrineLat'
+          '?overview=full&geometries=geojson&alternatives=true&steps=false',
+        ),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode != 200) return [];
+      final data = jsonDecode(response.body);
+      if (data['routes'] == null || (data['routes'] as List).isEmpty) {
+        return [];
+      }
+
+      final routes = (data['routes'] as List).take(maxAlternatives).toList();
+      return routes.map<RouteOption>((route) {
+        final distanceKm = (route['distance'] as num).toDouble() / 1000;
+        final durationMin = (route['duration'] as num).toDouble() / 60;
+        final geometry = route['geometry']['coordinates'] as List;
+        final points = geometry
+            .map((coord) => LatLng(coord[1] as double, coord[0] as double))
+            .toList();
+        return RouteOption(
+          distanceKm: distanceKm,
+          durationMin: durationMin,
+          points: points,
+          profile: profile,
+        );
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// ✅ حساب كل خيارات المسار (مشي + سيارة كمقارنة) وتحديد الأقصر تلقائياً
+  /// ملاحظة: بيانات "مسارات المشي" بين المدن على OpenStreetMap محدودة في
+  /// العراق، لذلك نضيف أيضاً مسار السيارة كخيار احتياطي/مقارنة لأن كثيراً
+  /// من الزوار يمشون على جانب الطريق الرئيسي نفسه أثناء المسير
   Future<void> _calculateRoadDistance() async {
     if (_position == null) return;
 
     setState(() {
       _calculatingRoute = true;
+      _routeOptions = [];
     });
 
-    try {
-      final response = await http.get(
-        Uri.parse(
-          'https://router.project-osrm.org/route/v1/foot/'
-          '${_position!.longitude},${_position!.latitude};'
-          '$hussainShrineLng,$hussainShrineLat'
-          '?overview=full&geometries=geojson',
-        ),
-      ).timeout(const Duration(seconds: 15));
+    final options = <RouteOption>[];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['routes'] != null && data['routes'].isNotEmpty) {
-          final route = data['routes'][0];
-          final distance = (route['distance'] as num).toDouble(); // بالمتر
-          final geometry = route['geometry']['coordinates'] as List;
+    final footOptions = await _fetchRoutes(
+      fromLat: _position!.latitude,
+      fromLng: _position!.longitude,
+      profile: 'foot',
+      maxAlternatives: 3,
+    );
+    options.addAll(footOptions);
 
-          // تحويل نقاط المسار إلى LatLng
-          final points = geometry.map((coord) {
-            return LatLng(coord[1] as double, coord[0] as double);
-          }).toList();
+    final drivingOptions = await _fetchRoutes(
+      fromLat: _position!.latitude,
+      fromLng: _position!.longitude,
+      profile: 'driving',
+      maxAlternatives: 1,
+    );
+    options.addAll(drivingOptions);
 
-          setState(() {
-            _roadDistanceKm = distance / 1000;
-            _routePoints = points;
-            _calculatingRoute = false;
-          });
-        }
-      } else {
-        throw Exception('فشل في حساب المسار');
-      }
-    } catch (e) {
+    if (!mounted) return;
+
+    if (options.isEmpty) {
       setState(() {
         _roadDistanceKm = _straightDistanceKm; // fallback
         _calculatingRoute = false;
       });
+      return;
     }
+
+    // ✅ تحديد المسار الأقصر تلقائياً (أفضّل مسارات المشي عند التساوي التقريبي)
+    int shortestIndex = 0;
+    double shortestDist = options.first.distanceKm;
+    for (int i = 1; i < options.length; i++) {
+      if (options[i].distanceKm < shortestDist) {
+        shortestDist = options[i].distanceKm;
+        shortestIndex = i;
+      }
+    }
+
+    setState(() {
+      _routeOptions = options;
+      _selectedRouteIndex = shortestIndex;
+      _roadDistanceKm = options[shortestIndex].distanceKm;
+      _routePoints = options[shortestIndex].points;
+      _calculatingRoute = false;
+    });
   }
 
-  /// ✅ حساب مسافة الطريق (مشياً) من أي مدينة إلى كربلاء
-  Future<double> _getRoadDistanceFromCity(double lat, double lng) async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-          'https://router.project-osrm.org/route/v1/foot/'
-          '$lng,$lat;'
-          '$hussainShrineLng,$hussainShrineLat'
-          '?overview=false',
-        ),
-      ).timeout(const Duration(seconds: 10));
+  void _selectRoute(int index) {
+    if (index < 0 || index >= _routeOptions.length) return;
+    setState(() {
+      _selectedRouteIndex = index;
+      _roadDistanceKm = _routeOptions[index].distanceKm;
+      _routePoints = _routeOptions[index].points;
+    });
+  }
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['routes'] != null && data['routes'].isNotEmpty) {
-          return (data['routes'][0]['distance'] as num).toDouble() / 1000;
-        }
-      }
-    } catch (e) {
-      // fallback: استخدام المسافة المستقيمة مع معامل تصحيح
+  /// ✅ حساب مسافة الطريق (مشياً) من أي مدينة إلى كربلاء (أقصر خيار متاح)
+  Future<double> _getRoadDistanceFromCity(double lat, double lng) async {
+    final footOptions = await _fetchRoutes(
+      fromLat: lat,
+      fromLng: lng,
+      profile: 'foot',
+      maxAlternatives: 3,
+    );
+    if (footOptions.isNotEmpty) {
+      footOptions.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+      return footOptions.first.distanceKm;
     }
+    // fallback: استخدام المسافة المستقيمة مع معامل تصحيح
     return _haversineKm(lat, lng, hussainShrineLat, hussainShrineLng) * 1.3;
   }
 
@@ -202,7 +275,7 @@ class _RouteScreenState extends State<RouteScreen> {
         _loading = false;
       });
 
-      // ✅ حساب المسافة على الطريق تلقائياً
+      // ✅ حساب كل خيارات المسار تلقائياً وتحديد الأقصر
       await _calculateRoadDistance();
     } catch (e) {
       setState(() {
@@ -299,6 +372,18 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  String _routeLabel(RouteOption option, int index) {
+    final icon = option.profile == 'foot' ? '🚶' : '🚗';
+    final typeLabel = option.profile == 'foot' ? 'مشي' : 'طريق رئيسي';
+    // ترقيم بدائل المشي فقط (1، 2، 3...)، أما السيارة فخيار واحد فقط
+    if (option.profile == 'foot') {
+      final footIndex =
+          _routeOptions.where((o) => o.profile == 'foot').toList().indexOf(option) + 1;
+      return '$icon $typeLabel $footIndex';
+    }
+    return '$icon $typeLabel';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -367,7 +452,7 @@ class _RouteScreenState extends State<RouteScreen> {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'جاري حساب المسافة على الطريق...',
+                              'جاري حساب المسارات المتاحة...',
                               style: TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                           ],
@@ -376,7 +461,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       if (_roadDistanceKm != null) ...[
                         const SizedBox(height: 6),
                         Text(
-                          'المسافة على الطريق: ${_roadDistanceKm!.toStringAsFixed(1)} كم',
+                          'أقصر مسار: ${_roadDistanceKm!.toStringAsFixed(1)} كم',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -387,6 +472,44 @@ class _RouteScreenState extends State<RouteScreen> {
                         Text(
                           '⏱️ وقت المشي التقريبي: ${(_roadDistanceKm! / 5).toStringAsFixed(0)} ساعة',
                           style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                      // ✅ قائمة كل خيارات المسار المتاحة مع مسافة كل واحد
+                      if (_routeOptions.length > 1) ...[
+                        const SizedBox(height: 14),
+                        const Text(
+                          'اختر مساراً لعرضه على الخريطة:',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: List.generate(_routeOptions.length, (i) {
+                            final opt = _routeOptions[i];
+                            final selected = i == _selectedRouteIndex;
+                            final isShortest =
+                                opt.distanceKm == _routeOptions.map((o) => o.distanceKm).reduce(min);
+                            return ChoiceChip(
+                              label: Text(
+                                '${_routeLabel(opt, i)} • ${opt.distanceKm.toStringAsFixed(1)} كم'
+                                '${isShortest ? ' ⭐' : ''}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: selected ? Colors.white : Colors.black87,
+                                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              selected: selected,
+                              selectedColor: AppColors.gold,
+                              backgroundColor: Colors.white,
+                              onSelected: (_) => _selectRoute(i),
+                            );
+                          }),
                         ),
                       ],
                       const SizedBox(height: 14),
@@ -541,30 +664,44 @@ class _RouteScreenState extends State<RouteScreen> {
                           // يتحكم فعلياً بجلب الصور.
                           tileProvider: OfflineFirstTileProvider(),
                         ),
-                        if (_position != null)
+                        if (_routeOptions.isNotEmpty)
                           PolylineLayer(
                             polylines: [
-                              // ✅ المسار الفعلي على الطريق (مشياً)
-                              if (_routePoints.isNotEmpty)
-                                Polyline(
-                                  points: _routePoints,
-                                  color: AppColors.primaryGreen,
-                                  strokeWidth: 5,
-                                  borderStrokeWidth: 2,
-                                  borderColor: Colors.white,
-                                )
-                              else
-                                // fallback: خط مستقيم أثناء التحميل أو
-                                // عند فشل الاتصال بخدمة التوجيه
-                                Polyline(
-                                  points: [
-                                    LatLng(_position!.latitude, _position!.longitude),
-                                    const LatLng(hussainShrineLat, hussainShrineLng),
-                                  ],
-                                  color: Colors.grey,
-                                  strokeWidth: 3,
-                                  strokeCap: StrokeCap.round,
-                                ),
+                              // ✅ كل المسارات البديلة تُرسم رفيعة ورمادية
+                              for (int i = 0; i < _routeOptions.length; i++)
+                                if (i != _selectedRouteIndex)
+                                  Polyline(
+                                    points: _routeOptions[i].points,
+                                    color: Colors.grey.withOpacity(0.55),
+                                    strokeWidth: 3,
+                                  ),
+                              // ✅ المسار المختار حالياً يُرسم عريضاً وملوّناً
+                              Polyline(
+                                points: _routeOptions[_selectedRouteIndex].points,
+                                color: _routeOptions[_selectedRouteIndex].profile ==
+                                        'foot'
+                                    ? AppColors.primaryGreen
+                                    : Colors.blueGrey,
+                                strokeWidth: 5,
+                                borderStrokeWidth: 2,
+                                borderColor: Colors.white,
+                              ),
+                            ],
+                          )
+                        else if (_position != null)
+                          PolylineLayer(
+                            polylines: [
+                              // fallback: خط مستقيم أثناء التحميل أو
+                              // عند فشل الاتصال بخدمة التوجيه
+                              Polyline(
+                                points: [
+                                  LatLng(_position!.latitude, _position!.longitude),
+                                  const LatLng(hussainShrineLat, hussainShrineLng),
+                                ],
+                                color: Colors.grey,
+                                strokeWidth: 3,
+                                strokeCap: StrokeCap.round,
+                              ),
                             ],
                           ),
                         MarkerLayer(
@@ -680,7 +817,7 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 }
 
-/// ✅ بطاقة مدينة مع مسافة دقيقة على الطريق
+/// ✅ بطاقة مدينة مع مسافة دقيقة على الطريق (أقصر خيار متاح)
 class _CityDistanceTile extends StatefulWidget {
   final IraqiCity city;
   final VoidCallback onDirections;
@@ -721,7 +858,7 @@ class _CityDistanceTileState extends State<_CityDistanceTile> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _roadDistance = widget.city.approxDistanceKm;
+          _roadDistance = widget.city.approxDistanceKm.toDouble();
           _loading = false;
         });
       }
@@ -747,7 +884,7 @@ class _CityDistanceTileState extends State<_CityDistanceTile> {
                 ],
               )
             : Text(
-                'المسافة على الطريق: ~${_roadDistance!.toStringAsFixed(0)} كم',
+                'أقصر مسافة (مشياً): ~${_roadDistance!.toStringAsFixed(0)} كم',
                 style: const TextStyle(fontSize: 13),
               ),
         trailing: IconButton(
