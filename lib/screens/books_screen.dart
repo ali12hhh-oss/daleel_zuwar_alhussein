@@ -13,16 +13,16 @@ class BooksScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          SectionCard(
-            title: 'القرآن الكريم',
-            subtitle: 'نص القرآن الكريم كاملاً، تصفح حسب السور',
-            icon: Icons.menu_book,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const QuranScreen()),
-            ),
+         SectionCard(
+          title: 'القرآن الكريم',
+          subtitle: 'نص القرآن الكريم كاملاً تصفح حسب السور',
+          icon: Icons.menu_book,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const QuranScreen()),
           ),
-        ],
+        ),
+      ],
     );
   }
 }
