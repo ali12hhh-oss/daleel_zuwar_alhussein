@@ -92,6 +92,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       _toTZDateTime(time),
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
