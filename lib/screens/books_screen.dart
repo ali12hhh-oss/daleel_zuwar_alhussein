@@ -22,19 +22,7 @@ class BooksScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const QuranScreen()),
             ),
           ),
-          SectionCard(
-            title: 'مفاتيح الجنان',
-            subtitle: 'كتاب الأدعية والزيارات للشيخ عباس القمي',
-            icon: Icons.auto_stories,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const MafatihJinanScreen(),
-              ),
-            ),
-          ),
         ],
-      ),
     );
   }
 }
