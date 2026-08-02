@@ -403,16 +403,6 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  '✅ المسافة على الطريق محسوبة بدقة عبر خدمة OSRM العالمية (مسار مشي)\n'
-                  '✅ الخريطة احترافية وتوضح المسار الفعلي والمناطق التي يمر بها\n'
-                  '✅ اضغط زر "عرض مسار المشي" لفتح Google Maps بخط سير تفصيلي',
-                  style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.6),
-                ),
-              ),
             ],
             const SizedBox(height: 16),
             Card(
@@ -433,13 +423,6 @@ class _RouteScreenState extends State<RouteScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                ),
-                              ),
-                              Text(
-                                'خريطة OpenStreetMap تغطي العراق كاملاً والطريق إلى ضريح الإمام الحسين عليه السلام',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
                                 ),
                               ),
                             ],
@@ -687,7 +670,7 @@ class _RouteScreenState extends State<RouteScreen> {
     return iraqiCities.where((city) {
       final routeCities = [
         'بغداد', 'الحلة', 'المسيب', 'الاسكندرية', 'الهندية',
-        'الكفل', 'عين تمر', 'الشنافية', 'الناصرية', 'العمارة',
+        'الكفل', 'عين تمر', 'الناصرية', 'العمارة',
         'البصرة', 'الديوانية', 'الكوت', 'الرطبة', 'الرمادي',
         'الفلوجة', 'تكريت', 'الموصل', 'كركوك', 'أربيل',
         'السليمانية', 'دهوك', 'النجف الأشرف', 'الكاظمية',
