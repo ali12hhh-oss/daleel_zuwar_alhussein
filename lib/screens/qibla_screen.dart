@@ -553,27 +553,27 @@ class _QiblaScreenState extends State<QiblaScreen>
                       SizedBox(height: 8),
                       Text(
                         '• حرك الجهاز حتى يتجه السهم الأخضر نحو القبلة',
-                        style: TextStyle(fontSize: 12, height: 1.8),
+                        style: TextStyle(fontSize: 12, height: 1.8, color: Colors.black87),
                       ),
                       Text(
                         '• عندما يصبح الفرق أقل من 5 درجات، ستظهر رسالة التأكيد',
-                        style: TextStyle(fontSize: 12, height: 1.8),
+                        style: TextStyle(fontSize: 12, height: 1.8, color: Colors.black87),
                       ),
                       Text(
                         '• وقف بعيداً عن الأجسام المعدنية',
-                        style: TextStyle(fontSize: 12, height: 1.8),
+                        style: TextStyle(fontSize: 12, height: 1.8, color: Colors.black87),
                       ),
                       Text(
                         '• حافظ على الجهاز أفقياً',
-                        style: TextStyle(fontSize: 12, height: 1.8),
+                        style: TextStyle(fontSize: 12, height: 1.8, color: Colors.black87),
                       ),
                       Text(
                         '• إذا ظهر تنبيه معايرة البوصلة، حرّك الجهاز بشكل رقم ٨ بالهواء',
-                        style: TextStyle(fontSize: 12, height: 1.8),
+                        style: TextStyle(fontSize: 12, height: 1.8, color: Colors.black87),
                       ),
                       Text(
                         '• الزاوية محسوبة من الشمال نحو الشرق',
-                        style: TextStyle(fontSize: 12, height: 1.8),
+                        style: TextStyle(fontSize: 12, height: 1.8, color: Colors.black87),
                       ),
                     ],
                   ),
