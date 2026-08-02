@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../widgets/section_card.dart';
 import 'quran_screen.dart';
 import 'book_viewer_screen.dart';
-import 'mafatih_jinan_screen.dart';
 
 class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
@@ -13,16 +12,17 @@ class BooksScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-         SectionCard(
-          title: 'القرآن الكريم',
-          subtitle: 'نص القرآن الكريم كاملاً تصفح حسب السور',
-          icon: Icons.menu_book,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const QuranScreen()),
+          SectionCard(
+            title: 'القرآن الكريم',
+            subtitle: 'نص القرآن الكريم كاملاً تصفح حسب السور',
+            icon: Icons.menu_book,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const QuranScreen()),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
