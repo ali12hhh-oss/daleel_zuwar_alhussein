@@ -32,7 +32,6 @@ const List<IraqiCity> iraqiCities = [
   IraqiCity(name: 'بلد (صلاح الدين)', lat: 34.0156, lng: 44.1450, approxDistanceKm: 200),
   IraqiCity(name: 'بيجي', lat: 34.9291, lng: 43.4931, approxDistanceKm: 320),
   IraqiCity(name: 'الشعلة', lat: 33.3800, lng: 44.2800, approxDistanceKm: 100),
-  IraqiCity(name: 'المدينة (النجف)', lat: 32.0100, lng: 44.3300, approxDistanceKm: 82),
   IraqiCity(name: 'الكفل', lat: 32.3800, lng: 44.4000, approxDistanceKm: 65),
   IraqiCity(name: 'الهاشمية', lat: 32.4300, lng: 44.5200, approxDistanceKm: 55),
   IraqiCity(name: 'المسيب', lat: 32.5800, lng: 44.3800, approxDistanceKm: 45),
@@ -57,10 +56,6 @@ const List<IraqiCity> iraqiCities = [
   IraqiCity(name: 'الدغارة', lat: 32.3000, lng: 46.2000, approxDistanceKm: 240),
   IraqiCity(name: 'السنية', lat: 32.4500, lng: 46.0500, approxDistanceKm: 220),
   IraqiCity(name: 'الحمزة الغربي', lat: 31.7500, lng: 44.6500, approxDistanceKm: 150),
-  IraqiCity(name: 'الخضر', lat: 31.8500, lng: 44.6000, approxDistanceKm: 140),
-  IraqiCity(name: 'الشنافية', lat: 31.5800, lng: 44.6500, approxDistanceKm: 160),
   IraqiCity(name: 'الدغارة', lat: 32.3000, lng: 46.2000, approxDistanceKm: 240),
   IraqiCity(name: 'السماوة', lat: 31.3234, lng: 45.2830, approxDistanceKm: 250),
-  IraqiCity(name: 'الخضر', lat: 31.8500, lng: 44.6000, approxDistanceKm: 140),
-  IraqiCity(name: 'الشنافية', lat: 31.5800, lng: 44.6500, approxDistanceKm: 160),
 ];
