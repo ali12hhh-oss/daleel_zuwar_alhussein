@@ -116,7 +116,7 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const MawaddaScreen())),
           ),
           SectionCard(
-            title: 'معركة الطف',
+            title: 'احداث معركة الطف',
             subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
             icon: Icons.history_edu,
             onTap: () => Navigator.push(context,
