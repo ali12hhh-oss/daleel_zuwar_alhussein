@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../theme.dart';
 import '../data/ahlulbayt_dates_data.dart';
 import '../models/models.dart';
@@ -20,11 +21,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  // ✅ مشغّل صوت مخصص فقط لمعاينة صوت الأذان داخل شاشة الإعدادات (منفصل
+  // تماماً عن آلية جدولة إشعارات الأذان الفعلية في prayer_times_screen)
+  final AudioPlayer _previewPlayer = AudioPlayer();
+
   bool _notificationsEnabled = false;
   bool _prayerTimeReminder = false;
   bool _eventsReminder = false;
   bool _muharramReminder = false;
   bool _loading = true;
+
+  // ✅ إعدادات صوت الأذان الجديدة: نمط التنبيه (صوت / اهتزاز / صامت)
+  // ومستوى صوت المعاينة داخل التطبيق. تُقرأ من قِبل شاشة مواقيت الصلاة
+  // عند جدولة إشعارات الأذان الفعلية.
+  String _adhanSoundMode = 'sound'; // 'sound' | 'vibrate' | 'silent'
+  double _adhanVolume = 1.0;
+  // ✅ اختيار مقطع الأذان: 'adhan1' أو 'adhan2' - يجب أن يكون لكل منهما
+  // نسخة في android/app/src/main/res/raw/ (للإشعار الفعلي) ونسخة في
+  // assets/sounds/ (لزر المعاينة داخل التطبيق)، بنفس الاسم بالضبط.
+  String _adhanSoundFile = 'adhan1'; // 'adhan1' | 'adhan2'
 
   @override
   void initState() {
@@ -33,12 +48,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
+  @override
+  void dispose() {
+    _previewPlayer.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _prayerTimeReminder = prefs.getBool('prayerTimeReminder') ?? false;
       _eventsReminder = prefs.getBool('eventsReminder') ?? false;
       _muharramReminder = prefs.getBool('muharramReminder') ?? false;
+      _adhanSoundMode = prefs.getString('adhanSoundMode') ?? 'sound';
+      _adhanVolume = prefs.getDouble('adhanVolume') ?? 1.0;
+      _adhanSoundFile = prefs.getString('adhanSoundFile') ?? 'adhan1';
       _loading = false;
     });
   }
@@ -46,6 +70,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSetting(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+  }
+
+  /// ✅ حفظ نمط تنبيه الأذان (صوت/اهتزاز/صامت). شاشة مواقيت الصلاة تقرأ
+  /// هذه القيمة قبل كل عملية جدولة، وتبني معرّف قناة إشعار مختلف لكل
+  /// نمط (channel id يتضمن اسم النمط) لأن قنوات أندرويد لا يمكن تعديل
+  /// إعداداتها (كالصوت) بعد إنشائها لأول مرة.
+  Future<void> _saveAdhanSoundMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('adhanSoundMode', mode);
+    setState(() => _adhanSoundMode = mode);
+  }
+
+  Future<void> _saveAdhanVolume(double volume) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('adhanVolume', volume);
+    setState(() => _adhanVolume = volume);
+  }
+
+  /// ✅ حفظ اختيار مقطع الأذان (adhan1 أو adhan2).
+  Future<void> _saveAdhanSoundFile(String file) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('adhanSoundFile', file);
+    setState(() => _adhanSoundFile = file);
+  }
+
+  /// ✅ تشغيل معاينة صوت الأذان المختار (adhan1 أو adhan2) بمستوى الصوت
+  /// المحدد، داخل التطبيق فقط. ملاحظة مهمة: هذا يشغّل نسخة الصوت من
+  /// assets/sounds/<fileName>.mp3 (نسخة منفصلة عن ملفات
+  /// android/app/src/main/res/raw/<fileName>.mp3 المستخدمة فعلياً في
+  /// إشعارات الأذان المجدولة عند إغلاق التطبيق) - لأن مشغّلات الصوت داخل
+  /// التطبيق (audioplayers) لا يمكنها الوصول لموارد أندرويد الأصلية
+  /// (raw) مباشرة، فقط لملفات assets الخاصة بفلاتر.
+  Future<void> _previewAdhanSound(String fileName) async {
+    try {
+      await _previewPlayer.stop();
+      await _previewPlayer.setVolume(_adhanVolume);
+      await _previewPlayer.play(AssetSource('sounds/$fileName.mp3'));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'تعذّر تشغيل المعاينة. تأكد من وجود assets/sounds/$fileName.mp3',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _initNotifications() async {
@@ -502,6 +574,127 @@ https://github.com/daleelzuwar/alhussein''',
                 : null,
           ),
 
+          // ✅ قسم صوت الأذان الجديد: نمط التنبيه (صوت/اهتزاز/صامت)
+          // + مستوى صوت معاينة داخل التطبيق
+          if (_notificationsEnabled && _prayerTimeReminder) ...[
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.volume_up, color: AppColors.primaryGreen, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'نمط تنبيه الأذان',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('🔊 صوت'),
+                          selected: _adhanSoundMode == 'sound',
+                          selectedColor: AppColors.primaryGreen,
+                          labelStyle: TextStyle(
+                            color: _adhanSoundMode == 'sound' ? Colors.white : Colors.black87,
+                            fontWeight: _adhanSoundMode == 'sound' ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          onSelected: (_) => _saveAdhanSoundMode('sound'),
+                        ),
+                        ChoiceChip(
+                          label: const Text('📳 اهتزاز فقط'),
+                          selected: _adhanSoundMode == 'vibrate',
+                          selectedColor: AppColors.primaryGreen,
+                          labelStyle: TextStyle(
+                            color: _adhanSoundMode == 'vibrate' ? Colors.white : Colors.black87,
+                            fontWeight: _adhanSoundMode == 'vibrate' ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          onSelected: (_) => _saveAdhanSoundMode('vibrate'),
+                        ),
+                        ChoiceChip(
+                          label: const Text('🔕 صامت'),
+                          selected: _adhanSoundMode == 'silent',
+                          selectedColor: AppColors.primaryGreen,
+                          labelStyle: TextStyle(
+                            color: _adhanSoundMode == 'silent' ? Colors.white : Colors.black87,
+                            fontWeight: _adhanSoundMode == 'silent' ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          onSelected: (_) => _saveAdhanSoundMode('silent'),
+                        ),
+                      ],
+                    ),
+                    if (_adhanSoundMode == 'sound') ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'اختر مقطع الأذان',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      Column(
+                        children: [
+                          _AdhanSoundOption(
+                            label: 'الصوت الأول',
+                            selected: _adhanSoundFile == 'adhan1',
+                            onSelect: () => _saveAdhanSoundFile('adhan1'),
+                            onPreview: () => _previewAdhanSound('adhan1'),
+                          ),
+                          const SizedBox(height: 6),
+                          _AdhanSoundOption(
+                            label: 'الصوت الثاني',
+                            selected: _adhanSoundFile == 'adhan2',
+                            onSelect: () => _saveAdhanSoundFile('adhan2'),
+                            onPreview: () => _previewAdhanSound('adhan2'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'مستوى صوت المعاينة داخل التطبيق',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.volume_down, size: 18, color: Colors.grey),
+                          Expanded(
+                            child: Slider(
+                              value: _adhanVolume,
+                              min: 0.0,
+                              max: 1.0,
+                              activeColor: AppColors.primaryGreen,
+                              onChanged: (v) => setState(() => _adhanVolume = v),
+                              onChangeEnd: (v) => _saveAdhanVolume(v),
+                            ),
+                          ),
+                          const Icon(Icons.volume_up, size: 18, color: Colors.grey),
+                          IconButton(
+                            icon: const Icon(Icons.play_circle_fill, color: AppColors.primaryGreen),
+                            tooltip: 'تجربة الصوت المختار',
+                            onPressed: () => _previewAdhanSound(_adhanSoundFile),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'الشريط أعلاه يتحكم بصوت أزرار "▶ تجربة" داخل التطبيق فقط.\n'
+                        'صوت إشعار الأذان الفعلي عند إغلاق التطبيق يتبع مستوى '
+                        'صوت الإشعارات في إعدادات الجهاز نفسه (قيد تحكم أندرويد) - '
+                        'يمكنك ضبطه من: إعدادات الهاتف ← التطبيقات ← دليل زوار الحسين ← الإشعارات.',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600], height: 1.6),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           _NotificationTile(
             icon: Icons.calendar_today,
             title: 'تذكير المناسبات التلقائي',
@@ -674,6 +867,63 @@ https://github.com/daleelzuwar/alhussein''',
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AdhanSoundOption extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onSelect;
+  final VoidCallback onPreview;
+
+  const _AdhanSoundOption({
+    required this.label,
+    required this.selected,
+    required this.onSelect,
+    required this.onPreview,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onSelect,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryGreen.withOpacity(0.1) : null,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? AppColors.primaryGreen : Colors.grey[300]!,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: selected ? AppColors.primaryGreen : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.play_circle_outline, color: AppColors.primaryGreen),
+              tooltip: 'تجربة $label',
+              onPressed: onPreview,
+            ),
+          ],
+        ),
       ),
     );
   }
