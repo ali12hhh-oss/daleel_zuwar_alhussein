@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import '../theme.dart';
 
@@ -29,6 +30,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  // ✅ نمط تنبيه الأذان المحفوظ من شاشة الإعدادات: 'sound' | 'vibrate' | 'silent'
+  // يُقرأ من SharedPreferences قبل كل عملية جدولة (وليس مرة واحدة فقط)
+  // حتى يعكس أي تغيير يجريه المستخدم في الإعدادات دون الحاجة لإعادة فتح
+  // التطبيق بالكامل.
+  String _adhanSoundMode = 'sound';
+  // ✅ مقطع الأذان المختار: 'adhan1' أو 'adhan2' - يجب أن يقابله ملف فعلي
+  // بنفس الاسم داخل android/app/src/main/res/raw/
+  String _adhanSoundFile = 'adhan1';
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +59,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   Future<void> _initNotifications() async {
     // ✅ تهيئة التوقيت المحلي، مطلوبة لأي جدولة دقيقة عبر zonedSchedule
+    // ملاحظة إصلاح: لا يجوز قراءة tz.local قبل تعيينه. كان الكود سابقاً
+    // tz.setLocalLocation(tz.local) وهذا خطأ دائري (يحاول قراءة قيمة لم
+    // تُعيَّن بعد)، فيرمي LateInitializationError فور استدعائه. هذا
+    // الاستثناء كان يُمسك لاحقاً داخل try/catch حساب الأوقات ويُظهر
+    // رسالة "إعادة المحاولة" رغم أن الأوقات كانت محسوبة بنجاح أصلاً.
+    // بما أن التطبيق مخصص للعراق (منطقة زمنية واحدة، بدون توقيت صيفي
+    // حالياً)، نحدد المنطقة صراحة بدل الاعتماد على قراءة ذاتية.
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
 
@@ -72,6 +89,63 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return tz.TZDateTime.from(dt, tz.local);
   }
 
+  /// ✅ يقرأ نمط تنبيه الأذان ومقطع الصوت المختار من شاشة الإعدادات.
+  Future<void> _loadAdhanSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _adhanSoundMode = prefs.getString('adhanSoundMode') ?? 'sound';
+      _adhanSoundFile = prefs.getString('adhanSoundFile') ?? 'adhan1';
+    });
+  }
+
+  /// ✅ معرّف قناة الإشعار يتضمن نمط الصوت + مقطع الصوت المختار معاً.
+  /// السبب: قنوات إشعارات أندرويد (Notification Channels) لا يمكن تعديل
+  /// إعداداتها (كالصوت أو الاهتزاز) بعد إنشائها لأول مرة - محاولة تغييرها
+  /// ببساطة تُتجاهل من النظام. لذلك عند تغيير المستخدم للنمط أو المقطع
+  /// من الإعدادات، نستخدم معرّف قناة مختلف فيُنشئ أندرويد قناة جديدة
+  /// فعلياً بالإعدادات الصحيحة بدل إعادة استخدام قناة قديمة بإعدادات قديمة.
+  String get _adhanChannelId => 'adhan_channel_v3_${_adhanSoundMode}_$_adhanSoundFile';
+
+  /// ✅ يبني تفاصيل إشعار أندرويد حسب نمط الصوت المختار من الإعدادات.
+  AndroidNotificationDetails _buildAdhanAndroidDetails() {
+    switch (_adhanSoundMode) {
+      case 'vibrate':
+        return AndroidNotificationDetails(
+          _adhanChannelId,
+          'أذان الصلاة',
+          channelDescription: 'تذكير بأوقات الأذان (اهتزاز فقط)',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: false,
+          enableVibration: true,
+        );
+      case 'silent':
+        return AndroidNotificationDetails(
+          _adhanChannelId,
+          'أذان الصلاة',
+          channelDescription: 'تذكير بأوقات الأذان (صامت)',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: false,
+          enableVibration: false,
+        );
+      case 'sound':
+      default:
+        return AndroidNotificationDetails(
+          _adhanChannelId,
+          'أذان الصلاة',
+          channelDescription: 'تذكير بأوقات الأذان',
+          importance: Importance.high,
+          priority: Priority.high,
+          sound: RawResourceAndroidNotificationSound(_adhanSoundFile),
+          playSound: true,
+          enableVibration: true,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+        );
+    }
+  }
+
   /// يجدول إشعار أذان حقيقي في وقته بالضبط، يعمل حتى لو التطبيق مغلق
   /// تماماً أو الجهاز نائم، لأن نظام أندرويد نفسه هو من يطلقه بالوقت
   /// المحدد (بعكس مراقبة الوقت داخل التطبيق اللي تتوقف إذا انسكرت الشاشة).
@@ -83,42 +157,28 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     // لا تجدول وقتاً فات بالفعل اليوم
     if (time.isBefore(DateTime.now())) return;
 
-    const androidDetails = AndroidNotificationDetails(
-      'adhan_channel_v2',
-      'أذان الصلاة',
-      channelDescription: 'تذكير بأوقات الأذان',
-      importance: Importance.high,
-      priority: Priority.high,
-      sound: RawResourceAndroidNotificationSound('adhan'),
-      playSound: true,
-      enableVibration: true,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
-    );
-    const notificationDetails = NotificationDetails(android: androidDetails);
+    final notificationDetails =
+        NotificationDetails(android: _buildAdhanAndroidDetails());
 
-    // ✅ نغلّف الجدولة بـ try/catch: لو صوت adhan.mp3 غير موجود بالـ APK
-    // المُثبّت (مثلاً بسبب بناء قديم لم يشمل الملف)، تُرمى
-    // PlatformException(invalid_sound). سابقاً هذا الاستثناء كان يفلت
-    // للأعلى ويكسر شاشة مواقيت الصلاة بالكامل رغم أن الأوقات محسوبة
-    // بنجاح. الآن نمسك الخطأ محلياً فقط، ونكمل عرض المواقيت بشكل طبيعي.
-    try {
-      await _notificationsPlugin.zonedSchedule(
-        id,
-        'حان وقت أذان $prayerName',
-        'الساعة ${_formatTime12Hour(time)}',
-        _toTZDateTime(time),
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-    } catch (e) {
-      debugPrint('⚠️ فشل جدولة إشعار $prayerName: $e');
-    }
+    await _notificationsPlugin.zonedSchedule(
+      id,
+      'حان وقت أذان $prayerName',
+      'الساعة ${_formatTime12Hour(time)}',
+      _toTZDateTime(time),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 
   /// يجدول أذانات اليوم الثلاثة دفعة واحدة بعد ما تُحسب أوقاتها.
   Future<void> _scheduleAllAdhans() async {
+    // ✅ نعيد قراءة الإعدادات هنا (وليس مرة واحدة في initState فقط) حتى
+    // تنعكس أي تغييرات أجراها المستخدم في شاشة الإعدادات فوراً عند أي
+    // تحديث لاحق لمواقيت الصلاة (سحب للتحديث مثلاً).
+    await _loadAdhanSettings();
+
     if (_fajrAdhan != null) {
       await _scheduleAdhanNotification(1001, 'الفجر', _fajrAdhan!);
     }
@@ -131,37 +191,16 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Future<void> _showAdhanNotification(String prayerName, String time) async {
-    const androidDetails = AndroidNotificationDetails(
-      'adhan_channel_v2',
-      'أذان الصلاة',
-      channelDescription: 'تذكير بأوقات الأذان',
-      importance: Importance.high,
-      priority: Priority.high,
-      sound: RawResourceAndroidNotificationSound('adhan'),
-      playSound: true,
-      enableVibration: true,
-    );
-    const notificationDetails = NotificationDetails(android: androidDetails);
+    await _loadAdhanSettings();
+    final notificationDetails =
+        NotificationDetails(android: _buildAdhanAndroidDetails());
 
-    // ✅ نفس مبدأ الحماية أعلاه: لا نكسر الشاشة لو ملف الصوت غير موجود
-    // بالـ APK الحالي، بل نعرض رسالة واضحة تشرح السبب الحقيقي للمستخدم.
-    try {
-      await _notificationsPlugin.show(
-        prayerName.hashCode,
-        'حان وقت أذان $prayerName',
-        'الساعة $time',
-        notificationDetails,
-      );
-    } catch (e) {
-      debugPrint('⚠️ فشل تشغيل صوت الأذان: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تعذر تشغيل صوت الأذان. تأكد من تحديث التطبيق لآخر إصدار'),
-          ),
-        );
-      }
-    }
+    await _notificationsPlugin.show(
+      prayerName.hashCode,
+      'حان وقت أذان $prayerName',
+      'الساعة $time',
+      notificationDetails,
+    );
   }
 
   Future<void> _getLocationAndCalculate() async {
@@ -205,13 +244,18 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _midnight = times['midnight'];
         _loading = false;
       });
-
       // ✅ جدولة إشعارات الأذان الحقيقية فور توفر أوقات اليوم.
-      // مهم: هذا الاستدعاء الآن خارج المسؤولية عن نجاح/فشل عرض
-      // المواقيت - أي خطأ بالصوت أو الجدولة يُمسك داخلياً بـ
-      // _scheduleAdhanNotification ولا يوصل هنا إطلاقاً، فـ setState
-      // أعلاه (عرض المواقيت) دائماً ينجح بغض النظر عن حالة الصوت.
-      await _scheduleAllAdhans();
+      // ملاحظة مهمة: جدولة الإشعارات معزولة الآن بـ try/catch خاص بها،
+      // لأنها عملية "إضافية" منفصلة عن عرض الأوقات. فشلها (مثلاً بسبب
+      // نقص ملف صوت raw resource، أو رفض إذن الإشعارات) لا يجب أن يوقف
+      // عرض مواقيت الصلاة على الشاشة، وهذا ما كان يحدث سابقاً: أي خطأ
+      // هنا كان يُمسك في catch الخارجي فيُظهر "إعادة المحاولة" ويخفي كل
+      // شيء رغم أن الأوقات محسوبة وصحيحة بالفعل.
+      try {
+        await _scheduleAllAdhans();
+      } catch (e) {
+        debugPrint('تعذّرت جدولة إشعارات الأذان: $e');
+      }
     } catch (e) {
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
@@ -276,10 +320,29 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return nearest;
   }
 
+  // ==================== محرك حساب مواقيت الصلاة ====================
+  //
+  // يعتمد على حساب الموقع الفلكي الحقيقي للشمس (اليوم اليولياني + معادلة
+  // الزمن + ميل الشمس)، ثم يحسب كل وقت بتوقيت UTC أولاً، ويحوَّل بعدها
+  // تلقائياً لتوقيت الجهاز المحلي عبر toLocal() لتفادي أي خلط يدوي بين
+  // التوقيتات.
+  //
+  // زاوية الفجر (18°) وزاوية المغرب (4.5°) لم تتغيّر - هي نفس القيم
+  // المعتمدة أصلاً حسب كراس مواقيت السيد السيستاني دام ظله.
+  //
+  // ✅ تصحيح فقهي 1: نهاية وقت الظهرين (الظهر والعصر) هي "مغيب قرص
+  // الشمس" (sunset، زاوية 0.833°)، وليست "غياب الحمرة المشرقية" (زاوية
+  // 4.5° وهي بداية وقت المغربين). لذلك _isCurrentPrayer ونهاية عرض وقت
+  // الظهر تعتمدان الآن على _sunset وليس _maghribAdhan.
+  //
+  // ✅ تصحيح فقهي 2: منتصف الليل الشرعي = منتصف المدة بين غروب الشمس
+  // وطلوع الفجر الصادق لليوم التالي (وليس شروق الشمس). لذلك نحسب الآن
+  // "فجر الغد" بزاوية الفجر (18°) بدل شروق الغد بزاوية الشروق.
+
   Map<String, DateTime> _calculateShiaPrayerTimes(double lat, double lng, DateTime date) {
     const fajrAngle = 18.0;
     const maghribAngle = 4.5;
-    const sunriseSunsetAngle = 0.833;
+    const sunriseSunsetAngle = 0.833; // زاوية الشروق/الغروب الظاهري (مع الانكسار الجوي)
 
     final sunToday = _sunPosition(_julianDate(date.year, date.month, date.day));
     final dhuhrUtc = 12.0 - (lng / 15.0) - sunToday.equationOfTime;
@@ -294,6 +357,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final sunset = _utcHoursToLocalDateTime(date, dhuhrUtc + riseSetT);
     final maghribAdhan = _utcHoursToLocalDateTime(date, dhuhrUtc + maghribT);
 
+    // ✅ فجر الغد (وليس شروق الغد)، لحساب منتصف الليل الشرعي بشكل صحيح
+    // بين غروب اليوم وطلوع الفجر الصادق لليوم التالي
     final tomorrow = date.add(const Duration(days: 1));
     final sunTomorrow = _sunPosition(_julianDate(tomorrow.year, tomorrow.month, tomorrow.day));
     final dhuhrTomorrowUtc = 12.0 - (lng / 15.0) - sunTomorrow.equationOfTime;
@@ -314,6 +379,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     };
   }
 
+  /// اليوم اليولياني (Julian Day) لتاريخ ميلادي معيّن عند الساعة 00:00 UT
   double _julianDate(int year, int month, int day) {
     var y = year;
     var m = month;
@@ -328,6 +394,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         day + b - 1524.5;
   }
 
+  /// موقع الشمس: ميل الشمس (declination) ومعادلة الزمن (equation of time)
   _SunPosition _sunPosition(double jd) {
     final d = jd - 2451545.0;
     final g = _fixAngle(357.529 + 0.98560028 * d);
@@ -365,6 +432,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return r < 0 ? r + 24.0 : r;
   }
 
+  /// الفارق الزمني (بالساعات) بين الزوال وبين لحظة وصول الشمس لزاوية معيّنة تحت الأفق
   double _sunAngleTime(double angle, double lat, double decl) {
     final numerator = -math.sin(angle * math.pi / 180.0) -
         math.sin(lat * math.pi / 180.0) * math.sin(decl * math.pi / 180.0);
@@ -373,6 +441,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return math.acos(ratio) * 180.0 / math.pi / 15.0;
   }
 
+  /// يحوّل عدد ساعات بتوقيت UTC (قد يكون كسرياً) إلى DateTime بتوقيت الجهاز المحلي
   DateTime _utcHoursToLocalDateTime(DateTime date, double hours) {
     final totalMinutes = (hours * 60).round();
     return DateTime.utc(date.year, date.month, date.day)
@@ -409,6 +478,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       case 'fajr':
         return now.isAfter(_fajrAdhan!) && now.isBefore(_sunrise!);
       case 'dhuhr':
+        // ✅ تصحيح: وقت الظهرين ينتهي بغروب الشمس (مغيب قرص الشمس)،
+        // وليس بغياب الحمرة المشرقية (وهي بداية وقت المغربين لاحقاً)
         return now.isAfter(_dhuhrAdhan!) && now.isBefore(_sunset!);
       case 'maghrib':
         return now.isAfter(_maghribAdhan!) && now.isBefore(_midnight!);
@@ -581,6 +652,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 name: 'أذان الظهر',
                 time: _formatTime12Hour(_dhuhrAdhan!),
                 subtitle: 'من زوال الشمس إلى مغيب قرص الشمس',
+                // ✅ تصحيح: ينتهي وقت الظهرين بالغروب (_sunset)، وليس
+                // بوقت أذان المغرب (_maghribAdhan) الذي هو غياب الحمرة
                 endTime: 'ينتهي: ${_formatTime12Hour(_sunset!)}',
                 icon: Icons.sunny,
                 isCurrent: _isCurrentPrayer('dhuhr'),
@@ -601,6 +674,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
               const SizedBox(height: 6),
 
+              // صف الشروق / الغروب / منتصف الليل
               Card(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
