@@ -9,6 +9,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../theme.dart';
 import '../data/ahlulbayt_dates_data.dart';
 import '../models/models.dart';
+import '../models/hijri_month.dart';
+import '../services/hijri_calendar_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -44,8 +46,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _initNotifications();
-    _loadSettings();
+    _initApp();
+  }
+
+  /// ✅ نُشغّل التهيئة بالتسلسل وليس بالتوازي، لسببين اثنين.
+  /// أولاً: تفادي تصادم نوافذ صلاحيات النظام إن استُدعيت شاشات أخرى معاً.
+  /// ثانياً وهو الأهم هنا: _loadSettings() تتحقق من قيمة _notificationsEnabled
+  ///    لتقرر هل تُعيد جدولة تذكير المناسبات تلقائياً. إن استدعيناها قبل
+  ///    اكتمال _initNotifications() فعلياً، ستقرأ القيمة الافتراضية
+  ///    (false) الخاطئة حتى لو كانت الإشعارات مفعّلة فعلاً على الجهاز.
+  Future<void> _initApp() async {
+    await _initNotifications();
+    await _loadSettings();
   }
 
   @override
@@ -65,6 +77,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _adhanSoundFile = prefs.getString('adhanSoundFile') ?? 'adhan1';
       _loading = false;
     });
+
+    // ✅ إذا كان تذكير المناسبات مفعّلاً مسبقاً، نعيد جدولته من جديد في
+    // كل مرة تُفتح فيها شاشة الإعدادات (وليس فقط عند أول تفعيل). السبب:
+    // جدول hijri_calendar.json يُحدَّث دورياً عن بُعد (شهر جديد يُعلن)،
+    // فإعادة الجدولة هنا تضمن مطابقة أي مناسبات جديدة أصبحت الآن ضمن
+    // نطاق الجدول المنشور، دون انتظار المستخدم لإعادة تفعيل المفتاح يدوياً.
+    if (_notificationsEnabled && _eventsReminder) {
+      // لا ننتظر (await) هذه العملية عمداً حتى لا تُبطئ فتح الشاشة،
+      // فهي عملية شبكة قد تستغرق وقتاً وليست حرجة للعرض الفوري.
+      _scheduleEventsReminders();
+    }
   }
 
   Future<void> _saveSetting(String key, bool value) async {
@@ -102,11 +125,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// إشعارات الأذان المجدولة عند إغلاق التطبيق) - لأن مشغّلات الصوت داخل
   /// التطبيق (audioplayers) لا يمكنها الوصول لموارد أندرويد الأصلية
   /// (raw) مباشرة، فقط لملفات assets الخاصة بفلاتر.
+  ///
+  /// ✅ إصلاح: كان الكود يستدعي setVolume() ثم play() بشكل منفصل، وهذا
+  /// لا يُطبَّق بشكل موثوق في audioplayers لأن تحميل مصدر صوت جديد قد
+  /// يُعيد ضبط مستوى الصوت لقيمته الافتراضية (1.0) بعد استدعاء setVolume
+  /// وقبل بدء التشغيل الفعلي. الحل الصحيح هو تمرير مستوى الصوت مباشرة
+  /// كمعامل volume إلى play() نفسها، وهذا مضمون التطبيق دائماً.
   Future<void> _previewAdhanSound(String fileName) async {
     try {
       await _previewPlayer.stop();
-      await _previewPlayer.setVolume(_adhanVolume);
-      await _previewPlayer.play(AssetSource('sounds/$fileName.mp3'));
+      await _previewPlayer.play(
+        AssetSource('sounds/$fileName.mp3'),
+        volume: _adhanVolume,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,8 +151,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// ✅ يُستدعى أثناء سحب شريط الصوت مباشرة (وليس فقط عند تركه)، حتى
+  /// يسمع المستخدم تأثير رفع/خفض الصوت فوراً إن كان الصوت قيد التشغيل
+  /// فعلاً، بدل الحاجة لإيقاف التشغيل وإعادة الضغط على "تجربة" في كل مرة.
+  Future<void> _applyLiveVolumePreview(double volume) async {
+    try {
+      await _previewPlayer.setVolume(volume);
+    } catch (_) {
+      // لا شيء يستدعي التصرف هنا؛ لو لم يكن هناك تشغيل جارٍ فلا تأثير له أصلاً
+    }
+  }
+
   Future<void> _initNotifications() async {
+    // ✅ إصلاح: لم يكن هذا الملف يستدعي tz.setLocalLocation() إطلاقاً
+    // سابقاً (فقط initializeTimeZones())، وهذا كان سيرمي استثناءً فوراً
+    // (LateInitializationError) بمجرد استخدام أي جدولة حقيقية عبر
+    // zonedSchedule التي تعتمد على tz.local. لم يظهر هذا الخلل سابقاً
+    // لأن دالة الجدولة (_scheduleNotification) لم تكن تُستدعى من أي
+    // مكان في الواجهة بعد. بما أن التطبيق مخصص للعراق (منطقة زمنية
+    // واحدة)، نحدد المنطقة صراحة.
     tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -163,6 +213,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // ==================== تذكير المناسبات التلقائي ====================
+  //
+  // آلية العمل: نجلب جدول الأشهر الهجرية المنشور فعلياً (نفس مصدر شارة
+  // التاريخ الهجري في الشاشة الرئيسية)، ثم لكل مناسبة في ahlulBaytEvents
+  // نستخرج اليوم والشهر من الرواية الأشهر (isMostFamous)، ونطابقها مع
+  // الجدول لحساب التاريخ الميلادي الفعلي، ثم نجدول إشعاراً في الساعة 8
+  // صباحاً من ذلك اليوم. أي مناسبة يقع شهرها خارج الجدول المنشور حالياً
+  // (عادة أشهر بعيدة لم تُعلن رؤية هلالها بعد) تُتجاهل بصمت هذه الدورة،
+  // وستُطابَق تلقائياً في المرة القادمة التي يُحدَّث فيها الجدول ويُعاد
+  // تشغيل الجدولة (انظر _loadSettings أعلاه).
+
+  /// نطاق مُعرّفات إشعارات المناسبات (لتفادي التصادم مع قنوات أخرى،
+  /// ولتمكين إلغائها تحديداً دون التأثير على إشعارات الأذان مثلاً).
+  static const int _eventsNotificationIdBase = 5000;
+
+  /// أسماء الأشهر الهجرية كما تظهر بالضبط في hijri_calendar.json، مرتبة
+  /// من الأطول فالأقصر لتفادي تطابق جزئي خاطئ (مثال: "ربيع الأول" يجب
+  /// أن يُفحص قبل "ربيع" لو وُجد استخدام مختصر لاحقاً).
+  static const List<String> _calendarMonthNames = [
+    'جمادى الأولى',
+    'جمادى الآخرة',
+    'ربيع الأول',
+    'ربيع الآخر',
+    'ذو القعدة',
+    'ذو الحجة',
+    'محرم',
+    'صفر',
+    'رجب',
+    'شعبان',
+    'رمضان',
+    'شوال',
+  ];
+
+  /// بعض المناسبات في ahlulbayt_dates_data.dart تستخدم تسميات مرادفة
+  /// لنفس الشهر تختلف عن التسمية المعتمدة في hijri_calendar.json
+  /// (مثال: "ربيع الثاني" هو نفسه "ربيع الآخر"). هذا القاموس يوحّدها.
+  static const Map<String, String> _monthNameSynonyms = {
+    'ربيع الثاني': 'ربيع الآخر',
+  };
+
+  /// يحاول استخراج رقم اليوم الهجري من نص الرواية (hijriDate)، بالبحث
+  /// عن رقم يسبق مباشرة اسم شهر معروف من _calendarMonthNames (بعد توحيد
+  /// المرادفات). يتعامل مع صيغ مثل "10 محرم (يوم عاشوراء)" و
+  /// "آخر يوم من صفر (29 صفر)" لأن الرقم يظهر قبل اسم الشهر في كلتا
+  /// الحالتين. يُعيد null إن لم يوجد رقم يوم محدد (مثل "غير محدد بدقة").
+  ({int day, String monthName})? _extractDayAndMonth(String hijriDateRaw) {
+    var text = hijriDateRaw;
+    for (final entry in _monthNameSynonyms.entries) {
+      text = text.replaceAll(entry.key, entry.value);
+    }
+
+    for (final monthName in _calendarMonthNames) {
+      final pattern = RegExp('(\\d{1,2})\\s*' + RegExp.escape(monthName));
+      final match = pattern.firstMatch(text);
+      if (match != null) {
+        final day = int.tryParse(match.group(1)!);
+        if (day != null && day >= 1 && day <= 30) {
+          return (day: day, monthName: monthName);
+        }
+      }
+    }
+    return null;
+  }
+
+  /// يحوّل يوم+شهر هجري إلى تاريخ ميلادي فعلي، بالبحث عن الشهر المطابق
+  /// ضمن جدول الأشهر المنشور. يُعيد null إن لم يكن الشهر منشوراً بعد.
+  DateTime? _hijriToGregorian(
+      int day, String monthName, List<HijriMonthEntry> months) {
+    for (final month in months) {
+      if (month.name == monthName && day <= month.days) {
+        return month.startDate.add(Duration(days: day - 1));
+      }
+    }
+    return null;
+  }
+
+  /// يجدول إشعاراً واحداً لمناسبة معيّنة في الساعة 8 صباحاً من تاريخها.
+  Future<void> _scheduleEventNotification({
+    required int id,
+    required AhlulBaytEvent event,
+    required DateTime gregorianDate,
+  }) async {
+    final scheduledTime = DateTime(
+      gregorianDate.year,
+      gregorianDate.month,
+      gregorianDate.day,
+      8, // الساعة 8 صباحاً
+    );
+
+    // لا تجدول تاريخاً فات بالفعل
+    if (scheduledTime.isBefore(DateTime.now())) return;
+
+    final isBirth = event.kind == EventKind.birth;
+    final title = isBirth
+        ? 'ذكرى ولادة ${event.personName}'
+        : 'ذكرى استشهاد/وفاة ${event.personName}';
+
+    const androidDetails = AndroidNotificationDetails(
+      'events_channel_v1',
+      'تذكير المناسبات',
+      channelDescription: 'تذكير تلقائي بولادات ووفيات أهل البيت عليهم السلام',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    await _notificationsPlugin.zonedSchedule(
+      id,
+      title,
+      event.description,
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  /// ✅ الدالة الرئيسية: تمر على كل مناسبات أهل البيت، تطابق كل واحدة مع
+  /// التاريخ الميلادي الفعلي عبر الجدول المنشور، وتجدول إشعاراً لكل ما
+  /// أمكن مطابقته ولم يفت وقته بعد.
+  Future<void> _scheduleEventsReminders() async {
+    final months = await HijriCalendarService.getMonths();
+    if (months.isEmpty) return; // لا يوجد اتصال ولا نسخة مخزّنة محلياً
+
+    for (var i = 0; i < ahlulBaytEvents.length; i++) {
+      final event = ahlulBaytEvents[i];
+      if (event.narrations.isEmpty) continue;
+
+      final famousNarration = event.narrations.firstWhere(
+        (n) => n.isMostFamous,
+        orElse: () => event.narrations.first,
+      );
+
+      final parsed = _extractDayAndMonth(famousNarration.hijriDate);
+      if (parsed == null) continue; // لا يوجد يوم محدد بدقة لهذه المناسبة
+
+      final gregorianDate =
+          _hijriToGregorian(parsed.day, parsed.monthName, months);
+      if (gregorianDate == null) continue; // الشهر خارج الجدول المنشور حالياً
+
+      await _scheduleEventNotification(
+        id: _eventsNotificationIdBase + i,
+        event: event,
+        gregorianDate: gregorianDate,
+      );
+    }
+  }
+
+  /// يلغي فقط إشعارات المناسبات المجدولة (دون التأثير على إشعارات
+  /// الأذان أو غيرها)، لأن معرّفاتها كلها ضمن نطاق ثابت معروف.
+  Future<void> _cancelEventsReminders() async {
+    for (var i = 0; i < ahlulBaytEvents.length; i++) {
+      await _notificationsPlugin.cancel(_eventsNotificationIdBase + i);
+    }
+  }
+
   Future<void> _cancelAllNotifications() async {
     await _notificationsPlugin.cancelAll();
     if (mounted) {
@@ -196,41 +403,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ملاحظة: هذه الدالة جاهزة لجدولة إشعارات مستقبلية (مثل مواقيت الصلاة
-  // أو المناسبات تلقائيًا) ولم تُربط بواجهة المستخدم بعد.
-  // ignore: unused_element
-  Future<void> _scheduleNotification({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime scheduledDate,
-  }) async {
-    if (!_notificationsEnabled) {
-      await _requestPermission();
-      return;
-    }
-
-    const androidDetails = AndroidNotificationDetails(
-      'scheduled_channel',
-      'تذكير مجدول',
-      channelDescription: 'إشعارات مجدولة للمناسبات والصلوات',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-
-    const notificationDetails = NotificationDetails(android: androidDetails);
-
-    await _notificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-  }
 
   String _getHijriDate(AhlulBaytEvent event) {
     if (event.narrations.isEmpty) return '';
@@ -669,7 +841,10 @@ https://github.com/daleelzuwar/alhussein''',
                               min: 0.0,
                               max: 1.0,
                               activeColor: AppColors.primaryGreen,
-                              onChanged: (v) => setState(() => _adhanVolume = v),
+                              onChanged: (v) {
+                                setState(() => _adhanVolume = v);
+                                _applyLiveVolumePreview(v);
+                              },
                               onChangeEnd: (v) => _saveAdhanVolume(v),
                             ),
                           ),
@@ -695,6 +870,92 @@ https://github.com/daleelzuwar/alhussein''',
             ),
           ],
 
+          // ✅ بطاقة إرشادية لتعطيل "تحسين البطارية" لهذا التطبيق تحديداً.
+          // أجهزة شاومي/هواوي/سامسونج (الأكثر انتشاراً في العراق) تقتل
+          // الإشعارات المجدولة بصمت لتوفير البطارية، رغم صحة كل الأذونات
+          // في الكود. بدون هذه الخطوة اليدوية من المستخدم، مواقيت الأذان
+          // قد تتوقف عن العمل بعد أيام من التثبيت لدى نسبة كبيرة من
+          // المستخدمين، دون أي خطأ ظاهر في التطبيق نفسه.
+          if (_notificationsEnabled) ...[
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              color: Colors.orange.withOpacity(0.08),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Row(
+                      children: [
+                        Icon(Icons.battery_alert, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text(
+                          'مهم: تعطيل تحسين البطارية',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'بعض الأجهزة (شاومي، هواوي، سامسونج وغيرها) توقف '
+                      'إشعارات الأذان المجدولة تلقائياً بعد فترة لتوفير '
+                      'البطارية، حتى مع تفعيل كل الأذونات بشكل صحيح.\n\n'
+                      'لضمان وصول إشعار الأذان في وقته دائماً، يرجى الذهاب '
+                      'يدوياً إلى:\n'
+                      'إعدادات الهاتف ← البطارية (أو التطبيقات) ← دليل زوار '
+                      'الحسين ← واختيار "بدون قيود" أو تعطيل "تحسين البطارية" '
+                      'لهذا التطبيق تحديداً.',
+                      style: TextStyle(fontSize: 12, height: 1.7),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
+          // ✅ بطاقة إضافية خاصة بأجهزة هواوي/هونور تحديداً (EMUI/Magic UI)
+          // - لديها نظام إدارة تشغيل تطبيقات منفصل تماماً عن "تحسين
+          // البطارية" القياسي في أندرويد. تفعيل "بدون قيود" في تحسين
+          // البطارية وحده لا يكفي إطلاقاً على هذه الأجهزة، وهذا السبب
+          // الأشهر لفشل كل تطبيقات التذكير المجدولة عليها تحديداً.
+          if (_notificationsEnabled) ...[
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              color: Colors.orange.withOpacity(0.08),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Row(
+                      children: [
+                        Icon(Icons.phone_android, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text(
+                          'خاص بأجهزة هواوي / هونور',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'إذا كان هاتفك من هواوي أو هونور، تعطيل "تحسين البطارية" '
+                      'وحده لا يكفي لضمان وصول إشعار الأذان. أضف خطوتين إضافيتين:\n\n'
+                      '1) إعدادات الهاتف ← التطبيقات ← دليل زوار الحسين ← '
+                      '"بدء التشغيل" (App Launch): أوقف "إدارة تلقائية"، '
+                      'وفعّل يدوياً الثلاثة معاً (بدء تلقائي / بدء ثانوي / '
+                      'تشغيل في الخلفية).\n\n'
+                      '2) تطبيق "مدير الهاتف" (Phone Manager) ← البطارية ← '
+                      '"التطبيقات المحمية" (Protected apps): أضف دليل زوار '
+                      'الحسين لهذه القائمة.',
+                      style: TextStyle(fontSize: 12, height: 1.7),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           _NotificationTile(
             icon: Icons.calendar_today,
             title: 'تذكير المناسبات التلقائي',
@@ -704,6 +965,34 @@ https://github.com/daleelzuwar/alhussein''',
                 ? (value) async {
                     setState(() => _eventsReminder = value);
                     await _saveSetting('eventsReminder', value);
+
+                    if (value) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('جاري جدولة تذكيرات المناسبات...'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                      await _scheduleEventsReminders();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم تفعيل تذكير المناسبات'),
+                          ),
+                        );
+                      }
+                    } else {
+                      await _cancelEventsReminders();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم إلغاء تذكير المناسبات'),
+                          ),
+                        );
+                      }
+                    }
                   }
                 : null,
           ),
