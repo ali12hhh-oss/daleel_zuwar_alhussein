@@ -12,7 +12,7 @@ import 'ahlulbayt_dates_screen.dart';
 import 'settings_screen.dart';
 import 'tasbih_screen.dart';
 import 'qibla_screen.dart';
-import 'ziarat_screen.dart';
+import 'duas_ziarat_screen.dart';
 import 'prayer_times_screen.dart';
 import 'crescent_screen.dart';
 import 'books_screen.dart';
@@ -176,14 +176,17 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const QiblaScreen())),
           ),
+          // ✅ تم تغيير الاسم من "الزيارات" إلى "الأدعية والزيارات"،
+          // ويفتح الآن شاشة جامعة تحتوي زرّين (الأدعية / الزيارات)
+          // بدل الانتقال المباشر لشاشة الزيارات وحدها.
           SectionCard(
-            title: 'الزيارات',
-            subtitle: 'زيارة عاشوراء، وارث، الأربعين، العباس، علي الأكبر، الأصحاب',
+            title: 'الأدعية والزيارات',
+            subtitle: 'دعاء كميل والتوسل، زيارة عاشوراء ووارث والأربعين وغيرها',
             icon: Icons.mosque,
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => const ZiaratScreen())),
+                    builder: (_) => const DuasZiaratScreen())),
           ),
           const SizedBox(height: 12),
         ],
