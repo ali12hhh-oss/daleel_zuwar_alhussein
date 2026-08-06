@@ -78,6 +78,8 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+
+          // 1. طريق زائر الحسين
           SectionCard(
             title: 'طريق زائر الحسين',
             subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
@@ -85,6 +87,8 @@ class HomeScreen extends StatelessWidget {
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const RouteScreen())),
           ),
+
+          // 2. أسئلة شرعية
           SectionCard(
             title: 'أسئلة شرعية',
             subtitle: 'اختر المرجع الديني الشيعي واطّلع على الأجوبة الشرعية',
@@ -92,45 +96,8 @@ class HomeScreen extends StatelessWidget {
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ScholarsScreen())),
           ),
-          SectionCard(
-            title: 'أقوال الإمام الحسين عليه السلام',
-            subtitle: 'خطبه وكلماته في كربلاء',
-            icon: Icons.format_quote,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const HusseinQuotesScreen())),
-          ),
-          SectionCard(
-            title: 'خطب اهل البيت ',
-            subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
-            icon: Icons.record_voice_over,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const SabayaScreen())),
-          ),
-          SectionCard(
-            title: 'مودة أهل البيت عليهم السلام',
-            subtitle: 'أحاديث النبي صلى الله عليه وآله في حب أهل البيت',
-            icon: Icons.favorite,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MawaddaScreen())),
-          ),
-          SectionCard(
-            title: 'احداث معركة الطف',
-            subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
-            icon: Icons.history_edu,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const BattleScreen())),
-          ),
-          SectionCard(
-            title: 'ولادات ووفيات أهل البيت',
-            subtitle: 'تواريخ ولادة واستشهاد المعصومين عليهم السلام',
-            icon: Icons.calendar_month,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const AhlulBaytDatesScreen())),
-          ),
+
+          // 3. مواقيت الصلاة
           SectionCard(
             title: 'مواقيت الصلاة',
             subtitle: 'حسب كتيب مواقيت الصلاة للسيد السيستاني',
@@ -140,33 +107,8 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const PrayerTimesScreen())),
           ),
-          SectionCard(
-            title: 'مواقيت الأهلة',
-            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
-            icon: Icons.nightlight_round,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const CrescentScreen())),
-          ),
-          SectionCard(
-            title: 'الكتب الدينية',
-            subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
-            icon: Icons.library_books,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const BooksScreen())),
-          ),
-          SectionCard(
-            title: 'المسبحة الإلكترونية',
-            subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
-            icon: Icons.fingerprint,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const TasbihScreen())),
-          ),
+
+          // 4. اتجاه القبلة
           SectionCard(
             title: 'اتجاه القبلة',
             subtitle: 'حساب اتجاه القبلة حسب موقعك',
@@ -176,9 +118,19 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const QiblaScreen())),
           ),
-          // ✅ تم تغيير الاسم من "الزيارات" إلى "الأدعية والزيارات"،
-          // ويفتح الآن شاشة جامعة تحتوي زرّين (الأدعية / الزيارات)
-          // بدل الانتقال المباشر لشاشة الزيارات وحدها.
+
+          // 5. مواقيت الأهلة
+          SectionCard(
+            title: 'مواقيت الأهلة',
+            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
+            icon: Icons.nightlight_round,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const CrescentScreen())),
+          ),
+
+          // 6. الأدعية والزيارات
           SectionCard(
             title: 'الأدعية والزيارات',
             subtitle: 'دعاء كميل والتوسل، زيارة عاشوراء ووارث والأربعين وغيرها',
@@ -188,6 +140,82 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const DuasZiaratScreen())),
           ),
+
+          // 7. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
+          SectionCard(
+            title: 'المكتبة',
+            subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
+            icon: Icons.library_books,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const BooksScreen())),
+          ),
+
+          // 8. المسبحة الإلكترونية
+          SectionCard(
+            title: 'المسبحة الإلكترونية',
+            subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
+            icon: Icons.fingerprint,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const TasbihScreen())),
+          ),
+
+          // 9. ولادات ووفيات أهل البيت
+          SectionCard(
+            title: 'ولادات ووفيات أهل البيت',
+            subtitle: 'تواريخ ولادة واستشهاد المعصومين عليهم السلام',
+            icon: Icons.calendar_month,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AhlulBaytDatesScreen())),
+          ),
+
+          // 10. أقوال الإمام الحسين عليه السلام
+          SectionCard(
+            title: 'أقوال الإمام الحسين عليه السلام',
+            subtitle: 'خطبه وكلماته في كربلاء',
+            icon: Icons.format_quote,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const HusseinQuotesScreen())),
+          ),
+
+          // 11. أحداث معركة الطف
+          SectionCard(
+            title: 'احداث معركة الطف',
+            subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
+            icon: Icons.history_edu,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const BattleScreen())),
+          ),
+
+          // 12. خطب اهل البيت (السبايا)
+          // ملاحظة: بقائمتك رقم 12 مكتوب "اقوال الامام الحسين" مكرر مع
+          // رقم 10. افترضت إنه المقصود هو "خطب اهل البيت" (شاشة السبايا)
+          // لأنها الشاشة الوحيدة المتبقية من القائمة الأصلية وما انذكرت
+          // برقم واضح غيرها. خبرني إذا المقصود شي ثاني.
+          SectionCard(
+            title: 'خطب اهل البيت ',
+            subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
+            icon: Icons.record_voice_over,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const SabayaScreen())),
+          ),
+
+          // 13. مودة أهل البيت عليهم السلام
+          SectionCard(
+            title: 'مودة أهل البيت عليهم السلام',
+            subtitle: 'أحاديث النبي صلى الله عليه وآله في حب أهل البيت',
+            icon: Icons.favorite,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MawaddaScreen())),
+          ),
+
           const SizedBox(height: 12),
         ],
       ),
