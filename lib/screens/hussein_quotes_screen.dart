@@ -1,167 +1,223 @@
 import 'package:flutter/material.dart';
-import '../data/hussein_quotes_data.dart';
 import '../theme.dart';
+import '../widgets/section_card.dart';
+import '../widgets/hijri_date_badge.dart';
+import 'route_screen.dart';
+import 'scholars_screen.dart';
+import 'hussein_quotes_screen.dart';
+import 'mawadda_screen.dart';
+import 'battle_screen.dart';
+import 'sabaya_screen.dart';
+import 'ahlulbayt_dates_screen.dart';
+import 'settings_screen.dart';
+import 'tasbih_screen.dart';
+import 'qibla_screen.dart';
+import 'duas_ziarat_screen.dart';
+import 'prayer_times_screen.dart';
+import 'crescent_screen.dart';
+import 'books_screen.dart';
 
-class HusseinQuotesScreen extends StatelessWidget {
-  const HusseinQuotesScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('أقوال الإمام الحسين عليه السلام')),
-      body: ListView(
-        padding: const EdgeInsets.all(14),
-        children: [
-          Card(
-            color: AppColors.lightGold.withOpacity(0.4),
-            child: const Padding(
-              padding: EdgeInsets.all(14),
-              child: Text(
-                'أقوال وخطب الإمام الحسين عليه السلام في كربلاء، '
-                'منقولة من المصادر التاريخية الشيعية المعتمدة.',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          ...husseinQuotes.asMap().entries.map((entry) {
-            final index = entry.key;
-            final q = entry.value;
-            return _QuoteCard(
-              index: index,
-              text: q.text,
-              occasion: q.occasion,
-              source: q.source,
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
-// ✅ بطاقة المقولة مع التوسيع
-class _QuoteCard extends StatefulWidget {
-  final int index;
-  final String text;
-  final String occasion;
-  final String source;
-
-  const _QuoteCard({
-    required this.index,
-    required this.text,
-    required this.occasion,
-    required this.source,
+  const HomeScreen({
+    super.key,
+    required this.themeMode,
+    required this.onToggleTheme,
   });
 
   @override
-  State<_QuoteCard> createState() => _QuoteCardState();
-}
-
-class _QuoteCardState extends State<_QuoteCard> {
-  bool _isExpanded = false;
-
-  // ✅ تقسيم النص إلى مقطعين (مقطع قصير + الباقي)
-  String get _shortText {
-    final words = widget.text.split(' ');
-    if (words.length <= 25) return widget.text;
-    return words.take(25).join(' ') + '...';
-  }
-
-  String get _fullText => widget.text;
-
-  bool get _hasMoreText => widget.text.split(' ').length > 25;
-
-  @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          if (_hasMoreText) {
-            setState(() => _isExpanded = !_isExpanded);
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ✅ رقم المقولة
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.primaryGreen,
-                    child: Text(
-                      '${widget.index + 1}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      widget.occasion,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // ✅ النص (مقطع أو كامل)
-              Icon(Icons.format_quote, color: AppColors.gold, size: 20),
-              const SizedBox(height: 8),
-              Text(
-                _isExpanded ? _fullText : _shortText,
-                style: const TextStyle(
-                  fontSize: 16,
-                  height: 1.6,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              // ✅ زر "اقرأ المزيد" إذا كان النص طويلاً
-              if (_hasMoreText) ...[
-                const SizedBox(height: 10),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () => setState(() => _isExpanded = !_isExpanded),
-                    icon: Icon(
-                      _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: AppColors.primaryGreen,
-                    ),
-                    label: Text(
-                      _isExpanded ? 'إخفاء' : 'اقرأ المزيد',
-                      style: const TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              const Divider(height: 20),
-              // ✅ المصدر
-              Text(
-                'المصدر: ${widget.source}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('دليل زوار الحسين'),
+        actions: [
+          IconButton(
+            tooltip: 'الإعدادات',
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
-        ),
+          IconButton(
+            tooltip: isDark ? 'الوضع النهاري' : 'الوضع الليلي',
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            onPressed: onToggleTheme,
+          ),
+          // في واجهة عربية (RTL) هذا العنصر الأخير بالقائمة يظهر في أقصى
+          // يسار الشاشة (أبعد نقطة عن العنوان)، بعد أيقونتي الإعدادات والوضع
+          // الليلي/النهاري.
+          const HijriDateBadge(),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Column(
+              children: [
+                Text('السلام عليك يا أبا عبدالله',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 6),
+                Text('دليلك الشامل لزيارة الإمام الحسين عليه السلام',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // 1. طريق زائر الحسين
+          SectionCard(
+            title: 'طريق زائر الحسين',
+            subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
+            icon: Icons.directions_walk,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const RouteScreen())),
+          ),
+
+          // 2. أسئلة شرعية
+          SectionCard(
+            title: 'أسئلة شرعية',
+            subtitle: 'اختر المرجع الديني الشيعي واطّلع على الأجوبة الشرعية',
+            icon: Icons.menu_book,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ScholarsScreen())),
+          ),
+
+          // 3. مواقيت الصلاة
+          SectionCard(
+            title: 'مواقيت الصلاة',
+            subtitle: 'حسب كتيب مواقيت الصلاة للسيد السيستاني',
+            icon: Icons.access_time_filled,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const PrayerTimesScreen())),
+          ),
+
+          // 4. اتجاه القبلة
+          SectionCard(
+            title: 'اتجاه القبلة',
+            subtitle: 'حساب اتجاه القبلة حسب موقعك',
+            icon: Icons.explore,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const QiblaScreen())),
+          ),
+
+          // 5. مواقيت الأهلة
+          SectionCard(
+            title: 'مواقيت الأهلة',
+            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
+            icon: Icons.nightlight_round,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const CrescentScreen())),
+          ),
+
+          // 6. الأدعية والزيارات
+          SectionCard(
+            title: 'الأدعية والزيارات',
+            subtitle: 'دعاء كميل والتوسل، زيارة عاشوراء ووارث والأربعين وغيرها',
+            icon: Icons.mosque,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const DuasZiaratScreen())),
+          ),
+
+          // 7. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
+          SectionCard(
+            title: 'المكتبة',
+            subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
+            icon: Icons.library_books,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const BooksScreen())),
+          ),
+
+          // 8. المسبحة الإلكترونية
+          SectionCard(
+            title: 'المسبحة الإلكترونية',
+            subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
+            icon: Icons.fingerprint,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const TasbihScreen())),
+          ),
+
+          // 9. ولادات ووفيات أهل البيت
+          SectionCard(
+            title: 'ولادات ووفيات أهل البيت',
+            subtitle: 'تواريخ ولادة واستشهاد المعصومين عليهم السلام',
+            icon: Icons.calendar_month,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AhlulBaytDatesScreen())),
+          ),
+
+          // 10. أقوال الإمام الحسين عليه السلام
+          SectionCard(
+            title: 'أقوال الإمام الحسين عليه السلام',
+            subtitle: 'خطبه وكلماته في كربلاء',
+            icon: Icons.format_quote,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const HusseinQuotesScreen())),
+          ),
+
+          // 11. أحداث معركة الطف
+          SectionCard(
+            title: 'احداث معركة الطف',
+            subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
+            icon: Icons.history_edu,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const BattleScreen())),
+          ),
+
+          // 12. خطب اهل البيت (السبايا)
+          // ملاحظة: بقائمتك رقم 12 مكتوب "اقوال الامام الحسين" مكرر مع
+          // رقم 10. افترضت إنه المقصود هو "خطب اهل البيت" (شاشة السبايا)
+          // لأنها الشاشة الوحيدة المتبقية من القائمة الأصلية وما انذكرت
+          // برقم واضح غيرها. خبرني إذا المقصود شي ثاني.
+          SectionCard(
+            title: 'خطب اهل البيت ',
+            subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
+            icon: Icons.record_voice_over,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const SabayaScreen())),
+          ),
+
+          // 13. مودة أهل البيت عليهم السلام
+          SectionCard(
+            title: 'مودة أهل البيت عليهم السلام',
+            subtitle: 'أحاديث النبي صلى الله عليه وآله في حب أهل البيت',
+            icon: Icons.favorite,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MawaddaScreen())),
+          ),
+
+          const SizedBox(height: 12),
+        ],
       ),
     );
   }
