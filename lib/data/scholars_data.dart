@@ -13,7 +13,12 @@ const List<Scholar> scholarsList = [
     istiftaUrl: 'https://www.sistani.org/arabic/qa/',
     isLiving: true,
     hasRss: true,
-    rssUrl: 'https://www.sistani.org/arabic/qa/feed/',
+    // ✅ تصحيح: الرابط القديم https://www.sistani.org/arabic/qa/feed/
+    // كان يرجع 404 (غير موجود) - وهو سبب رسالة "فشل البحث". هذا هو
+    // رابط RSS الصحيح والفعّال بالموقع الرسمي، تحقّقنا منه ويرجع محتوى
+    // XML صالح فعلاً. ملاحظة: هذا الفيد يغطي كل تحديثات موقع السيستاني
+    // (بيانات، أرشيف، استفتاءات) مو الاستفتاءات فقط.
+    rssUrl: 'https://www.sistani.org/arabic/rss/',
   ),
   Scholar(
     id: 'sadr',
@@ -34,7 +39,14 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://arabic.khamenei.ir',
     istiftaUrl: 'https://arabic.khamenei.ir/others/toziholmasael',
     isLiving: true,
-    hasRss: false,
+    hasRss: true,
+    // ✅ رابط RSS الرسمي لقسم "الاستفتاءات" (مو كل الموقع) - مصدره
+    // صفحة قوائم RSS الرسمية بالموقع (arabic.khamenei.ir/rss-list).
+    // ملاحظة: الموقع يمنع أدوات الفحص الآلي (robots.txt)، لهذا ما قدرنا
+    // نتحقق من محتواه مباشرة، بس هذا لا يمنع عادة طلبات تطبيق أندرويد
+    // العادية (http package). جرب الزر وخبرني إذا طلعت نفس مشكلة
+    // "فشل البحث" حتى نلاحقها.
+    rssUrl: 'https://arabic.khamenei.ir/feed/service/11654',
   ),
   Scholar(
     id: 'shirazi',
