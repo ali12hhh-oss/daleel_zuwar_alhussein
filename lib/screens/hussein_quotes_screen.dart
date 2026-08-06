@@ -17,8 +17,8 @@ class HusseinQuotesScreen extends StatelessWidget {
             child: const Padding(
               padding: EdgeInsets.all(14),
               child: Text(
-                'كلمات وخطب الإمام الحسين عليه السلام في نهضته وفي كربلاء، '
-                'منقولة من المصادر الشيعية المعتمدة.',
+                'أقوال وخطب الإمام الحسين عليه السلام في كربلاء، '
+                'منقولة من المصادر التاريخية الشيعية المعتمدة.',
                 style: TextStyle(fontSize: 13),
               ),
             ),
@@ -40,6 +40,7 @@ class HusseinQuotesScreen extends StatelessWidget {
   }
 }
 
+// ✅ بطاقة المقولة مع التوسيع
 class _QuoteCard extends StatefulWidget {
   final int index;
   final String text;
@@ -60,6 +61,7 @@ class _QuoteCard extends StatefulWidget {
 class _QuoteCardState extends State<_QuoteCard> {
   bool _isExpanded = false;
 
+  // ✅ تقسيم النص إلى مقطعين (مقطع قصير + الباقي)
   String get _shortText {
     final words = widget.text.split(' ');
     if (words.length <= 25) return widget.text;
@@ -89,6 +91,7 @@ class _QuoteCardState extends State<_QuoteCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ✅ رقم المقولة
               Row(
                 children: [
                   CircleAvatar(
@@ -116,6 +119,7 @@ class _QuoteCardState extends State<_QuoteCard> {
                 ],
               ),
               const SizedBox(height: 12),
+              // ✅ النص (مقطع أو كامل)
               Icon(Icons.format_quote, color: AppColors.gold, size: 20),
               const SizedBox(height: 8),
               Text(
@@ -126,6 +130,7 @@ class _QuoteCardState extends State<_QuoteCard> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              // ✅ زر "اقرأ المزيد" إذا كان النص طويلاً
               if (_hasMoreText) ...[
                 const SizedBox(height: 10),
                 Center(
@@ -146,6 +151,7 @@ class _QuoteCardState extends State<_QuoteCard> {
                 ),
               ],
               const Divider(height: 20),
+              // ✅ المصدر
               Text(
                 'المصدر: ${widget.source}',
                 style: TextStyle(
