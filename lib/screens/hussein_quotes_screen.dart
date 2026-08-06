@@ -1,222 +1,127 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
-import '../widgets/section_card.dart';
-import '../widgets/hijri_date_badge.dart';
-import 'route_screen.dart';
-import 'scholars_screen.dart';
-import 'hussein_quotes_screen.dart';
-import 'mawadda_screen.dart';
-import 'battle_screen.dart';
-import 'sabaya_screen.dart';
-import 'ahlulbayt_dates_screen.dart';
-import 'settings_screen.dart';
-import 'tasbih_screen.dart';
-import 'qibla_screen.dart';
-import 'duas_ziarat_screen.dart';
-import 'prayer_times_screen.dart';
-import 'crescent_screen.dart';
-import 'books_screen.dart';
+import 'ziarat_screen.dart' show ZiaratDetailScreen;
 
-class HomeScreen extends StatelessWidget {
-  final ThemeMode themeMode;
-  final VoidCallback onToggleTheme;
+class HusseinQuotesScreen extends StatelessWidget {
+  const HusseinQuotesScreen({super.key});
 
-  const HomeScreen({
-    super.key,
-    required this.themeMode,
-    required this.onToggleTheme,
-  });
+  final List<Map<String, dynamic>> quotesList = const [
+    {
+      'title': 'إني لا أرى الموت إلا سعادة',
+      'subtitle': 'خطبته عليه السلام في مسيره إلى كربلاء',
+      'icon': Icons.format_quote,
+      'content': '''إنَّ هذِهِ الدُّنيا قَد تَغَيَّرَت وتَنَكَّرَت، وأدبَرَ مَعروفُها، فَلَم يَبقَ مِنها إلّا صُبابَةٌ كَصُبابَةِ الإِناءِ، وخَسيسُ عَيشٍ كَالمَرعى الوَبيلِ. ألا تَرَونَ أنّ الحَقَّ لا يُعمَلُ بِهِ، وأنَّ الباطِلَ لا يُتَناهى عَنهُ! لِيَرغَبِ المُؤمِنُ في لِقاءِ اللهِ مُحِقّاً؛ فَإِنّي لا أرى المَوتَ إلّا سَعادَةً، وَالحَياةَ مَعَ الظّالِمينَ إلّا بَرَماً.
+
+إنَّ النّاسَ عَبيدُ الدُّنيا، وَالدّينُ لَعِقٌ عَلى أَلسِنَتِهِمْ، يَحوطونَهُ ما دَرَّتْ مَعايِشُهُمْ، فَإِذا مُحِّصوا بِالبَلاءِ قَلَّ الدَّيّانونَ.''',
+    },
+    {
+      'title': 'إني لم أخرج أشراً ولا بطراً',
+      'subtitle': 'بيان أهداف نهضته عليه السلام',
+      'icon': Icons.format_quote,
+      'content': '''إنّي لَمْ أَخْرُجْ أَشِراً وَلا بَطِراً، وَلا مُفْسِداً وَلا ظالِماً، وَإِنَّما خَرَجْتُ لِطَلَبِ الإِصْلاحِ في أُمَّةِ جَدّي صَلَّى اللهُ عَلَيهِ وَآلِهِ، أُريدُ أَنْ آمُرَ بِالْمَعْروفِ وَأَنْهى عَنِ الْمُنْكَرِ، وَأَسيرَ بِسيرَةِ جَدّي وَأَبي عَلِيِّ بْنِ أَبي طالِب عَلَيْهِ السَّلامُ.''',
+    },
+    {
+      'title': 'الموت أولى من ركوب العار',
+      'subtitle': 'قوله عليه السلام في مواجهة جيش يزيد',
+      'icon': Icons.format_quote,
+      'content': '''أَلا وَإِنَّ الدَّعِيَّ ابْنَ الدَّعِيِّ قَدْ رَكَزَ بَيْنَ اثْنَتَيْنِ: بَيْنَ السِّلَّةِ وَالذِّلَّةِ، وَهَيْهاتَ مِنَّا الذِّلَّةُ، يَأْبى اللهُ ذلِكَ لَنا وَرَسُولُهُ وَالْمُؤْمِنونَ، وَحُجورٌ طابَتْ وَطَهُرَتْ، وَأُنوفٌ حَمِيَّةٌ، وَنُفوسٌ أَبِيَّةٌ، مِنْ أَنْ نُؤْثِرَ طاعَةَ اللِّئامِ عَلى مَصارِعِ الْكِرامِ.
+
+مَوْتٌ في عِزٍّ خَيْرٌ مِنْ حَياة في ذُلٍّ.''',
+    },
+    {
+      'title': 'والله لا أعطيكم بيدي إعطاء الذليل',
+      'subtitle': 'ردّه عليه السلام على طلب البيعة ليزيد',
+      'icon': Icons.format_quote,
+      'content': '''وَاللهِ لا أُعْطيكُمْ بِيَدي إِعْطاءَ الذَّليلِ، وَلا أُقِرُّ إِقْرارَ الْعَبيدِ، عِبادَ اللهِ أُعوذُ بِرَبّي وَرَبِّكُمْ مِنْ كُلِّ مُتَكَبِّر لا يُؤْمِنُ بِيَوْمِ الْحِسابِ.''',
+    },
+    {
+      'title': 'العلم لقاح المعرفة',
+      'subtitle': 'من حِكَمه عليه السلام',
+      'icon': Icons.format_quote,
+      'content': '''العِلْمُ لِقاحُ الْمَعْرِفَةِ، وَطولُ التَّجارِبِ زِيادَةٌ فِي الْعَقْلِ، وَالشَّرَفُ التَّقْوى، وَالْقُنوعُ راحَةُ الأَبْدانِ، وَمَنْ أَحَبَّكَ نَهاكَ، وَمَنْ أَبْغَضَكَ أَغْراكَ.
+
+إِذا سَمِعْتَ أَحَداً يَتَناوَلُ أَعْراضَ النّاسِ فَاجْتَهِدْ أَنْ لا يَعْرِفَكَ.''',
+    },
+    {
+      'title': 'نافسوا في المكارم',
+      'subtitle': 'خطبته عليه السلام في مكارم الأخلاق',
+      'icon': Icons.format_quote,
+      'content': '''يا أَيُّهَا النّاسُ نافِسوا في الْمَكارِمِ، وَسارِعوا في الْمَغانِمِ، وَلا تَحْتَسِبوا بِمَعْروفٍ لَمْ تُعَجِّلوهُ، وَاكْسِبُوا الْحَمْدَ بِالنُّجْحِ، وَلا تَكْتَسِبوا بِالْمَطْلِ ذَمّاً، فَمَهْما يَكُنْ لأَحَد عِنْدَ أَحَد صَنيعَةٌ لَهُ رَأى أَنَّهُ لا يَقومُ بِشُكْرِها، فَاللهُ لَهُ بِمُكافاتِهِ، فَإِنَّهُ أَجْزَلُ عَطاءً وَأَعْظَمُ أَجْراً.''',
+    },
+    {
+      'title': 'الغيبة إدام كلاب النار',
+      'subtitle': 'نصيحته عليه السلام لرجل اغتاب عنده أحداً',
+      'icon': Icons.format_quote,
+      'content': '''يا هذا، كُفَّ عَنِ الْغيبَةِ، فَإِنَّها إِدامُ كِلابِ النّارِ.''',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('دليل زوار الحسين'),
-        actions: [
-          IconButton(
-            tooltip: 'الإعدادات',
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-          IconButton(
-            tooltip: isDark ? 'الوضع النهاري' : 'الوضع الليلي',
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: onToggleTheme,
-          ),
-          // في واجهة عربية (RTL) هذا العنصر الأخير بالقائمة يظهر في أقصى
-          // يسار الشاشة (أبعد نقطة عن العنوان)، بعد أيقونتي الإعدادات والوضع
-          // الليلي/النهاري.
-          const HijriDateBadge(),
-        ],
-      ),
+      appBar: AppBar(title: const Text('أقوال الإمام الحسين عليه السلام')),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.all(16),
         children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Column(
-              children: [
-                Text('السلام عليك يا أبا عبدالله',
+          Card(
+            color: AppColors.lightGold.withOpacity(0.3),
+            child: const Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Icon(Icons.format_quote, size: 48, color: AppColors.primaryGreen),
+                  SizedBox(height: 12),
+                  Text(
+                    'أقوال الإمام الحسين عليه السلام',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
-                SizedBox(height: 6),
-                Text('دليلك الشامل لزيارة الإمام الحسين عليه السلام',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                    textAlign: TextAlign.center),
-              ],
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'خطبه وكلماته في مسيره إلى كربلاء وفي واقعة الطف',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-
-          // 1. طريق زائر الحسين
-          SectionCard(
-            title: 'طريق زائر الحسين',
-            subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
-            icon: Icons.directions_walk,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const RouteScreen())),
-          ),
-
-          // 2. أسئلة شرعية
-          SectionCard(
-            title: 'أسئلة شرعية',
-            subtitle: 'اختر المرجع الديني الشيعي واطّلع على الأجوبة الشرعية',
-            icon: Icons.menu_book,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ScholarsScreen())),
-          ),
-
-          // 3. مواقيت الصلاة
-          SectionCard(
-            title: 'مواقيت الصلاة',
-            subtitle: 'حسب كتيب مواقيت الصلاة للسيد السيستاني',
-            icon: Icons.access_time_filled,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const PrayerTimesScreen())),
-          ),
-
-          // 4. اتجاه القبلة
-          SectionCard(
-            title: 'اتجاه القبلة',
-            subtitle: 'حساب اتجاه القبلة حسب موقعك',
-            icon: Icons.explore,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const QiblaScreen())),
-          ),
-
-          // 5. مواقيت الأهلة
-          SectionCard(
-            title: 'مواقيت الأهلة',
-            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
-            icon: Icons.nightlight_round,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const CrescentScreen())),
-          ),
-
-          // 6. الأدعية والزيارات
-          SectionCard(
-            title: 'الأدعية والزيارات',
-            subtitle: 'دعاء كميل والتوسل، زيارة عاشوراء ووارث والأربعين وغيرها',
-            icon: Icons.mosque,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const DuasZiaratScreen())),
-          ),
-
-          // 7. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
-          SectionCard(
-            title: 'المكتبة',
-            subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
-            icon: Icons.library_books,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const BooksScreen())),
-          ),
-
-          // 8. المسبحة الإلكترونية
-          SectionCard(
-            title: 'المسبحة الإلكترونية',
-            subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
-            icon: Icons.fingerprint,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const TasbihScreen())),
-          ),
-
-          // 9. ولادات ووفيات أهل البيت
-          SectionCard(
-            title: 'ولادات ووفيات أهل البيت',
-            subtitle: 'تواريخ ولادة واستشهاد المعصومين عليهم السلام',
-            icon: Icons.calendar_month,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const AhlulBaytDatesScreen())),
-          ),
-
-          // 10. أقوال الإمام الحسين عليه السلام
-          SectionCard(
-            title: 'أقوال الإمام الحسين عليه السلام',
-            subtitle: 'خطبه وكلماته في كربلاء',
-            icon: Icons.format_quote,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const HusseinQuotesScreen())),
-          ),
-
-          // 11. أحداث معركة الطف
-          SectionCard(
-            title: 'احداث معركة الطف',
-            subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
-            icon: Icons.history_edu,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const BattleScreen())),
-          ),
-
-          // 12. خطب اهل البيت (السبايا)
-          // ملاحظة: بقائمتك رقم 12 مكتوب "اقوال الامام الحسين" مكرر مع
-          // رقم 10. افترضت إنه المقصود هو "خطب اهل البيت" (شاشة السبايا)
-          // لأنها الشاشة الوحيدة المتبقية من القائمة الأصلية وما انذكرت
-          // برقم واضح غيرها. خبرني إذا المقصود شي ثاني.
-          SectionCard(
-            title: 'خطب اهل البيت ',
-            subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
-            icon: Icons.record_voice_over,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const SabayaScreen())),
-          ),
-
-          // 13. مودة أهل البيت عليهم السلام
-          SectionCard(
-            title: 'مودة أهل البيت عليهم السلام',
-            subtitle: 'أحاديث النبي صلى الله عليه وآله في حب أهل البيت',
-            icon: Icons.favorite,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MawaddaScreen())),
-          ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          ...quotesList.map((quote) => Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              leading: Icon(
+                quote['icon'] as IconData,
+                color: AppColors.primaryGreen,
+                size: 32,
+              ),
+              title: Text(
+                quote['title'] as String,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              subtitle: Text(
+                quote['subtitle'] as String,
+                style: const TextStyle(fontSize: 12),
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ZiaratDetailScreen(
+                      title: quote['title'] as String,
+                      content: quote['content'] as String,
+                    ),
+                  ),
+                );
+              },
+            ),
+          )),
         ],
       ),
     );
