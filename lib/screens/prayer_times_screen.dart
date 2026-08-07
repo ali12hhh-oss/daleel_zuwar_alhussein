@@ -195,12 +195,32 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final notificationDetails =
         NotificationDetails(android: _buildAdhanAndroidDetails());
 
-    await _notificationsPlugin.show(
-      prayerName.hashCode,
-      'حان وقت أذان $prayerName',
-      'الساعة $time',
-      notificationDetails,
-    );
+    // ✅ هذا الاستدعاء يجي مباشرة من ضغطة المستخدم على زر "تشغيل صوت
+    // الأذان" (اختبار يدوي)، وكان الوحيد بدون حماية try/catch بالملف.
+    // لو ملف الصوت (adhan1.mp3 أو adhan2.mp3) غير موجود فعلياً بالـ APK
+    // المثبت (بسبب R8 resource shrinking مثلاً)، الخطأ كان يفلت بصمت
+    // بدون أي تفسير للمستخدم. الآن نمسكه ونعرض رسالة واضحة.
+    try {
+      await _notificationsPlugin.show(
+        prayerName.hashCode,
+        'حان وقت أذان $prayerName',
+        'الساعة $time',
+        notificationDetails,
+      );
+    } catch (e) {
+      debugPrint('⚠️ فشل تشغيل صوت الأذان: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _adhanSoundMode == 'sound'
+                  ? 'تعذر تشغيل صوت الأذان. تأكد من تحديث التطبيق لآخر إصدار'
+                  : 'تعذر تشغيل الإشعار. تأكد من تفعيل إذن الإشعارات',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _getLocationAndCalculate() async {
@@ -320,29 +340,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return nearest;
   }
 
-  // ==================== محرك حساب مواقيت الصلاة ====================
-  //
-  // يعتمد على حساب الموقع الفلكي الحقيقي للشمس (اليوم اليولياني + معادلة
-  // الزمن + ميل الشمس)، ثم يحسب كل وقت بتوقيت UTC أولاً، ويحوَّل بعدها
-  // تلقائياً لتوقيت الجهاز المحلي عبر toLocal() لتفادي أي خلط يدوي بين
-  // التوقيتات.
-  //
-  // زاوية الفجر (18°) وزاوية المغرب (4.5°) لم تتغيّر - هي نفس القيم
-  // المعتمدة أصلاً حسب كراس مواقيت السيد السيستاني دام ظله.
-  //
-  // ✅ تصحيح فقهي 1: نهاية وقت الظهرين (الظهر والعصر) هي "مغيب قرص
-  // الشمس" (sunset، زاوية 0.833°)، وليست "غياب الحمرة المشرقية" (زاوية
-  // 4.5° وهي بداية وقت المغربين). لذلك _isCurrentPrayer ونهاية عرض وقت
-  // الظهر تعتمدان الآن على _sunset وليس _maghribAdhan.
-  //
-  // ✅ تصحيح فقهي 2: منتصف الليل الشرعي = منتصف المدة بين غروب الشمس
-  // وطلوع الفجر الصادق لليوم التالي (وليس شروق الشمس). لذلك نحسب الآن
-  // "فجر الغد" بزاوية الفجر (18°) بدل شروق الغد بزاوية الشروق.
-
   Map<String, DateTime> _calculateShiaPrayerTimes(double lat, double lng, DateTime date) {
     const fajrAngle = 18.0;
     const maghribAngle = 4.5;
-    const sunriseSunsetAngle = 0.833; // زاوية الشروق/الغروب الظاهري (مع الانكسار الجوي)
+    const sunriseSunsetAngle = 0.833;
 
     final sunToday = _sunPosition(_julianDate(date.year, date.month, date.day));
     final dhuhrUtc = 12.0 - (lng / 15.0) - sunToday.equationOfTime;
@@ -357,8 +358,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final sunset = _utcHoursToLocalDateTime(date, dhuhrUtc + riseSetT);
     final maghribAdhan = _utcHoursToLocalDateTime(date, dhuhrUtc + maghribT);
 
-    // ✅ فجر الغد (وليس شروق الغد)، لحساب منتصف الليل الشرعي بشكل صحيح
-    // بين غروب اليوم وطلوع الفجر الصادق لليوم التالي
     final tomorrow = date.add(const Duration(days: 1));
     final sunTomorrow = _sunPosition(_julianDate(tomorrow.year, tomorrow.month, tomorrow.day));
     final dhuhrTomorrowUtc = 12.0 - (lng / 15.0) - sunTomorrow.equationOfTime;
@@ -379,7 +378,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     };
   }
 
-  /// اليوم اليولياني (Julian Day) لتاريخ ميلادي معيّن عند الساعة 00:00 UT
   double _julianDate(int year, int month, int day) {
     var y = year;
     var m = month;
@@ -394,7 +392,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         day + b - 1524.5;
   }
 
-  /// موقع الشمس: ميل الشمس (declination) ومعادلة الزمن (equation of time)
   _SunPosition _sunPosition(double jd) {
     final d = jd - 2451545.0;
     final g = _fixAngle(357.529 + 0.98560028 * d);
@@ -432,7 +429,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return r < 0 ? r + 24.0 : r;
   }
 
-  /// الفارق الزمني (بالساعات) بين الزوال وبين لحظة وصول الشمس لزاوية معيّنة تحت الأفق
   double _sunAngleTime(double angle, double lat, double decl) {
     final numerator = -math.sin(angle * math.pi / 180.0) -
         math.sin(lat * math.pi / 180.0) * math.sin(decl * math.pi / 180.0);
@@ -441,7 +437,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return math.acos(ratio) * 180.0 / math.pi / 15.0;
   }
 
-  /// يحوّل عدد ساعات بتوقيت UTC (قد يكون كسرياً) إلى DateTime بتوقيت الجهاز المحلي
   DateTime _utcHoursToLocalDateTime(DateTime date, double hours) {
     final totalMinutes = (hours * 60).round();
     return DateTime.utc(date.year, date.month, date.day)
@@ -478,8 +473,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       case 'fajr':
         return now.isAfter(_fajrAdhan!) && now.isBefore(_sunrise!);
       case 'dhuhr':
-        // ✅ تصحيح: وقت الظهرين ينتهي بغروب الشمس (مغيب قرص الشمس)،
-        // وليس بغياب الحمرة المشرقية (وهي بداية وقت المغربين لاحقاً)
         return now.isAfter(_dhuhrAdhan!) && now.isBefore(_sunset!);
       case 'maghrib':
         return now.isAfter(_maghribAdhan!) && now.isBefore(_midnight!);
@@ -652,8 +645,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 name: 'أذان الظهر',
                 time: _formatTime12Hour(_dhuhrAdhan!),
                 subtitle: 'من زوال الشمس إلى مغيب قرص الشمس',
-                // ✅ تصحيح: ينتهي وقت الظهرين بالغروب (_sunset)، وليس
-                // بوقت أذان المغرب (_maghribAdhan) الذي هو غياب الحمرة
                 endTime: 'ينتهي: ${_formatTime12Hour(_sunset!)}',
                 icon: Icons.sunny,
                 isCurrent: _isCurrentPrayer('dhuhr'),
@@ -674,7 +665,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
               const SizedBox(height: 6),
 
-              // صف الشروق / الغروب / منتصف الليل
               Card(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
