@@ -18,6 +18,17 @@ class _FatwasScreenState extends State<FatwasScreen> {
   bool _loading = true;
   String? _error;
 
+  // ✅ ترويسات تحاكي متصفح حقيقي. بعض المواقع (مثل arabic.khamenei.ir)
+  // تكتشف الطلبات الآلية (بدون User-Agent مألوف) وتدخلها في حلقة
+  // إعادة توجيه (redirect loop) بدل إرجاع المحتوى مباشرة، وهذا كان
+  // سبب خطأ "ClientException: Redirect loop detected".
+  static const Map<String, String> _requestHeaders = {
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+            '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -34,9 +45,12 @@ class _FatwasScreenState extends State<FatwasScreen> {
         return;
       }
 
-      final response = await http.get(Uri.parse(widget.scholar.rssUrl!));
+      final response = await http.get(
+        Uri.parse(widget.scholar.rssUrl!),
+        headers: _requestHeaders,
+      );
       if (response.statusCode != 200) {
-        throw Exception('فشل في تحميل الاستفتاءات');
+        throw Exception('فشل في تحميل الاستفتاءات (رمز ${response.statusCode})');
       }
 
       final document = XmlDocument.parse(response.body);
@@ -50,7 +64,9 @@ class _FatwasScreenState extends State<FatwasScreen> {
         final pubDate = DateTime.tryParse(pubDateStr) ?? DateTime.now();
 
         return FatwaItem(
-          title: title,
+          // ✅ إذا العنوان فارغ (حالات نادرة قد تبقى رغم إصلاح CDATA)،
+          // نعرض نص بديل بدل بطاقة فارغة بلا أي محتوى مقروء.
+          title: title.isNotEmpty ? title : 'استفتاء جديد',
           link: link,
           description: description,
           pubDate: pubDate,
@@ -70,11 +86,15 @@ class _FatwasScreenState extends State<FatwasScreen> {
     }
   }
 
-  /// Helper to safely get text from XML element
+  /// ✅ يستخرج نص العنصر بشكل موثوق، شامل محتوى CDATA. الاعتماد سابقاً
+  /// على `element.value` كان يرجع نص فارغ لعناصر RSS القياسية اللي
+  /// تُغلَّف عناوينها بـ CDATA (وهذا شائع جداً بخلاصات RSS لتفادي مشاكل
+  /// رموز مثل & و< الخاصة). `innerText` يجمع كل النصوص الفرعية (نص عادي
+  /// + CDATA) بشكل صحيح.
   String _getXmlText(XmlElement item, String elementName) {
     final elements = item.findElements(elementName);
     if (elements.isEmpty) return '';
-    return elements.first.value ?? '';
+    return elements.first.innerText.trim();
   }
 
   Future<void> _openLink(String url) async {
@@ -158,12 +178,13 @@ class _FatwasScreenState extends State<FatwasScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 4),
-                Text(
-                  fatwa.description.length > 100
-                      ? '${fatwa.description.substring(0, 100)}...'
-                      : fatwa.description,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
+                if (fatwa.description.isNotEmpty)
+                  Text(
+                    fatwa.description.length > 100
+                        ? '${fatwa.description.substring(0, 100)}...'
+                        : fatwa.description,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
                 const SizedBox(height: 4),
                 Text(
                   _formatDate(fatwa.pubDate),
