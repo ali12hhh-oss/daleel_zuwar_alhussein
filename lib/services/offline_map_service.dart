@@ -14,38 +14,25 @@ class OfflineMapService {
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const List<String> subdomains = [];
 
-  /// ترويسة User-Agent مطلوبة إلزامياً حسب سياسة استخدام خرائط
-  /// OpenStreetMap (https://operations.osmfoundation.org/policies/tiles/).
-  /// بدونها تُصنَّف الطلبات كمشبوهة وتُحظر أو تُبطَّأ من طرف الخادم،
-  /// مما يسبب ظهور بلاطات فارغة أو رمادية (جودة خريطة سيئة).
-  static const Map<String, String> _tileHeaders = {
-    'User-Agent': 'DaleelZuwarAlHussein/1.0 (Flutter app; contact via app)',
-  };
+  // ✅ خادم احتياطي يُستخدم فقط أثناء التحميل الجماعي (بدون نت) إذا فشل
+  // الخادم الأساسي (OSM) لبلاطة معيّنة - لتفادي توقف التحميل بالكامل لو
+  // OSM كان تحت ضغط مؤقت أو رفض الطلب. لا يُستخدم أثناء التصفح المباشر
+  // (هناك OSM فقط، للحفاظ على الأسماء العربية دائماً).
+  static const String _fallbackTileUrlTemplate =
+      'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 
   static String? _tilesDirPath;
-  static bool _initializing = false;
 
-  /// يجب استدعاؤها (ومنتظرة بـ await) مرة واحدة قبل استخدام الخريطة أو
-  /// قراءة حجم التخزين المؤقت، لضمان عدم قراءة قيمة خاطئة (0) بسبب
-  /// عدم اكتمال تهيئة مسار المجلد بعد.
+  /// يجب استدعاؤها مرة واحدة قبل استخدام الخريطة (تُستدعى تلقائياً من
+  /// downloadRegion، ويفضّل استدعاؤها أيضاً عند فتح الشاشة)
   static Future<void> init() async {
     if (_tilesDirPath != null) return;
-    if (_initializing) {
-      // تجنّب تنفيذ التهيئة أكثر من مرة بالتوازي إذا استُدعيت من أكثر
-      // من مكان بنفس الوقت
-      while (_initializing) {
-        await Future.delayed(const Duration(milliseconds: 20));
-      }
-      return;
-    }
-    _initializing = true;
     final appDir = await getApplicationDocumentsDirectory();
     final dir = Directory('${appDir.path}/map_tiles');
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     _tilesDirPath = dir.path;
-    _initializing = false;
   }
 
   /// يحوّل إحداثيات (خط عرض/طول) إلى رقم بلاطة X وY عند مستوى تكبير معيّن
@@ -121,9 +108,21 @@ class OfflineMapService {
               .replaceAll('{x}', '$x')
               .replaceAll('{y}', '$y')
               .replaceAll('{r}', '');
-          final response = await http
-              .get(Uri.parse(url), headers: _tileHeaders)
+          var response = await http
+              .get(Uri.parse(url))
               .timeout(const Duration(seconds: 12));
+
+          // ✅ محاولة الخادم الاحتياطي فقط عند فشل الخادم الأساسي
+          if (response.statusCode != 200) {
+            final fallbackUrl = _fallbackTileUrlTemplate
+                .replaceAll('{z}', '$z')
+                .replaceAll('{x}', '$x')
+                .replaceAll('{y}', '$y');
+            response = await http
+                .get(Uri.parse(fallbackUrl))
+                .timeout(const Duration(seconds: 12));
+          }
+
           if (response.statusCode == 200) {
             await file.parent.create(recursive: true);
             await file.writeAsBytes(response.bodyBytes);
@@ -139,12 +138,9 @@ class OfflineMapService {
     }
   }
 
-  /// الحجم التقريبي للبلاطات المحفوظة بالميجابايت.
-  /// تنتظر اكتمال init() أولاً لتفادي إرجاع 0 خطأً قبل معرفة مسار
-  /// مجلد التخزين الفعلي.
+  /// الحجم التقريبي للبلاطات المحفوظة بالميجابايت
   static Future<double> getCacheSizeMb() async {
     await init();
-    if (_tilesDirPath == null) return 0;
     final dir = Directory(_tilesDirPath!);
     if (!await dir.exists()) return 0;
     int totalBytes = 0;
@@ -190,13 +186,6 @@ class OfflineFirstTileProvider extends TileProvider {
         .replaceAll('{x}', '$x')
         .replaceAll('{y}', '$y')
         .replaceAll('{r}', '');
-    // إرسال User-Agent إلزامي حسب سياسة OpenStreetMap لتفادي حظر/تبطيء
-    // الطلبات وظهور بلاطات ناقصة أو رمادية.
-    return NetworkImage(
-      url,
-      headers: const {
-        'User-Agent': 'DaleelZuwarAlHussein/1.0 (Flutter app; contact via app)',
-      },
-    );
+    return NetworkImage(url);
   }
 }
