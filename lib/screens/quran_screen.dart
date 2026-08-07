@@ -149,11 +149,43 @@ class _SurahInfo {
 }
 
 /// شاشة قراءة سورة كاملة، نصاً متصلاً كتدفق واحد (وليس آية بكل سطر)
-class SurahReadingScreen extends StatelessWidget {
+/// مع إمكانية تكبير/تصغير حجم الخط.
+class SurahReadingScreen extends StatefulWidget {
   final int surahNumber;
   const SurahReadingScreen({super.key, required this.surahNumber});
 
+  @override
+  State<SurahReadingScreen> createState() => _SurahReadingScreenState();
+}
+
+class _SurahReadingScreenState extends State<SurahReadingScreen> {
   static const int _tawbah = 9;
+
+  // حدود وخطوة تكبير/تصغير الخط
+  static const double _minFontSize = 16;
+  static const double _maxFontSize = 36;
+  static const double _fontStep = 2;
+
+  double _fontSize = 20; // القيمة الافتراضية (كانت ثابتة سابقاً)
+
+  int get surahNumber => widget.surahNumber;
+
+  bool get _canIncrease => _fontSize < _maxFontSize;
+  bool get _canDecrease => _fontSize > _minFontSize;
+
+  void _increaseFontSize() {
+    if (!_canIncrease) return;
+    setState(() {
+      _fontSize = (_fontSize + _fontStep).clamp(_minFontSize, _maxFontSize);
+    });
+  }
+
+  void _decreaseFontSize() {
+    if (!_canDecrease) return;
+    setState(() {
+      _fontSize = (_fontSize - _fontStep).clamp(_minFontSize, _maxFontSize);
+    });
+  }
 
   /// كل السور تُعرض لها البسملة كسطر مستقل أعلى الصفحة ما عدا سورة التوبة.
   /// البسملة ليست آية في أي سورة (ولا حتى الفاتحة)، ولا تُرقَّم ولا تُحسب
@@ -218,7 +250,21 @@ class SurahReadingScreen extends StatelessWidget {
     final name = quran.getSurahNameArabic(surahNumber);
 
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      appBar: AppBar(
+        title: Text(name),
+        actions: [
+          IconButton(
+            tooltip: 'تصغير الخط',
+            icon: const Icon(Icons.text_decrease),
+            onPressed: _canDecrease ? _decreaseFontSize : null,
+          ),
+          IconButton(
+            tooltip: 'تكبير الخط',
+            icon: const Icon(Icons.text_increase),
+            onPressed: _canIncrease ? _increaseFontSize : null,
+          ),
+        ],
+      ),
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: SingleChildScrollView(
@@ -233,8 +279,8 @@ class SurahReadingScreen extends StatelessWidget {
                     quran.basmala,
                     textDirection: TextDirection.rtl,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: _fontSize + 2,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryGreen,
                     ),
@@ -244,7 +290,7 @@ class SurahReadingScreen extends StatelessWidget {
                 _buildSurahBody(),
                 textDirection: TextDirection.rtl,
                 textAlign: TextAlign.justify,
-                style: const TextStyle(fontSize: 20, height: 2),
+                style: TextStyle(fontSize: _fontSize, height: 2),
               ),
             ],
           ),
