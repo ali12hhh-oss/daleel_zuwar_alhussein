@@ -39,14 +39,10 @@ const List<Scholar> scholarsList = [
     officialSite: 'https://arabic.khamenei.ir',
     istiftaUrl: 'https://arabic.khamenei.ir/others/toziholmasael',
     isLiving: true,
-    hasRss: true,
-    // ✅ رابط RSS الرسمي لقسم "الاستفتاءات" (مو كل الموقع) - مصدره
-    // صفحة قوائم RSS الرسمية بالموقع (arabic.khamenei.ir/rss-list).
-    // ملاحظة: الموقع يمنع أدوات الفحص الآلي (robots.txt)، لهذا ما قدرنا
-    // نتحقق من محتواه مباشرة، بس هذا لا يمنع عادة طلبات تطبيق أندرويد
-    // العادية (http package). جرب الزر وخبرني إذا طلعت نفس مشكلة
-    // "فشل البحث" حتى نلاحقها.
-    rssUrl: 'https://arabic.khamenei.ir/feed/service/11654',
+    // ✅ عُطِّل زر "الاستفتاءات" - رابط RSS الرسمي للخامنئي يرمي خطأ
+    // "Redirect loop" بشكل دائم (الموقع يمنع الوصول الآلي)، فقررنا
+    // إخفاء الزر بدل عرض ميزة معطوبة.
+    hasRss: false,
   ),
   Scholar(
     id: 'shirazi',
