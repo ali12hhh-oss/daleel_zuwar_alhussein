@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/hijri_month.dart';
 import '../services/hijri_calendar_service.dart';
 
-/// ودجت صغيرة تُضاف إلى actions في AppBar لعرض التاريخ الهجري.
-/// في واجهة عربية (RTL) تظهر actions تلقائياً في أعلى يسار الشاشة.
+/// ودجت صغيرة تُضاف إلى leading في AppBar لعرض التاريخ الهجري.
 class HijriDateBadge extends StatefulWidget {
   const HijriDateBadge({super.key});
 
@@ -40,6 +39,12 @@ class _HijriDateBadgeState extends State<HijriDateBadge> {
       child: Center(
         child: Text(
           _result!.displayText,
+          // ✅ فرض اتجاه RTL صراحة على النص، حتى يظهر الترتيب دائماً
+          // من اليمين لليسار: يوم ثم شهر ثم سنة، بغض النظر عن اتجاه
+          // العرض الافتراضي بهذا الموضع من الشاشة (leading بالـ AppBar).
+          // بدون هذا، الأرقام (اليوم والسنة) قد تُعاد ترتيبها بصرياً
+          // بخوارزمية Bidi الافتراضية فتظهر السنة قبل اليوم.
+          textDirection: TextDirection.rtl,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
