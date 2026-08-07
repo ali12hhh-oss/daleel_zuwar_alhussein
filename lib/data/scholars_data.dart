@@ -35,10 +35,12 @@ const List<Scholar> scholarsList = [
   Scholar(
     id: 'khamenei',
     name: 'السيد علي الخامنئي',
-    title: 'المرجع الديني وقائد الثورة الإسلامية',
+    title: 'المرجع الديني الشهيد',
     officialSite: 'https://arabic.khamenei.ir',
     istiftaUrl: 'https://arabic.khamenei.ir/others/toziholmasael',
-    isLiving: true,
+    // ✅ استُشهد في 28 فبراير/1 مارس 2026 بضربات إسرائيلية-أمريكية على
+    // إيران، لذا isLiving صارت false.
+    isLiving: false,
     // ✅ عُطِّل زر "الاستفتاءات" - رابط RSS الرسمي للخامنئي يرمي خطأ
     // "Redirect loop" بشكل دائم (الموقع يمنع الوصول الآلي)، فقررنا
     // إخفاء الزر بدل عرض ميزة معطوبة.
