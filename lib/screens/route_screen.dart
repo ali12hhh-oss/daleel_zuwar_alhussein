@@ -46,7 +46,8 @@ class _RouteScreenState extends State<RouteScreen> {
   String _cacheStatus = '';
   bool _calculatingRoute = false;
 
-  // ✅ كل خيارات المسار المكتشفة (مشي: عدة بدائل + سيارة: بديل واحد للمقارنة)
+  // ✅ كل خيارات المسار المكتشفة (مشي + سيارة/الطريق الرئيسي) - بدون أي
+  // سقف مصطنع من عندنا، نعرض كل ما يرجعه OSRM فعلياً من مسارات مختلفة
   List<RouteOption> _routeOptions = [];
   int _selectedRouteIndex = 0;
 
@@ -59,18 +60,12 @@ class _RouteScreenState extends State<RouteScreen> {
   static const double iraqCenterLat = 33.2232;
   static const double iraqCenterLng = 43.6793;
 
-  // ✅ خريطة OpenStreetMap القياسية - تعرض أسماء الأماكن باللغة المحلية
-  // (عربي للعراق) تلقائياً، بخلاف CartoDB اللي كانت تعرضها بالإنكليزي دائماً
   static const String _tileUrl =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   @override
   void initState() {
     super.initState();
-    // ✅ ننتظر اكتمال init() فعلياً قبل قراءة حجم التخزين المؤقت، وإلا
-    // getCacheSizeMb() السابقة كانت ترجع 0 دائماً (لأن مسار المجلد لم
-    // يكن جاهزاً بعد)، فيبقى زر "تحميل الخريطة" ظاهراً حتى لو الخريطة
-    // محمّلة فعلياً على الجهاز.
     _initMapAndCache();
     _detectLocation();
   }
@@ -102,13 +97,12 @@ class _RouteScreenState extends State<RouteScreen> {
 
   double _deg2rad(double deg) => deg * (pi / 180);
 
-  /// ✅ جلب كل بدائل المسار المتوفرة من OSRM لبروفايل معيّن (مشي أو سيارة)
-  /// alternatives=true تجعل OSRM يعيد حتى 3 مسارات مختلفة بدل مسار واحد فقط
+  /// ✅ جلب كل بدائل المسار المتوفرة فعلياً من OSRM لبروفايل معيّن (مشي أو
+  /// سيارة). لا يوجد سقف من عندنا - نعرض كل ما يرجعه الخادم بالكامل.
   Future<List<RouteOption>> _fetchRoutes({
     required double fromLat,
     required double fromLng,
     required String profile,
-    int maxAlternatives = 3,
   }) async {
     try {
       final response = await http.get(
@@ -126,7 +120,7 @@ class _RouteScreenState extends State<RouteScreen> {
         return [];
       }
 
-      final routes = (data['routes'] as List).take(maxAlternatives).toList();
+      final routes = data['routes'] as List;
       return routes.map<RouteOption>((route) {
         final distanceKm = (route['distance'] as num).toDouble() / 1000;
         final durationMin = (route['duration'] as num).toDouble() / 60;
@@ -146,10 +140,8 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  /// ✅ حساب كل خيارات المسار (مشي + سيارة كمقارنة) وتحديد الأقصر تلقائياً
-  /// ملاحظة: بيانات "مسارات المشي" بين المدن على OpenStreetMap محدودة في
-  /// العراق، لذلك نضيف أيضاً مسار السيارة كخيار احتياطي/مقارنة لأن كثيراً
-  /// من الزوار يمشون على جانب الطريق الرئيسي نفسه أثناء المسير
+  /// ✅ حساب كل خيارات المسار (مشي + سيارة/الطريق الرئيسي) وتحديد الأقصر
+  /// تلقائياً بين كل الأنواع معاً.
   Future<void> _calculateRoadDistance() async {
     if (_position == null) return;
 
@@ -164,7 +156,6 @@ class _RouteScreenState extends State<RouteScreen> {
       fromLat: _position!.latitude,
       fromLng: _position!.longitude,
       profile: 'foot',
-      maxAlternatives: 3,
     );
     options.addAll(footOptions);
 
@@ -172,7 +163,6 @@ class _RouteScreenState extends State<RouteScreen> {
       fromLat: _position!.latitude,
       fromLng: _position!.longitude,
       profile: 'driving',
-      maxAlternatives: 1,
     );
     options.addAll(drivingOptions);
 
@@ -180,13 +170,12 @@ class _RouteScreenState extends State<RouteScreen> {
 
     if (options.isEmpty) {
       setState(() {
-        _roadDistanceKm = _straightDistanceKm; // fallback
+        _roadDistanceKm = _straightDistanceKm;
         _calculatingRoute = false;
       });
       return;
     }
 
-    // ✅ تحديد المسار الأقصر تلقائياً (أفضّل مسارات المشي عند التساوي التقريبي)
     int shortestIndex = 0;
     double shortestDist = options.first.distanceKm;
     for (int i = 1; i < options.length; i++) {
@@ -214,19 +203,15 @@ class _RouteScreenState extends State<RouteScreen> {
     });
   }
 
-  /// ✅ حساب مسافة الطريق (مشياً) من أي مدينة إلى كربلاء (أقصر خيار متاح)
   Future<double> _getRoadDistanceFromCity(double lat, double lng) async {
-    final footOptions = await _fetchRoutes(
-      fromLat: lat,
-      fromLng: lng,
-      profile: 'foot',
-      maxAlternatives: 3,
-    );
-    if (footOptions.isNotEmpty) {
-      footOptions.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
-      return footOptions.first.distanceKm;
+    final options = <RouteOption>[];
+    options.addAll(await _fetchRoutes(fromLat: lat, fromLng: lng, profile: 'foot'));
+    options.addAll(await _fetchRoutes(fromLat: lat, fromLng: lng, profile: 'driving'));
+
+    if (options.isNotEmpty) {
+      options.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+      return options.first.distanceKm;
     }
-    // fallback: استخدام المسافة المستقيمة مع معامل تصحيح
     return _haversineKm(lat, lng, hussainShrineLat, hussainShrineLng) * 1.3;
   }
 
@@ -275,7 +260,6 @@ class _RouteScreenState extends State<RouteScreen> {
         _loading = false;
       });
 
-      // ✅ حساب كل خيارات المسار تلقائياً وتحديد الأقصر
       await _calculateRoadDistance();
     } catch (e) {
       setState(() {
@@ -308,7 +292,6 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  /// ✅ تحميل حقيقي: خريطة عامة للعراق كامل + تفاصيل واضحة حول كربلاء والضريح
   Future<void> _cacheIraqMap() async {
     setState(() {
       _isCaching = true;
@@ -318,7 +301,6 @@ class _RouteScreenState extends State<RouteScreen> {
     });
 
     try {
-      // المرحلة 1: خريطة عامة لكل العراق (مدن وطرق رئيسية)
       await OfflineMapService.downloadRegion(
         minLat: 29.0,
         maxLat: 37.4,
@@ -336,7 +318,6 @@ class _RouteScreenState extends State<RouteScreen> {
         },
       );
 
-      // المرحلة 2: تفاصيل واضحة حول كربلاء والضريح (مفيدة للمشي)
       await OfflineMapService.downloadRegion(
         minLat: hussainShrineLat - 0.35,
         maxLat: hussainShrineLat + 0.35,
@@ -375,11 +356,10 @@ class _RouteScreenState extends State<RouteScreen> {
   String _routeLabel(RouteOption option, int index) {
     final icon = option.profile == 'foot' ? '🚶' : '🚗';
     final typeLabel = option.profile == 'foot' ? 'مشي' : 'طريق رئيسي';
-    // ترقيم بدائل المشي فقط (1، 2، 3...)، أما السيارة فخيار واحد فقط
-    if (option.profile == 'foot') {
-      final footIndex =
-          _routeOptions.where((o) => o.profile == 'foot').toList().indexOf(option) + 1;
-      return '$icon $typeLabel $footIndex';
+    final sameTypeList = _routeOptions.where((o) => o.profile == option.profile).toList();
+    if (sameTypeList.length > 1) {
+      final typeIndex = sameTypeList.indexOf(option) + 1;
+      return '$icon $typeLabel $typeIndex';
     }
     return '$icon $typeLabel';
   }
@@ -452,7 +432,7 @@ class _RouteScreenState extends State<RouteScreen> {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'جاري حساب المسارات المتاحة...',
+                              'جاري حساب كل المسارات المتاحة...',
                               style: TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                           ],
@@ -474,7 +454,6 @@ class _RouteScreenState extends State<RouteScreen> {
                           style: const TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                       ],
-                      // ✅ قائمة كل خيارات المسار المتاحة مع مسافة كل واحد
                       if (_routeOptions.length > 1) ...[
                         const SizedBox(height: 14),
                         const Text(
@@ -658,16 +637,11 @@ class _RouteScreenState extends State<RouteScreen> {
                           urlTemplate: _tileUrl,
                           subdomains: const [],
                           userAgentPackageName: 'com.daleelzuwar.alhussein',
-                          // ملاحظة: ترويسة User-Agent الفعلية للطلبات تُرسَل
-                          // من داخل OfflineFirstTileProvider (عبر NetworkImage
-                          // headers)، وليس من هنا، لأن tileProvider هو من
-                          // يتحكم فعلياً بجلب الصور.
                           tileProvider: OfflineFirstTileProvider(),
                         ),
                         if (_routeOptions.isNotEmpty)
                           PolylineLayer(
                             polylines: [
-                              // ✅ كل المسارات البديلة تُرسم رفيعة ورمادية
                               for (int i = 0; i < _routeOptions.length; i++)
                                 if (i != _selectedRouteIndex)
                                   Polyline(
@@ -675,7 +649,6 @@ class _RouteScreenState extends State<RouteScreen> {
                                     color: Colors.grey.withOpacity(0.55),
                                     strokeWidth: 3,
                                   ),
-                              // ✅ المسار المختار حالياً يُرسم عريضاً وملوّناً
                               Polyline(
                                 points: _routeOptions[_selectedRouteIndex].points,
                                 color: _routeOptions[_selectedRouteIndex].profile ==
@@ -691,8 +664,6 @@ class _RouteScreenState extends State<RouteScreen> {
                         else if (_position != null)
                           PolylineLayer(
                             polylines: [
-                              // fallback: خط مستقيم أثناء التحميل أو
-                              // عند فشل الاتصال بخدمة التوجيه
                               Polyline(
                                 points: [
                                   LatLng(_position!.latitude, _position!.longitude),
@@ -884,7 +855,7 @@ class _CityDistanceTileState extends State<_CityDistanceTile> {
                 ],
               )
             : Text(
-                'أقصر مسافة (مشياً): ~${_roadDistance!.toStringAsFixed(0)} كم',
+                'أقصر مسافة: ~${_roadDistance!.toStringAsFixed(0)} كم',
                 style: const TextStyle(fontSize: 13),
               ),
         trailing: IconButton(
