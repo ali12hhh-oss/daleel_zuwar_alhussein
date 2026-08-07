@@ -32,7 +32,29 @@ class HomeScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('دليل زوار الحسين'),
+        // ✅ شارة التاريخ الهجري انتقلت من actions (يمين) إلى leading
+        // (يسار)، وصار اسم التطبيق بالنص بلون أبيض وإطار ذهبي.
+        leading: const Padding(
+          padding: EdgeInsets.only(right: 8),
+          child: HijriDateBadge(),
+        ),
+        leadingWidth: 90,
+        centerTitle: true,
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.gold, width: 1.5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Text(
+            'دليل زوار الحسين',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'الإعدادات',
@@ -47,10 +69,6 @@ class HomeScreen extends StatelessWidget {
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
             onPressed: onToggleTheme,
           ),
-          // في واجهة عربية (RTL) هذا العنصر الأخير بالقائمة يظهر في أقصى
-          // يسار الشاشة (أبعد نقطة عن العنوان)، بعد أيقونتي الإعدادات والوضع
-          // الليلي/النهاري.
-          const HijriDateBadge(),
         ],
       ),
       body: ListView(
@@ -195,10 +213,6 @@ class HomeScreen extends StatelessWidget {
           ),
 
           // 12. خطب اهل البيت (السبايا)
-          // ملاحظة: بقائمتك رقم 12 مكتوب "اقوال الامام الحسين" مكرر مع
-          // رقم 10. افترضت إنه المقصود هو "خطب اهل البيت" (شاشة السبايا)
-          // لأنها الشاشة الوحيدة المتبقية من القائمة الأصلية وما انذكرت
-          // برقم واضح غيرها. خبرني إذا المقصود شي ثاني.
           SectionCard(
             title: 'خطب اهل البيت ',
             subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
