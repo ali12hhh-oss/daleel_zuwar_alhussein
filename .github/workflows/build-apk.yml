@@ -121,13 +121,18 @@ jobs:
         run: flutter build apk --release
 
       - name: فحص مجلدات الموارد الوسيطة بعد البناء
+        continue-on-error: true
         run: |
-          echo "=== البحث عن adhan في كل مخرجات البناء ==="
-          find android/app/build -iname "*adhan*" 2>/dev/null || echo "لا يوجد أي أثر لملفات adhan في مجلد البناء إطلاقاً"
-          echo "=== فحص مجلد merged_res إن وُجد ==="
-          find android/app/build -path "*merged_res*" -iname "*.mp3" 2>/dev/null || echo "لا يوجد ملفات mp3 في merged_res"
-          echo "=== فحص res الأصلي كما يراه Gradle ==="
-          find android/app/build -type d -name "raw" 2>/dev/null
+          echo "=== مسار مجلد build في جذر المشروع ==="
+          ls -la build/ 2>/dev/null || echo "❌ مجلد build/ غير موجود في الجذر"
+          echo "=== البحث عن adhan في كل مخرجات البناء (build/) ==="
+          find build -iname "*adhan*" 2>/dev/null || true
+          echo "=== فحص مجلد merged_res أو مشابه ==="
+          find build -ipath "*merged*res*" -iname "*.mp3" 2>/dev/null || true
+          find build -ipath "*merged*res*" -iname "*.flat" 2>/dev/null | grep -i adhan || true
+          echo "=== فحص أي مجلد raw داخل build/ ==="
+          find build -type d -iname "raw" 2>/dev/null || true
+          echo "=== انتهى الفحص ==="
 
       - name: فحص وجود ملفات الصوت داخل الـ APK بعد البناء
         run: |
