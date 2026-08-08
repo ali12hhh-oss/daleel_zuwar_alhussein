@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/section_card.dart';
 import 'quran_screen.dart';
-import 'book_viewer_screen.dart';
+import 'mafatih_jinan_screen.dart';
 
 class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
@@ -19,6 +19,16 @@ class BooksScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const QuranScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SectionCard(
+            title: 'مفاتيح الجنان',
+            subtitle: 'الأدعية والزيارات والمناجاة - تصفح الكتاب كاملاً مع إمكانية الانتقال لأي صفحة',
+            icon: Icons.auto_stories,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MafatihJinanScreen()),
             ),
           ),
         ],
