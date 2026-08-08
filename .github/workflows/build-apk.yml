@@ -108,8 +108,22 @@ jobs:
       - name: تحليل الكود
         run: flutter analyze || true
 
+      - name: فحص وجود ملفات الصوت قبل البناء
+        run: |
+          echo "=== محتويات مجلد res/raw ==="
+          ls -la android/app/src/main/res/raw/ || echo "❌ المجلد غير موجود إطلاقاً"
+          echo "=== نوع وحجم كل ملف ==="
+          file android/app/src/main/res/raw/*.mp3 || true
+          echo "=== محتوى .gitattributes إن وُجد (للتأكد من عدم وجود LFS) ==="
+          cat .gitattributes 2>/dev/null || echo "لا يوجد ملف .gitattributes"
+
       - name: بناء APK (Release)
         run: flutter build apk --release
+
+      - name: فحص وجود ملفات الصوت داخل الـ APK بعد البناء
+        run: |
+          echo "=== محتويات res/raw داخل الـ APK النهائي ==="
+          unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -i "raw/adhan" || echo "❌ الملفات غير موجودة داخل الـ APK إطلاقاً"
 
       - name: رفع ملف APK كمخرَج
         uses: actions/upload-artifact@v6
