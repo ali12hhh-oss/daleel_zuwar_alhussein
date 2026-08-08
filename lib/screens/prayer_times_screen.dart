@@ -30,13 +30,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  // ✅ نمط تنبيه الأذان المحفوظ من شاشة الإعدادات: 'sound' | 'vibrate' | 'silent'
-  // يُقرأ من SharedPreferences قبل كل عملية جدولة (وليس مرة واحدة فقط)
-  // حتى يعكس أي تغيير يجريه المستخدم في الإعدادات دون الحاجة لإعادة فتح
-  // التطبيق بالكامل.
   String _adhanSoundMode = 'sound';
-  // ✅ مقطع الأذان المختار: 'adhan1' أو 'adhan2' - يجب أن يقابله ملف فعلي
-  // بنفس الاسم داخل android/app/src/main/res/raw/
   String _adhanSoundFile = 'adhan1';
 
   @override
@@ -45,27 +39,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     _initApp();
   }
 
-  /// ✅ يشغّل التهيئة بالتسلسل وليس بالتوازي. السبب: أندرويد لا يسمح
-  /// بعرض أكثر من نافذة صلاحية نظام (Permission Dialog) واحدة في نفس
-  /// اللحظة. سابقاً كانت _initNotifications() و_getLocationAndCalculate()
-  /// تُستدعيان معاً بدون انتظار، فيتصادم طلب إذن الإشعارات مع طلب إذن
-  /// الموقع في نفس اللحظة تقريباً، فيربح أحدهما "السباق" ويُرفض الآخر
-  /// تلقائياً بصمت (يرجع false فوراً دون أي نافذة تظهر للمستخدم إطلاقاً)
-  /// - وهذا كان سبب عدم ظهور طلب إذن الإشعارات عند أول فتح للتطبيق.
   Future<void> _initApp() async {
     await _initNotifications();
     await _getLocationAndCalculate();
   }
 
   Future<void> _initNotifications() async {
-    // ✅ تهيئة التوقيت المحلي، مطلوبة لأي جدولة دقيقة عبر zonedSchedule
-    // ملاحظة إصلاح: لا يجوز قراءة tz.local قبل تعيينه. كان الكود سابقاً
-    // tz.setLocalLocation(tz.local) وهذا خطأ دائري (يحاول قراءة قيمة لم
-    // تُعيَّن بعد)، فيرمي LateInitializationError فور استدعائه. هذا
-    // الاستثناء كان يُمسك لاحقاً داخل try/catch حساب الأوقات ويُظهر
-    // رسالة "إعادة المحاولة" رغم أن الأوقات كانت محسوبة بنجاح أصلاً.
-    // بما أن التطبيق مخصص للعراق (منطقة زمنية واحدة، بدون توقيت صيفي
-    // حالياً)، نحدد المنطقة صراحة بدل الاعتماد على قراءة ذاتية.
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
 
@@ -73,23 +52,17 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     const initSettings = InitializationSettings(android: androidSettings);
     await _notificationsPlugin.initialize(initSettings);
 
-    // ✅ طلب صلاحية الإشعارات صراحة (إلزامي بأندرويد 13+، بدونه لا يظهر
-    // أي إشعار إطلاقاً بغض النظر عن صحة باقي الكود)
     final androidImpl = _notificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.requestNotificationsPermission();
-    // ✅ إذن جدولة التنبيهات الدقيقة (Exact Alarms) - مطلوب بأندرويد 12+
-    // حتى تنطلق الجدولة بالثانية بدل ما تتأخر دقائق بسبب توفير الطاقة
     await androidImpl?.requestExactAlarmsPermission();
   }
 
-  /// يحوّل DateTime عادي إلى TZDateTime متوافق مع مكتبة الجدولة.
   tz.TZDateTime _toTZDateTime(DateTime dt) {
     return tz.TZDateTime.from(dt, tz.local);
   }
 
-  /// ✅ يقرأ نمط تنبيه الأذان ومقطع الصوت المختار من شاشة الإعدادات.
   Future<void> _loadAdhanSettings() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -99,15 +72,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     });
   }
 
-  /// ✅ معرّف قناة الإشعار يتضمن نمط الصوت + مقطع الصوت المختار معاً.
-  /// السبب: قنوات إشعارات أندرويد (Notification Channels) لا يمكن تعديل
-  /// إعداداتها (كالصوت أو الاهتزاز) بعد إنشائها لأول مرة - محاولة تغييرها
-  /// ببساطة تُتجاهل من النظام. لذلك عند تغيير المستخدم للنمط أو المقطع
-  /// من الإعدادات، نستخدم معرّف قناة مختلف فيُنشئ أندرويد قناة جديدة
-  /// فعلياً بالإعدادات الصحيحة بدل إعادة استخدام قناة قديمة بإعدادات قديمة.
   String get _adhanChannelId => 'adhan_channel_v3_${_adhanSoundMode}_$_adhanSoundFile';
 
-  /// ✅ يبني تفاصيل إشعار أندرويد حسب نمط الصوت المختار من الإعدادات.
   AndroidNotificationDetails _buildAdhanAndroidDetails() {
     switch (_adhanSoundMode) {
       case 'vibrate':
@@ -146,15 +112,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
-  /// يجدول إشعار أذان حقيقي في وقته بالضبط، يعمل حتى لو التطبيق مغلق
-  /// تماماً أو الجهاز نائم، لأن نظام أندرويد نفسه هو من يطلقه بالوقت
-  /// المحدد (بعكس مراقبة الوقت داخل التطبيق اللي تتوقف إذا انسكرت الشاشة).
   Future<void> _scheduleAdhanNotification(
     int id,
     String prayerName,
     DateTime time,
   ) async {
-    // لا تجدول وقتاً فات بالفعل اليوم
     if (time.isBefore(DateTime.now())) return;
 
     final notificationDetails =
@@ -172,11 +134,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  /// يجدول أذانات اليوم الثلاثة دفعة واحدة بعد ما تُحسب أوقاتها.
   Future<void> _scheduleAllAdhans() async {
-    // ✅ نعيد قراءة الإعدادات هنا (وليس مرة واحدة في initState فقط) حتى
-    // تنعكس أي تغييرات أجراها المستخدم في شاشة الإعدادات فوراً عند أي
-    // تحديث لاحق لمواقيت الصلاة (سحب للتحديث مثلاً).
     await _loadAdhanSettings();
 
     if (_fajrAdhan != null) {
@@ -195,11 +153,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final notificationDetails =
         NotificationDetails(android: _buildAdhanAndroidDetails());
 
-    // ✅ هذا الاستدعاء يجي مباشرة من ضغطة المستخدم على زر "تشغيل صوت
-    // الأذان" (اختبار يدوي)، وكان الوحيد بدون حماية try/catch بالملف.
-    // لو ملف الصوت (adhan1.mp3 أو adhan2.mp3) غير موجود فعلياً بالـ APK
-    // المثبت (بسبب R8 resource shrinking مثلاً)، الخطأ كان يفلت بصمت
-    // بدون أي تفسير للمستخدم. الآن نمسكه ونعرض رسالة واضحة.
     try {
       await _notificationsPlugin.show(
         prayerName.hashCode,
@@ -208,15 +161,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         notificationDetails,
       );
     } catch (e) {
+      // 🔧 وضع تشخيص مؤقت: نعرض نص الخطأ الحقيقي كاملاً على الشاشة
+      // بدل الرسالة العامة، لمعرفة السبب الفعلي وراء فشل الإشعار.
+      // يجب إعادة هذا لرسالة ودّية بعد إيجاد السبب وإصلاحه.
       debugPrint('⚠️ فشل تشغيل صوت الأذان: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              _adhanSoundMode == 'sound'
-                  ? 'تعذر تشغيل صوت الأذان. تأكد من تحديث التطبيق لآخر إصدار'
-                  : 'تعذر تشغيل الإشعار. تأكد من تفعيل إذن الإشعارات',
-            ),
+            content: Text('خطأ فعلي: $e'),
+            duration: const Duration(seconds: 10),
           ),
         );
       }
@@ -264,13 +217,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _midnight = times['midnight'];
         _loading = false;
       });
-      // ✅ جدولة إشعارات الأذان الحقيقية فور توفر أوقات اليوم.
-      // ملاحظة مهمة: جدولة الإشعارات معزولة الآن بـ try/catch خاص بها،
-      // لأنها عملية "إضافية" منفصلة عن عرض الأوقات. فشلها (مثلاً بسبب
-      // نقص ملف صوت raw resource، أو رفض إذن الإشعارات) لا يجب أن يوقف
-      // عرض مواقيت الصلاة على الشاشة، وهذا ما كان يحدث سابقاً: أي خطأ
-      // هنا كان يُمسك في catch الخارجي فيُظهر "إعادة المحاولة" ويخفي كل
-      // شيء رغم أن الأوقات محسوبة وصحيحة بالفعل.
       try {
         await _scheduleAllAdhans();
       } catch (e) {
