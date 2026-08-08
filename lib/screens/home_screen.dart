@@ -12,6 +12,7 @@ import 'ahlulbayt_dates_screen.dart';
 import 'settings_screen.dart';
 import 'tasbih_screen.dart';
 import 'qibla_screen.dart';
+import 'shrines_compass_screen.dart';
 import 'duas_ziarat_screen.dart';
 import 'prayer_times_screen.dart';
 import 'crescent_screen.dart';
@@ -137,7 +138,18 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const QiblaScreen())),
           ),
 
-          // 5. مواقيت الأهلة
+          // 5. اتجاه مراقد المعصومين (ع)
+          SectionCard(
+            title: 'اتجاه مراقد المعصومين (ع)',
+            subtitle: 'حدد اتجاه المسجد النبوي والمراقد الشريفة حسب موقعك',
+            icon: Icons.explore_outlined,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ShrinesCompassScreen())),
+          ),
+
+          // 6. مواقيت الأهلة
           SectionCard(
             title: 'مواقيت الأهلة',
             subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
@@ -148,7 +160,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const CrescentScreen())),
           ),
 
-          // 6. الأدعية والزيارات
+          // 7. الأدعية والزيارات
           SectionCard(
             title: 'الأدعية والزيارات',
             subtitle: 'دعاء كميل والتوسل، زيارة عاشوراء ووارث والأربعين وغيرها',
@@ -159,7 +171,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const DuasZiaratScreen())),
           ),
 
-          // 7. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
+          // 8. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
           SectionCard(
             title: 'المكتبة',
             subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
@@ -170,7 +182,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const BooksScreen())),
           ),
 
-          // 8. المسبحة الإلكترونية
+          // 9. المسبحة الإلكترونية
           SectionCard(
             title: 'المسبحة الإلكترونية',
             subtitle: 'تسبيح الزهراء عليها السلام والأذكار',
@@ -181,7 +193,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const TasbihScreen())),
           ),
 
-          // 9. ولادات ووفيات أهل البيت
+          // 10. ولادات ووفيات أهل البيت
           SectionCard(
             title: 'ولادات ووفيات أهل البيت',
             subtitle: 'تواريخ ولادة واستشهاد المعصومين عليهم السلام',
@@ -192,7 +204,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const AhlulBaytDatesScreen())),
           ),
 
-          // 10. أقوال الإمام الحسين عليه السلام
+          // 11. أقوال الإمام الحسين عليه السلام
           SectionCard(
             title: 'أقوال الإمام الحسين عليه السلام',
             subtitle: 'خطبه وكلماته في كربلاء',
@@ -203,7 +215,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const HusseinQuotesScreen())),
           ),
 
-          // 11. أحداث معركة الطف
+          // 12. أحداث معركة الطف
           SectionCard(
             title: 'احداث معركة الطف',
             subtitle: 'أحداث الأيام العشرة من محرم في كربلاء',
@@ -212,7 +224,7 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const BattleScreen())),
           ),
 
-          // 12. خطب اهل البيت (السبايا)
+          // 13. خطب اهل البيت (السبايا)
           SectionCard(
             title: 'خطب اهل البيت ',
             subtitle: 'خطب أهل البيت السبايا من كربلاء إلى الشام والمدينة',
@@ -221,7 +233,7 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const SabayaScreen())),
           ),
 
-          // 13. مودة أهل البيت عليهم السلام
+          // 14. مودة أهل البيت عليهم السلام
           SectionCard(
             title: 'مودة أهل البيت عليهم السلام',
             subtitle: 'أحاديث النبي صلى الله عليه وآله في حب أهل البيت',
