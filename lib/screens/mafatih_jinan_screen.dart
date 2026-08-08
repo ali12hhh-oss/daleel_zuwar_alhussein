@@ -35,7 +35,7 @@ List<MafatihEntry> _parseEntries(String jsonStr) {
 }
 
 class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
-  static const String _assetPath = 'assets/dooks/mafatih_aljanan.json';
+  static const String _assetPath = 'assets/books/mafatih_aljanan.json';
   static const double _minFont = 14;
   static const double _maxFont = 30;
   static const double _defaultFont = 19;
