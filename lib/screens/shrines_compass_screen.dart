@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:magnetic_declination/magnetic_declination.dart';
+import 'package:geomag/geomag.dart';
 import '../theme.dart';
 
 /// نقطة مقدّسة يمكن تحديد اتجاهها (مرقد شريف أو مسجد أو مقام)
@@ -194,14 +194,15 @@ class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
 
       double declination = 0;
       try {
-        declination = await MagneticDeclination.calculateDeclination(
+        final geoMag = GeoMag();
+        final geoMagResult = geoMag.calculate(
           position.latitude,
           position.longitude,
           position.altitude,
-          DateTime.now(),
         );
+        declination = geoMagResult.dec;
       } catch (_) {
-        declination = 0;
+        declination = 0; // في حال فشل الحساب، نكمل بدون تصحيح بدل تعطيل الشاشة
       }
 
       setState(() {
