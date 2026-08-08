@@ -120,6 +120,15 @@ jobs:
       - name: بناء APK (Release)
         run: flutter build apk --release
 
+      - name: فحص مجلدات الموارد الوسيطة بعد البناء
+        run: |
+          echo "=== البحث عن adhan في كل مخرجات البناء ==="
+          find android/app/build -iname "*adhan*" 2>/dev/null || echo "لا يوجد أي أثر لملفات adhan في مجلد البناء إطلاقاً"
+          echo "=== فحص مجلد merged_res إن وُجد ==="
+          find android/app/build -path "*merged_res*" -iname "*.mp3" 2>/dev/null || echo "لا يوجد ملفات mp3 في merged_res"
+          echo "=== فحص res الأصلي كما يراه Gradle ==="
+          find android/app/build -type d -name "raw" 2>/dev/null
+
       - name: فحص وجود ملفات الصوت داخل الـ APK بعد البناء
         run: |
           echo "=== محتويات res/raw داخل الـ APK النهائي ==="
