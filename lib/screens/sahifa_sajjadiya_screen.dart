@@ -160,7 +160,6 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
     final current = _entries.isNotEmpty ? _entries[_selectedIndex] : null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('الصحيفة السجادية'),
         actions: [
@@ -224,59 +223,61 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
     if (current == null) {
       return const Center(child: Text('لا يوجد محتوى', style: TextStyle(color: Colors.black87)));
     }
-    return Container(
-      color: Colors.white,
-      child: SingleChildScrollView(
-        controller: _contentScrollController,
-        padding: const EdgeInsets.all(20),
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                current.title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: _fontSize + 4,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+    return SingleChildScrollView(
+      controller: _contentScrollController,
+      padding: const EdgeInsets.all(20),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              current.title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: _fontSize + 4,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.black26),
-              const SizedBox(height: 12),
-              SelectableText(
-                current.content.isEmpty
-                    ? '(لا يوجد نص محدد لهذا العنوان بعد)'
-                    : current.content,
-                style: TextStyle(fontSize: _fontSize, height: 1.9, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: Colors.black26),
+            const SizedBox(height: 12),
+            SelectableText(
+              current.content.isEmpty
+                  ? '(لا يوجد نص محدد لهذا العنوان بعد)'
+                  : current.content,
+              style: TextStyle(
+                fontSize: _fontSize,
+                height: 1.9,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (_selectedIndex > 0)
-                    TextButton.icon(
-                      onPressed: () => _selectEntry(_selectedIndex - 1),
-                      icon: const Icon(Icons.arrow_forward),
-                      label: const Text('السابق'),
-                    )
-                  else
-                    const SizedBox(),
-                  if (_selectedIndex < _entries.length - 1)
-                    TextButton.icon(
-                      onPressed: () => _selectEntry(_selectedIndex + 1),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('التالي'),
-                      iconAlignment: IconAlignment.end,
-                    )
-                  else
-                    const SizedBox(),
-                ],
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (_selectedIndex > 0)
+                  TextButton.icon(
+                    onPressed: () => _selectEntry(_selectedIndex - 1),
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('السابق'),
+                  )
+                else
+                  const SizedBox(),
+                if (_selectedIndex < _entries.length - 1)
+                  TextButton.icon(
+                    onPressed: () => _selectEntry(_selectedIndex + 1),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('التالي'),
+                    iconAlignment: IconAlignment.end,
+                  )
+                else
+                  const SizedBox(),
+              ],
+            ),
+          ],
         ),
       ),
     );
