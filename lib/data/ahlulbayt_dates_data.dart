@@ -1,6 +1,10 @@
 import '../models/models.dart';
 
 const List<AhlulBaytEvent> ahlulBaytEvents = [
+  // ======================================================
+  // 1) المعصومون الأربعة عشر عليهم السلام (حسب التسلسل)
+  // ======================================================
+
   // النبي محمد صلى الله عليه وآله
   AhlulBaytEvent(
     personName: 'النبي محمد صلى الله عليه وآله',
@@ -28,160 +32,6 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     ],
     description: 'توفي صلى الله عليه وآله في المدينة المنورة؛ وتذكر بعض الروايات الشيعية أنه دُسّ له السمّ في خيبر قبل ذلك بأثر متأخر.',
     source: 'بحار الأنوار',
-  ),
-
-  // السيدة خديجة الكبرى عليها السلام
-  AhlulBaytEvent(
-    personName: 'السيدة خديجة بنت خويلد عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'شعبان (يوم غير محدد بدقة في المصادر الشيعية)',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في مكة المكرمة، وهي أول زوجات النبي صلى الله عليه وآله وأم السيدة فاطمة الزهراء عليها السلام.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'السيدة خديجة بنت خويلد عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '10 رمضان',
-        hijriYear: '3 هـ قبل البعث',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-      Narration(
-        hijriDate: 'رمضان',
-        attributedTo: 'رواية أخرى تذكرها بعض المصادر الشيعية',
-        note: 'توفيت قبل البعث النبوي بثلاث سنين',
-      ),
-    ],
-    description: 'توفيت عليها السلام في مكة المكرمة قبل الهجرة، وهي أول من آمن بالنبي صلى الله عليه وآله.',
-    source: 'بحار الأنوار، الكافي',
-  ),
-
-  // أبو طالب عليه السلام
-  AhlulBaytEvent(
-    personName: 'أبو طالب بن عبد المطلب عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
-        attributedTo: 'المشهور عند علماء الإمامية (إعلام الورى)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في مكة المكرمة، وهو عم النبي صلى الله عليه وآله وأبو الإمام علي عليه السلام. كان سيد قريش وكافل النبي وحاميه.',
-    source: 'إعلام الورى، بحار الأنوار',
-  ),
-  AhlulBaytEvent(
-    personName: 'أبو طالب بن عبد المطلب عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'شعبان',
-        hijriYear: '10 هـ قبل البعث',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفي عليه السلام في مكة المكرمة، وهو من المؤمنين بحسب الروايات الشيعية (توفي قبل نزول آية الإنذار العلني).',
-    source: 'بحار الأنوار، الكافي',
-  ),
-
-  // أبو ذر الغفاري عليه السلام
-  AhlulBaytEvent(
-    personName: 'أبو ذر جندب بن جنادة الغفاري عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في قبيلة غفار، وهو من أوائل من أسلم وأعلن إسلامه جهاراً.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'أبو ذر جندب بن جنادة الغفاري عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'ذي الحجة أو ربيع الأول',
-        hijriYear: '32 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-      Narration(
-        hijriDate: '31 هـ',
-        attributedTo: 'رواية أخرى وردت في بعض المصادر الشيعية',
-      ),
-    ],
-    description: 'توفي عليه السلام في الربذة منفياً بأمر عثمان بن عفان، وكان من أشد الناس ولاءً لأهل البيت عليهم السلام.',
-    source: 'بحار الأنوار، الكافي',
-  ),
-
-  // سلمان المحمدي (الفارسي) عليه السلام
-  AhlulBaytEvent(
-    personName: 'سلمان الفارسي المحمدي عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في فارس (إيران)، ورحل طويلاً بحثاً عن الحق حتى وصل إلى النبي صلى الله عليه وآله. كان من أهل البيت بحسب الحديث الشريف.',
-    source: 'بحار الأنوار، الكافي',
-  ),
-  AhlulBaytEvent(
-    personName: 'سلمان الفارسي المحمدي عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'ذي القعدة',
-        hijriYear: '35 أو 36 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفي عليه السلام في المدائن (العراق)، وهو من أصحاب النبي صلى الله عليه وآله المقربين جداً.',
-    source: 'بحار الأنوار، الكافي',
-  ),
-
-  // سعيد بن جبير عليه السلام
-  AhlulBaytEvent(
-    personName: 'سعيد بن جبير بن هشام الأسدي عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في الكوفة، وهو تابعي جليل ومن أصحاب الإمام علي والإمام الباقر عليهما السلام.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'سعيد بن جبير بن هشام الأسدي عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '19 رمضان',
-        hijriYear: '95 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'استشهد عليه السلام على يد الحجاج بن يوسف الثقفي، وهو من أبرز علماء التابعين ومن أشد الناس ولاءً لأهل البيت.',
-    source: 'بحار الأنوار، الكافي',
   ),
 
   // السيدة فاطمة الزهراء عليها السلام
@@ -256,39 +106,6 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     source: 'بحار الأنوار، إعلام الورى',
   ),
 
-  // أم البنين عليها السلام
-  AhlulBaytEvent(
-    personName: 'أم البنين فاطمة بنت حزام الكلابية عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام، وهي زوجة الإمام علي عليه السلام وأم العباس وجعفر وعثمان وعبد الله (شهداء كربلاء).',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'أم البنين فاطمة بنت حزام الكلابية عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '13 جمادى الآخرة',
-        hijriYear: '64 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-      Narration(
-        hijriDate: 'جمادى الآخرة',
-        attributedTo: 'رواية أخرى وردت في بعض المصادر الشيعية',
-      ),
-    ],
-    description: 'توفيت عليها السلام في الكوفة، وهي من أعظم النساء في التاريخ الإسلامي وأم الشهداء الأربعة في كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
   // الإمام الحسن عليه السلام
   AhlulBaytEvent(
     personName: 'الإمام الحسن بن علي عليه السلام',
@@ -351,242 +168,6 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     ],
     description: 'استشهد عليه السلام في معركة كربلاء مع أهل بيته وأصحابه.',
     source: 'اللهوف، بحار الأنوار',
-  ),
-
-  // علي الأكبر عليه السلام
-  AhlulBaytEvent(
-    personName: 'علي الأكبر بن الحسين عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: '11 شعبان',
-        hijriYear: '33 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في المدينة المنورة، وهو أكبر أبناء الإمام الحسين عليه السلام وأشبه الناس بالنبي صلى الله عليه وآله.',
-    source: 'مقتل المقرم، اللهوف',
-  ),
-  AhlulBaytEvent(
-    personName: 'علي الأكبر بن الحسين عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '10 محرم (يوم عاشوراء)',
-        hijriYear: '61 هـ',
-        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'استشهد عليه السلام في كربلاء وهو يقاتل بشجاعة نادرة، وكان أول من استشهد من بني هاشم بعد القاسم.',
-    source: 'اللهوف، مقتل المقرم',
-  ),
-
-  // القاسم بن الحسن عليه السلام
-  AhlulBaytEvent(
-    personName: 'القاسم بن الحسن بن علي عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'شعبان',
-        hijriYear: '47 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في المدينة المنورة، وهو ابن الإمام الحسن المجتبى عليه السلام.',
-    source: 'مقتل المقرم، اللهوف',
-  ),
-  AhlulBaytEvent(
-    personName: 'القاسم بن الحسن بن علي عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '10 محرم (يوم عاشوراء)',
-        hijriYear: '61 هـ',
-        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'استشهد عليه السلام في كربلاء وهو غلام شاب، وقد طلب من عمه الإمام الحسين عليه السلام الإذن بالجهاد.',
-    source: 'اللهوف، مقتل المقرم',
-  ),
-
-  // عبد الله بن الحسن (الأكبر) عليه السلام
-  AhlulBaytEvent(
-    personName: 'عبد الله بن الحسن المجتبى عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في المدينة المنورة، وهو ابن الإمام الحسن المجتبى عليه السلام وشقيق القاسم.',
-    source: 'مقتل المقرم، اللهوف',
-  ),
-  AhlulBaytEvent(
-    personName: 'عبد الله بن الحسن المجتبى عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '10 محرم (يوم عاشوراء)',
-        hijriYear: '61 هـ',
-        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'استشهد عليه السلام في كربلاء وهو يدافع عن عمه الإمام الحسين عليه السلام، وقد قُتل وهو يحمي أخاه القاسم.',
-    source: 'اللهوف، مقتل المقرم',
-  ),
-
-  // السيدة فاطمة الصغرى عليها السلام
-  AhlulBaytEvent(
-    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وأخت السيدة سكينة.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // أم كلثوم بنت علي عليها السلام
-  AhlulBaytEvent(
-    personName: 'أم كلثوم بنت علي عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام وأخت الإمام الحسن والحسين.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'أم كلثوم بنت علي عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء ومن خطب في الكوفة.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // رقية بنت علي عليها السلام
-  AhlulBaytEvent(
-    personName: 'رقية بنت علي عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'رقية بنت علي عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء في الشام بحسب بعض الروايات الشيعية.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // سكينة بنت الحسين عليها السلام
-  AhlulBaytEvent(
-    personName: 'سكينة بنت الحسين عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: '20 رجب',
-        hijriYear: '56 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام ومن أشهر شخصيات كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'سكينة بنت الحسين عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '5 ربيع الأول',
-        hijriYear: '117 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام في المدينة المنورة بعد عودتها من الشام، وهي من أشهر خطباء كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // فاطمة بنت الحسين عليها السلام
-  AhlulBaytEvent(
-    personName: 'فاطمة بنت الحسين عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'شعبان',
-        hijriYear: '57 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وزوجة الحسن المثنى.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'فاطمة بنت الحسين عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
   ),
 
   // الإمام زين العابدين عليه السلام
@@ -869,6 +450,106 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     source: 'بحار الأنوار، كمال الدين',
   ),
 
+  // ======================================================
+  // 2) أهل البيت المقرّبون عليهم السلام
+  // ======================================================
+
+  // السيدة خديجة الكبرى عليها السلام
+  AhlulBaytEvent(
+    personName: 'السيدة خديجة بنت خويلد عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'شعبان (يوم غير محدد بدقة في المصادر الشيعية)',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في مكة المكرمة، وهي أول زوجات النبي صلى الله عليه وآله وأم السيدة فاطمة الزهراء عليها السلام.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'السيدة خديجة بنت خويلد عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '10 رمضان',
+        hijriYear: '3 هـ قبل البعث',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+      Narration(
+        hijriDate: 'رمضان',
+        attributedTo: 'رواية أخرى تذكرها بعض المصادر الشيعية',
+        note: 'توفيت قبل البعث النبوي بثلاث سنين',
+      ),
+    ],
+    description: 'توفيت عليها السلام في مكة المكرمة قبل الهجرة، وهي أول من آمن بالنبي صلى الله عليه وآله.',
+    source: 'بحار الأنوار، الكافي',
+  ),
+
+  // أبو طالب عليه السلام
+  AhlulBaytEvent(
+    personName: 'أبو طالب بن عبد المطلب عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
+        attributedTo: 'المشهور عند علماء الإمامية (إعلام الورى)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في مكة المكرمة، وهو عم النبي صلى الله عليه وآله وأبو الإمام علي عليه السلام. كان سيد قريش وكافل النبي وحاميه.',
+    source: 'إعلام الورى، بحار الأنوار',
+  ),
+  AhlulBaytEvent(
+    personName: 'أبو طالب بن عبد المطلب عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'شعبان',
+        hijriYear: '10 هـ قبل البعث',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفي عليه السلام في مكة المكرمة، وهو من المؤمنين بحسب الروايات الشيعية (توفي قبل نزول آية الإنذار العلني).',
+    source: 'بحار الأنوار، الكافي',
+  ),
+
+  // أم البنين عليها السلام
+  AhlulBaytEvent(
+    personName: 'أم البنين فاطمة بنت حزام الكلابية عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام، وهي زوجة الإمام علي عليه السلام وأم العباس وجعفر وعثمان وعبد الله (شهداء كربلاء).',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'أم البنين فاطمة بنت حزام الكلابية عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '13 جمادى الآخرة',
+        hijriYear: '64 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+      Narration(
+        hijriDate: 'جمادى الآخرة',
+        attributedTo: 'رواية أخرى وردت في بعض المصادر الشيعية',
+      ),
+    ],
+    description: 'توفيت عليها السلام في الكوفة، وهي من أعظم النساء في التاريخ الإسلامي وأم الشهداء الأربعة في كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
   // السيدة زينب عليها السلام
   AhlulBaytEvent(
     personName: 'السيدة زينب بنت علي عليها السلام',
@@ -896,6 +577,183 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     ],
     description: 'توفيت عليها السلام بعد عودتها من الشام؛ وهناك خلاف تاريخي بين علماء الشيعة أنفسهم حول مكان وفاتها ودفنها: فالمشهور عند كثيرين أن مرقدها في دمشق، بينما يذهب آخرون إلى أنه في مصر.',
     source: 'مصادر تراجم شيعية عامة',
+  ),
+
+  // أم كلثوم بنت علي عليها السلام
+  AhlulBaytEvent(
+    personName: 'أم كلثوم بنت علي عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام وأخت الإمام الحسن والحسين.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'أم كلثوم بنت علي عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء ومن خطب في الكوفة.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // رقية بنت علي عليها السلام
+  AhlulBaytEvent(
+    personName: 'رقية بنت علي عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'رقية بنت علي عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء في الشام بحسب بعض الروايات الشيعية.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // علي الأكبر عليه السلام
+  AhlulBaytEvent(
+    personName: 'علي الأكبر بن الحسين عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: '11 شعبان',
+        hijriYear: '33 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في المدينة المنورة، وهو أكبر أبناء الإمام الحسين عليه السلام وأشبه الناس بالنبي صلى الله عليه وآله.',
+    source: 'مقتل المقرم، اللهوف',
+  ),
+  AhlulBaytEvent(
+    personName: 'علي الأكبر بن الحسين عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '10 محرم (يوم عاشوراء)',
+        hijriYear: '61 هـ',
+        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'استشهد عليه السلام في كربلاء وهو يقاتل بشجاعة نادرة، وكان أول من استشهد من بني هاشم بعد القاسم.',
+    source: 'اللهوف، مقتل المقرم',
+  ),
+
+  // سكينة بنت الحسين عليها السلام
+  AhlulBaytEvent(
+    personName: 'سكينة بنت الحسين عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: '20 رجب',
+        hijriYear: '56 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام ومن أشهر شخصيات كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'سكينة بنت الحسين عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '5 ربيع الأول',
+        hijriYear: '117 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام في المدينة المنورة بعد عودتها من الشام، وهي من أشهر خطباء كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // فاطمة بنت الحسين عليها السلام
+  AhlulBaytEvent(
+    personName: 'فاطمة بنت الحسين عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'شعبان',
+        hijriYear: '57 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وزوجة الحسن المثنى.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'فاطمة بنت الحسين عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // السيدة فاطمة الصغرى عليها السلام
+  AhlulBaytEvent(
+    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وأخت السيدة سكينة.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
   ),
 
   // أبو الفضل العباس عليه السلام
@@ -926,6 +784,160 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     ],
     description: 'استشهد عليه السلام في كربلاء وهو يحاول إحضار الماء لمخيم أخيه الإمام الحسين عليه السلام.',
     source: 'اللهوف، مقتل المقرم',
+  ),
+
+  // القاسم بن الحسن عليه السلام
+  AhlulBaytEvent(
+    personName: 'القاسم بن الحسن بن علي عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'شعبان',
+        hijriYear: '47 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في المدينة المنورة، وهو ابن الإمام الحسن المجتبى عليه السلام.',
+    source: 'مقتل المقرم، اللهوف',
+  ),
+  AhlulBaytEvent(
+    personName: 'القاسم بن الحسن بن علي عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '10 محرم (يوم عاشوراء)',
+        hijriYear: '61 هـ',
+        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'استشهد عليه السلام في كربلاء وهو غلام شاب، وقد طلب من عمه الإمام الحسين عليه السلام الإذن بالجهاد.',
+    source: 'اللهوف، مقتل المقرم',
+  ),
+
+  // عبد الله بن الحسن (الأكبر) عليه السلام
+  AhlulBaytEvent(
+    personName: 'عبد الله بن الحسن المجتبى عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في المدينة المنورة، وهو ابن الإمام الحسن المجتبى عليه السلام وشقيق القاسم.',
+    source: 'مقتل المقرم، اللهوف',
+  ),
+  AhlulBaytEvent(
+    personName: 'عبد الله بن الحسن المجتبى عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '10 محرم (يوم عاشوراء)',
+        hijriYear: '61 هـ',
+        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'استشهد عليه السلام في كربلاء وهو يدافع عن عمه الإمام الحسين عليه السلام، وقد قُتل وهو يحمي أخاه القاسم.',
+    source: 'اللهوف، مقتل المقرم',
+  ),
+
+  // ======================================================
+  // 3) الأصحاب والموالون عليهم السلام
+  // ======================================================
+
+  // أبو ذر الغفاري عليه السلام
+  AhlulBaytEvent(
+    personName: 'أبو ذر جندب بن جنادة الغفاري عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في قبيلة غفار، وهو من أوائل من أسلم وأعلن إسلامه جهاراً.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'أبو ذر جندب بن جنادة الغفاري عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'ذي الحجة أو ربيع الأول',
+        hijriYear: '32 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+      Narration(
+        hijriDate: '31 هـ',
+        attributedTo: 'رواية أخرى وردت في بعض المصادر الشيعية',
+      ),
+    ],
+    description: 'توفي عليه السلام في الربذة منفياً بأمر عثمان بن عفان، وكان من أشد الناس ولاءً لأهل البيت عليهم السلام.',
+    source: 'بحار الأنوار، الكافي',
+  ),
+
+  // سلمان المحمدي (الفارسي) عليه السلام
+  AhlulBaytEvent(
+    personName: 'سلمان الفارسي المحمدي عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في فارس (إيران)، ورحل طويلاً بحثاً عن الحق حتى وصل إلى النبي صلى الله عليه وآله. كان من أهل البيت بحسب الحديث الشريف.',
+    source: 'بحار الأنوار، الكافي',
+  ),
+  AhlulBaytEvent(
+    personName: 'سلمان الفارسي المحمدي عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'ذي القعدة',
+        hijriYear: '35 أو 36 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفي عليه السلام في المدائن (العراق)، وهو من أصحاب النبي صلى الله عليه وآله المقربين جداً.',
+    source: 'بحار الأنوار، الكافي',
+  ),
+
+  // سعيد بن جبير عليه السلام
+  AhlulBaytEvent(
+    personName: 'سعيد بن جبير بن هشام الأسدي عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة في المصادر الشيعية',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في الكوفة، وهو تابعي جليل ومن أصحاب الإمام علي والإمام الباقر عليهما السلام.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'سعيد بن جبير بن هشام الأسدي عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '19 رمضان',
+        hijriYear: '95 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'استشهد عليه السلام على يد الحجاج بن يوسف الثقفي، وهو من أبرز علماء التابعين ومن أشد الناس ولاءً لأهل البيت.',
+    source: 'بحار الأنوار، الكافي',
   ),
 
   // مسلم بن عقيل عليه السلام
