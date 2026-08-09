@@ -60,6 +60,7 @@ flutter:
   assets:
     - assets/books/ahilla.pdf
     - assets/books/mafatih_aljanan.json
+    - assets/books/sahifa_sajjadiya.json
     - assets/images/
     - assets/sounds/
 flutter_launcher_icons:
