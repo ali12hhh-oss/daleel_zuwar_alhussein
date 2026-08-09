@@ -161,15 +161,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         notificationDetails,
       );
     } catch (e) {
-      // 🔧 وضع تشخيص مؤقت: نعرض نص الخطأ الحقيقي كاملاً على الشاشة
-      // بدل الرسالة العامة، لمعرفة السبب الفعلي وراء فشل الإشعار.
-      // يجب إعادة هذا لرسالة ودّية بعد إيجاد السبب وإصلاحه.
       debugPrint('⚠️ فشل تشغيل صوت الأذان: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ فعلي: $e'),
-            duration: const Duration(seconds: 10),
+            content: Text(
+              _adhanSoundMode == 'sound'
+                  ? 'تعذر تشغيل صوت الأذان. تأكد من تحديث التطبيق لآخر إصدار'
+                  : 'تعذر تشغيل الإشعار. تأكد من تفعيل إذن الإشعارات',
+            ),
           ),
         );
       }
