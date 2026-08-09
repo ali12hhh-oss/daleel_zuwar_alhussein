@@ -1,13 +1,10 @@
 name: بناء تطبيق دليل زوار الحسين (APK)
-
 on:
   push:
     branches: [ "main", "master" ]
   workflow_dispatch: {}
-
 permissions:
   contents: write
-
 jobs:
   build-apk:
     name: Build Release APK
@@ -15,31 +12,26 @@ jobs:
     steps:
       - name: Checkout الكود
         uses: actions/checkout@v5
-
       - name: تثبيت Java
         uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - name: تثبيت Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.7'
           channel: 'stable'
           cache: true
-
       - name: إنشاء android/local.properties
         run: |
           FLUTTER_SDK_PATH="$(dirname "$(dirname "$(which flutter)")")"
           echo "flutter.sdk=$FLUTTER_SDK_PATH" > android/local.properties
           cat android/local.properties
-
       - name: تحميل حزم Flutter
         run: |
           flutter pub upgrade
           flutter pub get
-
       - name: إصلاح ملف build.gradle لـ geolocator_android
         run: |
           GEO_FILE=$(find "$HOME/.pub-cache/hosted/pub.dev" -path "*/geolocator_android-*/android/build.gradle" | head -1)
@@ -47,7 +39,6 @@ jobs:
             cat > "$GEO_FILE" << 'EOF'
           group 'com.baseflow.geolocator'
           version '1.0-SNAPSHOT'
-
           buildscript {
               repositories {
                   google()
@@ -57,43 +48,35 @@ jobs:
                   classpath 'com.android.tools.build:gradle:8.1.0'
               }
           }
-
           rootProject.allprojects {
               repositories {
                   google()
                   mavenCentral()
               }
           }
-
           apply plugin: 'com.android.library'
-
           android {
               namespace 'com.baseflow.geolocator'
               compileSdk 34
-
               defaultConfig {
                   minSdk 21
                   targetSdk 34
                   testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
               }
-
               lintOptions {
                   disable 'InvalidPackage'
               }
-
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
               }
           }
-
           dependencies {
               implementation 'androidx.core:core:1.10.1'
               implementation 'com.google.android.gms:play-services-location:21.0.1'
           }
           EOF
           fi
-
       - name: توليد ملفات Gradle Wrapper
         run: |
           set -e
@@ -104,10 +87,8 @@ jobs:
           cp /tmp/wrapper_ref/android/gradle/wrapper/gradle-wrapper.jar "$GITHUB_WORKSPACE/android/gradle/wrapper/gradle-wrapper.jar"
           chmod +x "$GITHUB_WORKSPACE/android/gradlew"
           rm -rf /tmp/wrapper_ref
-
       - name: تحليل الكود
         run: flutter analyze || true
-
       - name: فحص وجود ملفات الصوت قبل البناء
         run: |
           echo "=== محتويات مجلد res/raw ==="
@@ -116,10 +97,18 @@ jobs:
           file android/app/src/main/res/raw/*.mp3 || true
           echo "=== محتوى .gitattributes إن وُجد (للتأكد من عدم وجود LFS) ==="
           cat .gitattributes 2>/dev/null || echo "لا يوجد ملف .gitattributes"
-
+      # ===== إضافة: فك تشفير مفتاح التوقيع الحقيقي قبل البناء =====
+      - name: فك تشفير مفتاح التوقيع
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/daleel_zuwar_key.jks
+      - name: إنشاء android/key.properties
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=daleel_zuwar_key.jks" >> android/key.properties
       - name: بناء APK (Release)
         run: flutter build apk --release
-
       - name: فحص مجلدات الموارد الوسيطة بعد البناء
         continue-on-error: true
         run: |
@@ -133,19 +122,25 @@ jobs:
           echo "=== فحص أي مجلد raw داخل build/ ==="
           find build -type d -iname "raw" 2>/dev/null || true
           echo "=== انتهى الفحص ==="
-
       - name: فحص وجود ملفات الصوت داخل الـ APK بعد البناء
         run: |
           echo "=== محتويات res/raw داخل الـ APK النهائي ==="
           unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -i "raw/adhan" || echo "❌ الملفات غير موجودة داخل الـ APK إطلاقاً"
-
       - name: رفع ملف APK كمخرَج
         uses: actions/upload-artifact@v6
         with:
           name: daleel-zuwar-alhussein-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-
+      # ===== إضافة: بناء نسخة Google Play (AAB) =====
+      - name: بناء App Bundle (لرفعه على Google Play)
+        run: flutter build appbundle --release
+      - name: رفع ملف AAB كمخرَج
+        uses: actions/upload-artifact@v6
+        with:
+          name: daleel-zuwar-alhussein-aab-googleplay
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
       - name: إنشاء إصدار على GitHub
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
