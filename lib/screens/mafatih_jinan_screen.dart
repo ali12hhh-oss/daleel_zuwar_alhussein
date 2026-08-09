@@ -18,13 +18,44 @@ class MafatihEntry {
   final int id;
   final String title;
   final String content;
-  const MafatihEntry({required this.id, required this.title, required this.content});
+  final String titleNormalized;
+  final String contentNormalized;
+
+  MafatihEntry({
+    required this.id,
+    required this.title,
+    required this.content,
+  })  : titleNormalized = _normalizeArabic(title),
+        contentNormalized = _normalizeArabic(content);
 
   factory MafatihEntry.fromJson(Map<String, dynamic> j) => MafatihEntry(
         id: j['id'] as int,
         title: j['title'] as String,
         content: j['content'] as String,
       );
+}
+
+/// يحذف التشكيل (الحركات) ويوحّد أشكال الألف/الياء/التاء المربوطة، حتى
+/// يقدر المستخدم يبحث بكلمة بسيطة بدون تشكيل (مثل "دعاء") وتنطابق مع
+/// النص المشكّل بالكتاب (مثل "دُعَاءُ").
+String _normalizeArabic(String s) {
+  final buffer = StringBuffer();
+  for (final rune in s.runes) {
+    // نطاق الحركات والتنوين والسكون والمدّة والتطويل
+    if ((rune >= 0x064B && rune <= 0x0652) || rune == 0x0670 || rune == 0x0640) {
+      continue;
+    }
+    var ch = String.fromCharCode(rune);
+    if (ch == 'أ' || ch == 'إ' || ch == 'آ') {
+      ch = 'ا';
+    } else if (ch == 'ى') {
+      ch = 'ي';
+    } else if (ch == 'ة') {
+      ch = 'ه';
+    }
+    buffer.write(ch);
+  }
+  return buffer.toString();
 }
 
 List<MafatihEntry> _parseEntries(String jsonStr) {
@@ -109,9 +140,11 @@ class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
   List<MapEntry<int, MafatihEntry>> get _filteredIndex {
     final indexed = _entries.asMap().entries.toList();
     if (_indexQuery.trim().isEmpty) return indexed;
-    final q = _indexQuery.trim();
+    final q = _normalizeArabic(_indexQuery.trim());
     return indexed
-        .where((e) => e.value.title.contains(q) || e.value.content.contains(q))
+        .where((e) =>
+            e.value.titleNormalized.contains(q) ||
+            e.value.contentNormalized.contains(q))
         .toList();
   }
 
@@ -144,10 +177,20 @@ class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
               icon: const Icon(Icons.text_increase),
               onPressed: () => _changeFontSize(1),
             ),
-            IconButton(
-              tooltip: _showIndex ? 'إخفاء الفهرس' : 'إظهار الفهرس',
-              icon: Icon(_showIndex ? Icons.menu_open : Icons.menu_book),
-              onPressed: () => setState(() => _showIndex = !_showIndex),
+            InkWell(
+              onTap: () => setState(() => _showIndex = !_showIndex),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_showIndex ? Icons.close : Icons.search, size: 22),
+                    const SizedBox(width: 4),
+                    const Text('الفهرست', style: TextStyle(fontSize: 13)),
+                  ],
+                ),
+              ),
             ),
           ],
         ],
@@ -235,6 +278,48 @@ class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
     );
   }
 
+  /// يبني عنوان الفهرس مع تمييز كلمة البحث بلون بارز (برتقالي غامق)
+  /// إذا كانت موجودة ضمن العنوان.
+  Widget _highlightedTitle(String title, String query, {required bool bold}) {
+    final baseStyle = TextStyle(
+      fontSize: 12.5,
+      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+      color: Colors.black87,
+    );
+    final q = query.trim();
+    if (q.isEmpty) {
+      return Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: baseStyle);
+    }
+    final spans = <TextSpan>[];
+    int start = 0;
+    final lowerTitle = title;
+    final lowerQuery = q;
+    while (true) {
+      final idx = lowerTitle.indexOf(lowerQuery, start);
+      if (idx < 0) {
+        spans.add(TextSpan(text: title.substring(start)));
+        break;
+      }
+      if (idx > start) {
+        spans.add(TextSpan(text: title.substring(start, idx)));
+      }
+      spans.add(TextSpan(
+        text: title.substring(idx, idx + lowerQuery.length),
+        style: const TextStyle(
+          color: Color(0xFFE65100),
+          fontWeight: FontWeight.bold,
+          backgroundColor: Color(0xFFFFE0B2),
+        ),
+      ));
+      start = idx + lowerQuery.length;
+    }
+    return RichText(
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(style: baseStyle, children: spans),
+    );
+  }
+
   Widget _buildIndexPanel() {
     final filtered = _filteredIndex;
     return Container(
@@ -249,35 +334,48 @@ class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
             color: Theme.of(context).primaryColor,
             child: Column(
               children: [
-                const Text(
-                  'الفهرس',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.search, color: Colors.white, size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'الفهرست',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 TextField(
                   controller: _searchController,
                   onChanged: (v) => setState(() => _indexQuery = v),
-                  style: const TextStyle(fontSize: 13),
+                  autofocus: false,
+                  cursorColor: Theme.of(context).primaryColor,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
                   decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, size: 20, color: Colors.black54),
                     hintText: 'بحث بالعنوان أو النص',
-                    hintStyle: const TextStyle(fontSize: 12),
+                    hintStyle: const TextStyle(fontSize: 12.5, color: Colors.black45),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     isDense: true,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
                     suffixIcon: _indexQuery.isEmpty
                         ? null
                         : IconButton(
-                            icon: const Icon(Icons.close, size: 18),
+                            icon: const Icon(Icons.close, size: 18, color: Colors.black54),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _indexQuery = '');
@@ -306,14 +404,10 @@ class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
                         dense: true,
                         selected: isSelected,
                         selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                        title: Text(
+                        title: _highlightedTitle(
                           entry.value.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
+                          _indexQuery,
+                          bold: isSelected,
                         ),
                         onTap: () => _selectEntry(entry.key),
                       );
