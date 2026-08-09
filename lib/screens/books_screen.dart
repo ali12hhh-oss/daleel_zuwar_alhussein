@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/section_card.dart';
 import 'quran_screen.dart';
 import 'mafatih_jinan_screen.dart';
+import 'sahifa_sajjadiya_screen.dart';
 
 class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
@@ -29,6 +30,16 @@ class BooksScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MafatihJinanScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SectionCard(
+            title: 'الصحيفة السجادية',
+            subtitle: 'أدعية ومناجاة الإمام زين العابدين عليه السلام كاملة',
+            icon: Icons.menu_book_outlined,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SahifaSajjadiyaScreen()),
             ),
           ),
         ],
