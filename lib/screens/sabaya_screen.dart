@@ -115,6 +115,12 @@ class _SabayaScreenState extends State<SabayaScreen> {
                   itemBuilder: (context, index) {
                     final cat = _categories[index];
                     final isSelected = cat == _selectedCategory;
+                    // ✅ إصلاح: لون النص غير المحدد كان مثبتاً على
+                    // Colors.black دون خلفية صريحة، فيعتمد على لون
+                    // الثيم الافتراضي للزر. في الوضع الداكن كانت
+                    // الخلفية تصبح داكنة أيضاً، فيظهر نص أسود على
+                    // خلفية داكنة بالكاد مقروء. الآن نحدد خلفية ولون
+                    // نص صريحين يضمنان تبايناً واضحاً في كلا الوضعين.
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
@@ -126,8 +132,17 @@ class _SabayaScreenState extends State<SabayaScreen> {
                           }
                         },
                         selectedColor: AppColors.primaryGreen,
+                        backgroundColor: Theme.of(context).brightness ==
+                                Brightness.dark
+                            ? Colors.grey[800]
+                            : Colors.white,
                         labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
+                          color: isSelected
+                              ? Colors.white
+                              : (Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87),
                           fontSize: 12,
                         ),
                       ),
