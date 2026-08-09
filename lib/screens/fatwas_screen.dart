@@ -59,7 +59,13 @@ class _FatwasScreenState extends State<FatwasScreen> {
       final fatwas = items.map((item) {
         final title = _getXmlText(item, 'title');
         final link = _getXmlText(item, 'link');
-        final description = _getXmlText(item, 'description');
+        // ✅ إصلاح: وصف RSS (description) يأتي غالباً كـ HTML كامل
+        // مغلّف بـ CDATA (فقرات <p>، روابط <a>، قوائم <ul>/<li>). كان
+        // يُمرَّر خاماً كما هو إلى Text() التي لا تُفسّر HTML إطلاقاً،
+        // فتظهر الوسوم حرفياً على الشاشة بدل نص منسّق. _stripHtml
+        // يزيل الوسوم ويحوّل الرموز المُرمّزة (&nbsp; ونحوها) إلى نص
+        // عادي مقروء.
+        final description = _stripHtml(_getXmlText(item, 'description'));
         final pubDateStr = _getXmlText(item, 'pubDate');
         final pubDate = DateTime.tryParse(pubDateStr) ?? DateTime.now();
 
@@ -95,6 +101,20 @@ class _FatwasScreenState extends State<FatwasScreen> {
     final elements = item.findElements(elementName);
     if (elements.isEmpty) return '';
     return elements.first.innerText.trim();
+  }
+
+  /// ✅ يزيل وسوم HTML من نص خام (مثل وصف RSS)، ويحوّل أشهر الرموز
+  /// المُرمّزة (HTML entities) إلى ما يقابلها من نص عادي، ثم يضغط أي
+  /// مسافات متكررة ناتجة عن إزالة الوسوم إلى مسافة واحدة.
+  String _stripHtml(String htmlText) {
+    return htmlText
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&apos;', "'")
+        .replaceAll('&amp;', '&')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   Future<void> _openLink(String url) async {
