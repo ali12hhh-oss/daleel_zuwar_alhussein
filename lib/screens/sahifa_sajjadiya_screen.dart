@@ -5,9 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// شاشة الصحيفة السجادية الكاملة (أدعية ومناجاة وفصول)، نصية بالكامل.
 /// نفس بنية شاشة مفاتيح الجنان: فهرس جانبي، بحث بالعناوين والنصوص
-/// (بتجاهل التشكيل)، وتكبير/تصغير للخط. الألوان مثبّتة يدوياً (بيضاء
-/// للخلفية، سوداء للنص) بدل الاعتماد على ثيم التطبيق، حتى تبقى واضحة
-/// ومقروءة بأي وضع (فاتح/غامق/أخضر...) بدون أي تعارض بالتباين.
+/// (بتجاهل التشكيل)، وتكبير/تصغير للخط.
+/// لون نص العنوان والمحتوى يتكيّف تلقائياً حسب لون خلفية الوضع الحالي
+/// للتطبيق (فاتح/داكن): لو كانت الخلفية خضراء يصبح النص أبيض عريض حتى
+/// يبقى واضحاً، وفي غير ذلك يبقى أسود كالمعتاد. باقي عناصر الشاشة
+/// (الفهرست، الأزرار...) لم تُغيَّر.
 class SahifaSajjadiyaScreen extends StatefulWidget {
   const SahifaSajjadiyaScreen({super.key});
 
@@ -155,6 +157,16 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
     }
   }
 
+  /// يحدد لون نص العنوان/المحتوى حسب لون خلفية الوضع الحالي فعلياً
+  /// (بدون افتراض إذا كان فاتح أو داكن): لو كانت الخلفية خضراء يرجع
+  /// أبيض، وفي غير ذلك يرجع أسود كما كان سابقاً.
+  Color _contentTextColor(BuildContext context) {
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final hsl = HSLColor.fromColor(bg);
+    final isGreenish = hsl.hue >= 70 && hsl.hue <= 170 && hsl.saturation > 0.15;
+    return isGreenish ? Colors.white : Colors.black;
+  }
+
   @override
   Widget build(BuildContext context) {
     final current = _entries.isNotEmpty ? _entries[_selectedIndex] : null;
@@ -223,6 +235,7 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
     if (current == null) {
       return const Center(child: Text('لا يوجد محتوى', style: TextStyle(color: Colors.black87)));
     }
+    final textColor = _contentTextColor(context);
     return SingleChildScrollView(
       controller: _contentScrollController,
       padding: const EdgeInsets.all(20),
@@ -237,7 +250,7 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
               style: TextStyle(
                 fontSize: _fontSize + 4,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 16),
@@ -250,7 +263,7 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
               style: TextStyle(
                 fontSize: _fontSize,
                 height: 1.9,
-                color: Colors.black,
+                color: textColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -402,6 +415,25 @@ class _SahifaSajjadiyaScreenState extends State<SahifaSajjadiyaScreen> {
                     separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.black12),
                     itemBuilder: (context, i) {
                       final entry = filtered[i];
+                      final isSectionHeader = entry.value.content.trim().isEmpty;
+
+                      if (isSectionHeader) {
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          color: Colors.grey[200],
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            entry.value.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.5,
+                              color: Colors.black,
+                            ),
+                          ),
+                        );
+                      }
+
                       final isSelected = entry.key == _selectedIndex;
                       return ListTile(
                         dense: true,
