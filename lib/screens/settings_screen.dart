@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../theme.dart';
 import '../data/ahlulbayt_dates_data.dart';
 import '../models/models.dart';
@@ -192,6 +193,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _notificationsEnabled = enabled;
     });
+
+    // ✅ يطلب استثناء التطبيق من "تحسين البطارية" عبر نافذة نظام قياسية
+    // في أندرويد نفسها (وليست مساراً يدوياً في إعدادات الجهاز). هذا
+    // إذن معياري (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS) يعمل على معظم
+    // الأجهزة بما فيها شاومي وهواوي وسامسونج، ويحل محل الاعتماد الكامل
+    // على تعليمات نصية يدوية طويلة كانت تُعرض للمستخدم سابقاً في هذه
+    // الشاشة. لا يُطلب إلا إن لم يكن ممنوحاً بالفعل، ولا يُعرض له أي
+    // رسالة فشل إن رفضه المستخدم أو لم يدعمه الجهاز - فهو تحسين إضافي
+    // وليس شرطاً لعمل باقي ميزات الإشعارات الأساسية.
+    try {
+      final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+      if (!batteryStatus.isGranted) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+    } catch (e) {
+      debugPrint('تعذّر طلب استثناء تحسين البطارية: $e');
+    }
   }
 
   Future<void> _requestPermission() async {
@@ -864,92 +882,6 @@ https://github.com/daleelzuwar/alhussein''',
                         style: TextStyle(fontSize: 11, color: Colors.grey[600], height: 1.6),
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-
-          // ✅ بطاقة إرشادية لتعطيل "تحسين البطارية" لهذا التطبيق تحديداً.
-          // أجهزة شاومي/هواوي/سامسونج (الأكثر انتشاراً في العراق) تقتل
-          // الإشعارات المجدولة بصمت لتوفير البطارية، رغم صحة كل الأذونات
-          // في الكود. بدون هذه الخطوة اليدوية من المستخدم، مواقيت الأذان
-          // قد تتوقف عن العمل بعد أيام من التثبيت لدى نسبة كبيرة من
-          // المستخدمين، دون أي خطأ ظاهر في التطبيق نفسه.
-          if (_notificationsEnabled) ...[
-            Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              color: Colors.orange.withOpacity(0.08),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Row(
-                      children: [
-                        Icon(Icons.battery_alert, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text(
-                          'مهم: تعطيل تحسين البطارية',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'بعض الأجهزة (شاومي، هواوي، سامسونج وغيرها) توقف '
-                      'إشعارات الأذان المجدولة تلقائياً بعد فترة لتوفير '
-                      'البطارية، حتى مع تفعيل كل الأذونات بشكل صحيح.\n\n'
-                      'لضمان وصول إشعار الأذان في وقته دائماً، يرجى الذهاب '
-                      'يدوياً إلى:\n'
-                      'إعدادات الهاتف ← البطارية (أو التطبيقات) ← دليل زوار '
-                      'الحسين ← واختيار "بدون قيود" أو تعطيل "تحسين البطارية" '
-                      'لهذا التطبيق تحديداً.',
-                      style: TextStyle(fontSize: 12, height: 1.7),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-
-          // ✅ بطاقة إضافية خاصة بأجهزة هواوي/هونور تحديداً (EMUI/Magic UI)
-          // - لديها نظام إدارة تشغيل تطبيقات منفصل تماماً عن "تحسين
-          // البطارية" القياسي في أندرويد. تفعيل "بدون قيود" في تحسين
-          // البطارية وحده لا يكفي إطلاقاً على هذه الأجهزة، وهذا السبب
-          // الأشهر لفشل كل تطبيقات التذكير المجدولة عليها تحديداً.
-          if (_notificationsEnabled) ...[
-            Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              color: Colors.orange.withOpacity(0.08),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Row(
-                      children: [
-                        Icon(Icons.phone_android, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text(
-                          'خاص بأجهزة هواوي / هونور',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'إذا كان هاتفك من هواوي أو هونور، تعطيل "تحسين البطارية" '
-                      'وحده لا يكفي لضمان وصول إشعار الأذان. أضف خطوتين إضافيتين:\n\n'
-                      '1) إعدادات الهاتف ← التطبيقات ← دليل زوار الحسين ← '
-                      '"بدء التشغيل" (App Launch): أوقف "إدارة تلقائية"، '
-                      'وفعّل يدوياً الثلاثة معاً (بدء تلقائي / بدء ثانوي / '
-                      'تشغيل في الخلفية).\n\n'
-                      '2) تطبيق "مدير الهاتف" (Phone Manager) ← البطارية ← '
-                      '"التطبيقات المحمية" (Protected apps): أضف دليل زوار '
-                      'الحسين لهذه القائمة.',
-                      style: TextStyle(fontSize: 12, height: 1.7),
-                    ),
                   ],
                 ),
               ),
