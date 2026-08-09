@@ -325,7 +325,7 @@ class _MafatihJinanScreenState extends State<MafatihJinanScreen> {
     return Container(
       width: 300,
       height: double.infinity,
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
