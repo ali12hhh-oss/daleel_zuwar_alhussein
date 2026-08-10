@@ -236,7 +236,7 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
       final total = prayer.totalRakahs;
       if (_rakahCount == total) {
         // آخر ركعة: تشهد + تسليم، وإنهاء الصلاة
-        _showReminder('التشهد والتسليم — أتمّ الله صلاتك 🤍');
+        _showReminder('التشهد والتسليم — تقبل الله صلاتك 🤍');
         await _persist();
         await Future.delayed(const Duration(milliseconds: 300));
         await _resetCount(markDoneForTransition: true);
@@ -513,7 +513,7 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 24),
       child: Text(
-        'ضع الجهاز قرب موضع سجودك، والمس الشاشة بجبهتك عند كل سجدة',
+        'ضع الجهاز قرب موضع سجودك، والمس الشاشة بانفك او اصبعك عند كل سجدة',
         textAlign: TextAlign.center,
         style: TextStyle(color: Colors.white54, fontSize: 12.5, height: 1.6),
       ),
