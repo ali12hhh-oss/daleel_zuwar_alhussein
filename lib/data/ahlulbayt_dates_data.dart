@@ -1,9 +1,9 @@
 import '../models/models.dart';
 
 const List<AhlulBaytEvent> ahlulBaytEvents = [
-  // ======================================================
-  // 1) المعصومون الأربعة عشر عليهم السلام (حسب التسلسل)
-  // ======================================================
+  // ============================================================
+  // المعصومون الأربعة عشر عليهم السلام (بالتسلسل الزمني للإمامة)
+  // ============================================================
 
   // النبي محمد صلى الله عليه وآله
   AhlulBaytEvent(
@@ -450,9 +450,9 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     source: 'بحار الأنوار، كمال الدين',
   ),
 
-  // ======================================================
-  // 2) أهل البيت المقرّبون عليهم السلام
-  // ======================================================
+  // ============================================================
+  // أهل البيت المقرَّبون عليهم السلام (غير المعصومين الأربعة عشر)
+  // ============================================================
 
   // السيدة خديجة الكبرى عليها السلام
   AhlulBaytEvent(
@@ -550,93 +550,6 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     source: 'بحار الأنوار، مقتل المقرم',
   ),
 
-  // السيدة زينب عليها السلام
-  AhlulBaytEvent(
-    personName: 'السيدة زينب بنت علي عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: '5 جمادى الأولى',
-        hijriYear: '5 أو 6 هـ',
-        attributedTo: 'رواية شائعة في كتب التراجم المعاصرة',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة. وردت روايات مختلفة في تحديد سنة ولادتها بدقة.',
-    source: 'مصادر تراجم شيعية عامة',
-  ),
-  AhlulBaytEvent(
-    personName: 'السيدة زينب بنت علي عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '15 رجب',
-        attributedTo: 'رواية شائعة يعتمدها من يقول بأن مرقدها في دمشق',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد عودتها من الشام؛ وهناك خلاف تاريخي بين علماء الشيعة أنفسهم حول مكان وفاتها ودفنها: فالمشهور عند كثيرين أن مرقدها في دمشق، بينما يذهب آخرون إلى أنه في مصر.',
-    source: 'مصادر تراجم شيعية عامة',
-  ),
-
-  // أم كلثوم بنت علي عليها السلام
-  AhlulBaytEvent(
-    personName: 'أم كلثوم بنت علي عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام وأخت الإمام الحسن والحسين.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'أم كلثوم بنت علي عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء ومن خطب في الكوفة.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // رقية بنت علي عليها السلام
-  AhlulBaytEvent(
-    personName: 'رقية بنت علي عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام.',
-    source: 'بحار الأنوار، إعلام الورى',
-  ),
-  AhlulBaytEvent(
-    personName: 'رقية بنت علي عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء في الشام بحسب بعض الروايات الشيعية.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
   // علي الأكبر عليه السلام
   AhlulBaytEvent(
     personName: 'علي الأكبر بن الحسين عليه السلام',
@@ -664,125 +577,6 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
       ),
     ],
     description: 'استشهد عليه السلام في كربلاء وهو يقاتل بشجاعة نادرة، وكان أول من استشهد من بني هاشم بعد القاسم.',
-    source: 'اللهوف، مقتل المقرم',
-  ),
-
-  // سكينة بنت الحسين عليها السلام
-  AhlulBaytEvent(
-    personName: 'سكينة بنت الحسين عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: '20 رجب',
-        hijriYear: '56 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام ومن أشهر شخصيات كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'سكينة بنت الحسين عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '5 ربيع الأول',
-        hijriYear: '117 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام في المدينة المنورة بعد عودتها من الشام، وهي من أشهر خطباء كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // فاطمة بنت الحسين عليها السلام
-  AhlulBaytEvent(
-    personName: 'فاطمة بنت الحسين عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'شعبان',
-        hijriYear: '57 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وزوجة الحسن المثنى.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'فاطمة بنت الحسين عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // السيدة فاطمة الصغرى عليها السلام
-  AhlulBaytEvent(
-    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: 'غير محدد بدقة',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وأخت السيدة سكينة.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-  AhlulBaytEvent(
-    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: 'بعد عاشوراء',
-        hijriYear: '61 هـ',
-        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
-    source: 'بحار الأنوار، مقتل المقرم',
-  ),
-
-  // أبو الفضل العباس عليه السلام
-  AhlulBaytEvent(
-    personName: 'أبو الفضل العباس بن علي عليه السلام',
-    kind: EventKind.birth,
-    narrations: [
-      Narration(
-        hijriDate: '4 شعبان',
-        hijriYear: '26 هـ',
-        attributedTo: 'رواية شائعة في كتب التراجم المعاصرة',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'ولد عليه السلام في المدينة المنورة، وهو نجل الإمام علي عليه السلام من أم البنين.',
-    source: 'مصادر تراجم شيعية عامة',
-  ),
-  AhlulBaytEvent(
-    personName: 'أبو الفضل العباس بن علي عليه السلام',
-    kind: EventKind.death,
-    narrations: [
-      Narration(
-        hijriDate: '10 محرم (يوم عاشوراء)',
-        hijriYear: '61 هـ',
-        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
-        isMostFamous: true,
-      ),
-    ],
-    description: 'استشهد عليه السلام في كربلاء وهو يحاول إحضار الماء لمخيم أخيه الإمام الحسين عليه السلام.',
     source: 'اللهوف، مقتل المقرم',
   ),
 
@@ -845,9 +639,215 @@ const List<AhlulBaytEvent> ahlulBaytEvents = [
     source: 'اللهوف، مقتل المقرم',
   ),
 
-  // ======================================================
-  // 3) الأصحاب والموالون عليهم السلام
-  // ======================================================
+  // السيدة فاطمة الصغرى عليها السلام
+  AhlulBaytEvent(
+    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وأخت السيدة سكينة.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'السيدة فاطمة الصغرى بنت الحسين عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // أم كلثوم بنت علي عليها السلام
+  AhlulBaytEvent(
+    personName: 'أم كلثوم بنت علي عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام وأخت الإمام الحسن والحسين.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'أم كلثوم بنت علي عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء ومن خطب في الكوفة.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // رقية بنت علي عليها السلام
+  AhlulBaytEvent(
+    personName: 'رقية بنت علي عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'غير محدد بدقة',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام علي والسيدة فاطمة الزهراء عليهما السلام.',
+    source: 'بحار الأنوار، إعلام الورى',
+  ),
+  AhlulBaytEvent(
+    personName: 'رقية بنت علي عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء في الشام بحسب بعض الروايات الشيعية.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // سكينة بنت الحسين عليها السلام
+  AhlulBaytEvent(
+    personName: 'سكينة بنت الحسين عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: '20 رجب',
+        hijriYear: '56 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام ومن أشهر شخصيات كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'سكينة بنت الحسين عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '5 ربيع الأول',
+        hijriYear: '117 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام في المدينة المنورة بعد عودتها من الشام، وهي من أشهر خطباء كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // فاطمة بنت الحسين عليها السلام
+  AhlulBaytEvent(
+    personName: 'فاطمة بنت الحسين عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: 'شعبان',
+        hijriYear: '57 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة، وهي ابنة الإمام الحسين عليه السلام وزوجة الحسن المثنى.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+  AhlulBaytEvent(
+    personName: 'فاطمة بنت الحسين عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: 'بعد عاشوراء',
+        hijriYear: '61 هـ',
+        attributedTo: 'المشهور عند علماء الإمامية (بحار الأنوار)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد أحداث كربلاء، وهي من سبايا كربلاء.',
+    source: 'بحار الأنوار، مقتل المقرم',
+  ),
+
+  // السيدة زينب عليها السلام
+  AhlulBaytEvent(
+    personName: 'السيدة زينب بنت علي عليها السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: '5 جمادى الأولى',
+        hijriYear: '5 أو 6 هـ',
+        attributedTo: 'رواية شائعة في كتب التراجم المعاصرة',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولدت عليها السلام في المدينة المنورة. وردت روايات مختلفة في تحديد سنة ولادتها بدقة.',
+    source: 'مصادر تراجم شيعية عامة',
+  ),
+  AhlulBaytEvent(
+    personName: 'السيدة زينب بنت علي عليها السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '15 رجب',
+        attributedTo: 'رواية شائعة يعتمدها من يقول بأن مرقدها في دمشق',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'توفيت عليها السلام بعد عودتها من الشام؛ وهناك خلاف تاريخي بين علماء الشيعة أنفسهم حول مكان وفاتها ودفنها: فالمشهور عند كثيرين أن مرقدها في دمشق، بينما يذهب آخرون إلى أنه في مصر.',
+    source: 'مصادر تراجم شيعية عامة',
+  ),
+
+  // أبو الفضل العباس عليه السلام
+  AhlulBaytEvent(
+    personName: 'أبو الفضل العباس بن علي عليه السلام',
+    kind: EventKind.birth,
+    narrations: [
+      Narration(
+        hijriDate: '4 شعبان',
+        hijriYear: '26 هـ',
+        attributedTo: 'رواية شائعة في كتب التراجم المعاصرة',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'ولد عليه السلام في المدينة المنورة، وهو نجل الإمام علي عليه السلام من أم البنين.',
+    source: 'مصادر تراجم شيعية عامة',
+  ),
+  AhlulBaytEvent(
+    personName: 'أبو الفضل العباس بن علي عليه السلام',
+    kind: EventKind.death,
+    narrations: [
+      Narration(
+        hijriDate: '10 محرم (يوم عاشوراء)',
+        hijriYear: '61 هـ',
+        attributedTo: 'إجماع المصادر الشيعية (اللهوف، مقتل المقرم)',
+        isMostFamous: true,
+      ),
+    ],
+    description: 'استشهد عليه السلام في كربلاء وهو يحاول إحضار الماء لمخيم أخيه الإمام الحسين عليه السلام.',
+    source: 'اللهوف، مقتل المقرم',
+  ),
+
+  // ============================================================
+  // الأصحاب والموالون رحمهم الله
+  // ============================================================
 
   // أبو ذر الغفاري عليه السلام
   AhlulBaytEvent(
