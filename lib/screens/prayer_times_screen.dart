@@ -6,6 +6,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import '../theme.dart';
+import 'rakah_counter_screen.dart';
 
 class PrayerTimesScreen extends StatefulWidget {
   const PrayerTimesScreen({super.key});
@@ -636,6 +637,32 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+
+              // ✅ زر عداد الركعات - أُضيف بعد قسم الشروق/الغروب/منتصف
+              // الليل مباشرة كما طُلب، مع تمرير كل أوقات اليوم المحسوبة
+              // له لاستخدامها داخل شاشة العداد.
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RakahCounterScreen(
+                      fajrAdhan: _fajrAdhan,
+                      sunrise: _sunrise,
+                      dhuhrAdhan: _dhuhrAdhan,
+                      maghribAdhan: _maghribAdhan,
+                      midnight: _midnight,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.self_improvement),
+                label: const Text('عداد الركعات'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],
