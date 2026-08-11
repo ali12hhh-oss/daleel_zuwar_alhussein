@@ -44,10 +44,7 @@ extension PrayerNameX on PrayerName {
     }
   }
 
-  /// صلاة المسافر:
-  /// الفجر = 2
-  /// المغرب = 3
-  /// الظهر/العصر/العشاء = 2
+  /// صلاة المسافر.
   int get travelerRakahs {
     switch (this) {
       case PrayerName.fajr:
@@ -110,9 +107,9 @@ class RakahCounterScreen extends StatefulWidget {
 
 class _RakahCounterScreenState extends State<RakahCounterScreen>
     with SingleTickerProviderStateMixin {
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // مفاتيح التخزين
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static const _kDateKey = 'rakah_counter_date';
   static const _kSujudKey = 'rakah_counter_sujud';
@@ -131,9 +128,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
 
   static const _kCompletedPrayerPrefix = 'rakah_counter_completed_';
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // حالة العد
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   int _sujudCount = 0;
   int _rakahCount = 0;
@@ -161,9 +158,18 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
   /// الصلوات المكتملة لهذا اليوم.
   final Set<PrayerName> _completedPrayers = {};
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // تحديث التحديد التلقائي
+  // ===========================================================================
+
+  Timer? _autoPrayerTimer;
+
+  /// آخر صلاة تلقائية حتى نعرف هل تغيرت الصلاة.
+  PrayerName? _lastAutoPrayer;
+
+  // ===========================================================================
   // Animation
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
@@ -172,9 +178,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
 
   Timer? _reminderTimer;
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // دورة الحياة
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   @override
   void initState() {
@@ -199,29 +205,36 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
+    // تحديث وقت الصلاة تلقائيًا كل ثانية.
+    _autoPrayerTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _checkAutoPrayerChanged(),
+    );
+
     _init();
   }
 
   @override
   void dispose() {
+    _autoPrayerTimer?.cancel();
     _reminderTimer?.cancel();
     _pulseController.dispose();
     _glowController.dispose();
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // التاريخ
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   String get _today {
     final now = DateTime.now();
     return '${now.year}-${now.month}-${now.day}';
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // عدد الركعات الحالي
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   int _totalRakahsFor(PrayerName prayer) {
     return _isTraveler
@@ -229,12 +242,16 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
         : prayer.normalRakahs;
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // التهيئة
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Future<void> _init() async {
-    _hasVibrator = await Vibration.hasVibrator() ?? false;
+    try {
+      _hasVibrator = await Vibration.hasVibrator() ?? false;
+    } catch (_) {
+      _hasVibrator = false;
+    }
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -249,7 +266,15 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
 
     _inputMode = prefs.getString(_kInputModeKey) ?? 'touch';
 
-    _uiScale = prefs.getDouble(_kUiScaleKey) ?? 1.0;
+    final savedScale = prefs.getDouble(_kUiScaleKey);
+    _uiScale = savedScale ?? 1.0;
+
+    // حماية من أي قيمة غير صحيحة محفوظة.
+    if (_uiScale != 0.90 &&
+        _uiScale != 1.0 &&
+        _uiScale != 1.12) {
+      _uiScale = 1.0;
+    }
 
     final savedPrayer = prefs.getString(_kPrayerKey);
 
@@ -274,20 +299,27 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
       _sujudCount = 0;
       _rakahCount = 0;
       _completedPrayers.clear();
+
+      _dhuhrDoneDate = null;
+      _maghribDoneDate = null;
     }
 
-    if (mounted) {
-      setState(() {});
-    }
+    if (!mounted) return;
+
+    setState(() {
+      // تحديث الواجهة فور انتهاء التحميل.
+    });
+
+    _lastAutoPrayer = _autoPrayer;
   }
 
   String _completedKey(PrayerName prayer) {
     return '$_kCompletedPrayerPrefix${prayer.storageKey}_$_today';
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // الحفظ
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
@@ -313,7 +345,12 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     }
 
     if (_dhuhrDoneDate != null) {
-      await prefs.setString(_kDhuhrDoneKey, _dhuhrDoneDate!);
+      await prefs.setString(
+        _kDhuhrDoneKey,
+        _dhuhrDoneDate!,
+      );
+    } else {
+      await prefs.remove(_kDhuhrDoneKey);
     }
 
     if (_maghribDoneDate != null) {
@@ -321,6 +358,8 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
         _kMaghribDoneKey,
         _maghribDoneDate!,
       );
+    } else {
+      await prefs.remove(_kMaghribDoneKey);
     }
 
     for (final prayer in PrayerName.values) {
@@ -331,9 +370,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // التحديد التلقائي
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   PrayerName? get _autoPrayer {
     final now = DateTime.now();
@@ -344,29 +383,53 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     final maghrib = widget.maghribAdhan;
     final midnight = widget.midnight;
 
+    // -------------------------------------------------------------------------
+    // الفجر
+    // -------------------------------------------------------------------------
+
     if (fajr != null &&
         sunrise != null &&
-        now.isAfter(fajr) &&
+        !now.isBefore(fajr) &&
         now.isBefore(sunrise)) {
       return PrayerName.fajr;
     }
 
+    // -------------------------------------------------------------------------
+    // الظهر والعصر
+    // -------------------------------------------------------------------------
+
     if (dhuhr != null &&
         maghrib != null &&
-        now.isAfter(dhuhr) &&
+        !now.isBefore(dhuhr) &&
         now.isBefore(maghrib)) {
       return _dhuhrDoneDate == _today
           ? PrayerName.asr
           : PrayerName.dhuhr;
     }
 
+    // -------------------------------------------------------------------------
+    // المغرب والعشاء
+    // -------------------------------------------------------------------------
+
     if (maghrib != null &&
         midnight != null &&
-        now.isAfter(maghrib) &&
+        !now.isBefore(maghrib) &&
         now.isBefore(midnight)) {
       return _maghribDoneDate == _today
           ? PrayerName.isha
           : PrayerName.maghrib;
+    }
+
+    // -------------------------------------------------------------------------
+    // بعد منتصف الليل وحتى الفجر:
+    // نعتبرها العشاء ما لم يدخل الفجر.
+    // -------------------------------------------------------------------------
+
+    if (midnight != null &&
+        fajr != null &&
+        !now.isBefore(midnight) &&
+        now.isBefore(fajr)) {
+      return PrayerName.isha;
     }
 
     return null;
@@ -374,19 +437,77 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
 
   PrayerName? get _activePrayer {
     if (_manualMode) {
-      return _manualPrayer ?? _autoPrayer;
+      return _manualPrayer;
     }
 
-    return _autoPrayer ?? _manualPrayer;
+    return _autoPrayer;
   }
 
-  // ---------------------------------------------------------------------------
-  // الصوت والاهتزاز
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // فحص تغير الصلاة تلقائيًا
+  // ===========================================================================
 
-  Future<void> _feedback({bool strong = false}) async {
+  void _checkAutoPrayerChanged() {
+    if (!mounted) return;
+
+    // إذا كان المستخدم في الوضع اليدوي فلا نتدخل.
+    if (_manualMode) return;
+
+    final current = _autoPrayer;
+
+    if (current != _lastAutoPrayer) {
+      final previous = _lastAutoPrayer;
+
+      _lastAutoPrayer = current;
+
+      setState(() {});
+
+      if (current != null && previous != current) {
+        _showReminder(
+          'انتقل التحديد تلقائيًا إلى صلاة ${current.arabicName}',
+        );
+      }
+    } else {
+      // مهم جدًا:
+      // إعادة بناء الواجهة حتى إذا تغير التاريخ/الوقت
+      // أو تغيرت قيم وقت الصلاة من الخارج.
+      setState(() {});
+    }
+  }
+
+  // ===========================================================================
+  // عند رجوع الصفحة إلى الواجهة
+  // ===========================================================================
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // التأكد من أن التحديد التلقائي يعاد حسابه عند عودة الشاشة.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _manualMode) return;
+
+      final current = _autoPrayer;
+
+      if (current != _lastAutoPrayer) {
+        setState(() {
+          _lastAutoPrayer = current;
+        });
+      }
+    });
+  }
+
+  // ===========================================================================
+  // الصوت والاهتزاز
+  // ===========================================================================
+
+  Future<void> _feedback({
+    bool strong = false,
+  }) async {
     try {
-      await SystemSound.play(SystemSoundType.click);
+      await SystemSound.play(
+        SystemSoundType.click,
+      );
     } catch (_) {}
 
     if (!_vibrationEnabled || !_hasVibrator) {
@@ -406,9 +527,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     } catch (_) {}
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // رسالة داخلية
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   void _showReminder(String message) {
     _reminderTimer?.cancel();
@@ -431,14 +552,17 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // الضغط
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Future<void> _onTap() async {
     final prayer = _activePrayer;
 
     if (prayer == null) {
+      _showReminder(
+        'لا توجد صلاة محددة حاليًا',
+      );
       return;
     }
 
@@ -470,8 +594,8 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
         return;
       }
 
-      // التشهد بعد الركعة الثانية،
-      // لكن فقط إذا كانت الصلاة تحتوي على أكثر من ركعتين.
+      // التشهد بعد الركعة الثانية
+      // فقط إذا كانت الصلاة أكثر من ركعتين.
       if (_rakahCount == 2 && total > 2) {
         _showReminder('التشهد');
       }
@@ -480,16 +604,16 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     await _persist();
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // إكمال الصلاة
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
-  Future<void> _completePrayer(PrayerName prayer) async {
+  Future<void> _completePrayer(
+    PrayerName prayer,
+  ) async {
     _showReminder(
       'التشهد والتسليم — تقبل الله صلاتك 🤍',
     );
-
-    await _persist();
 
     await Future.delayed(
       const Duration(milliseconds: 500),
@@ -510,18 +634,29 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
 
       _sujudCount = 0;
       _rakahCount = 0;
+
+      _lastAutoPrayer = null;
     });
 
     await _persist();
+
+    // إعادة حساب الصلاة التالية مباشرة.
+    if (!_manualMode) {
+      _lastAutoPrayer = _autoPrayer;
+
+      if (mounted) {
+        setState(() {});
+      }
+    }
 
     _showReminder(
       'تم تسجيل صلاة ${prayer.arabicName} في سجل اليوم ✓',
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // تصفير العد
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Future<void> _resetCount({
     bool markDoneForTransition = false,
@@ -532,23 +667,27 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
       _sujudCount = 0;
       _rakahCount = 0;
 
-      if (markDoneForTransition && prayer == PrayerName.dhuhr) {
+      if (markDoneForTransition &&
+          prayer == PrayerName.dhuhr) {
         _dhuhrDoneDate = _today;
       }
 
-      if (markDoneForTransition && prayer == PrayerName.maghrib) {
+      if (markDoneForTransition &&
+          prayer == PrayerName.maghrib) {
         _maghribDoneDate = _today;
       }
     });
 
     await _persist();
 
-    _showReminder('تم تصفير عداد الصلاة');
+    _showReminder(
+      'تم تصفير عداد الصلاة',
+    );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // اختيار الفريضة يدويًا
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   void _openManualPicker() {
     showModalBottomSheet(
@@ -558,6 +697,7 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
       builder: (ctx) {
         return _ManualPrayerSheet(
           current: _activePrayer,
+          manualMode: _manualMode,
           onSelect: (prayer) async {
             setState(() {
               _manualMode = true;
@@ -582,12 +722,18 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
               _manualPrayer = null;
               _sujudCount = 0;
               _rakahCount = 0;
+              _lastAutoPrayer = _autoPrayer;
             });
 
             await _persist();
 
             if (mounted) {
               Navigator.pop(ctx);
+            }
+
+            // إعادة بناء فورية.
+            if (mounted) {
+              setState(() {});
             }
 
             _showReminder(
@@ -599,9 +745,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // الإعدادات
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   void _openSettings() {
     showModalBottomSheet(
@@ -614,6 +760,8 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
           vibrationEnabled: _vibrationEnabled,
           inputMode: _inputMode,
           uiScale: _uiScale,
+
+          // وضع المسافر
           onTravelerChanged: (value) async {
             setState(() {
               _isTraveler = value;
@@ -622,36 +770,62 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
             });
 
             await _persist();
+
+            // التغيير يظهر فورًا بدون إغلاق الإعدادات.
+            if (mounted) {
+              setState(() {});
+            }
           },
+
+          // الاهتزاز
           onVibrationChanged: (value) async {
             setState(() {
               _vibrationEnabled = value;
             });
 
             await _persist();
+
+            // تحديث فوري.
+            if (mounted) {
+              setState(() {});
+            }
           },
+
+          // طريقة الإدخال
           onInputModeChanged: (value) async {
             setState(() {
               _inputMode = value;
             });
 
             await _persist();
+
+            // تحديث فوري.
+            if (mounted) {
+              setState(() {});
+            }
           },
+
+          // حجم الواجهة
           onScaleChanged: (value) async {
             setState(() {
               _uiScale = value;
             });
 
             await _persist();
+
+            // تحديث فوري.
+            if (mounted) {
+              setState(() {});
+            }
           },
         );
       },
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // سجل اليوم
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   void _openDailyRecord() {
     showModalBottomSheet(
@@ -666,9 +840,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // البناء
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -728,9 +902,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // الشاشة الرئيسية
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildPrayerBody(
     PrayerName prayer,
@@ -777,9 +951,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     return content;
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // لا توجد صلاة حالية
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildNoActivePrayer() {
     return Center(
@@ -845,9 +1019,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // رأس الصلاة
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildHeader(
     PrayerName prayer,
@@ -940,9 +1114,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // قسم السجدات
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildSujudSection() {
     return Column(
@@ -1029,9 +1203,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // العداد الرئيسي
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildCounter(
     int total,
@@ -1044,7 +1218,8 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
         _glowController,
       ]),
       builder: (context, child) {
-        final glow = 0.18 + (_glowController.value * 0.08);
+        final glow =
+            0.18 + (_glowController.value * 0.08);
 
         return Transform.scale(
           scale: _pulseAnimation.value,
@@ -1170,9 +1345,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // الركعات
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildRakahSection(
     int total,
@@ -1231,9 +1406,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // طريقة العد
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildInputControl() {
     if (_inputMode == 'touch') {
@@ -1252,9 +1427,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
             color: Colors.white10,
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(
               Icons.touch_app_rounded,
               color: Colors.white54,
@@ -1313,9 +1488,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // تلميح
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildHint() {
     return Padding(
@@ -1336,9 +1511,9 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // عناصر تصميم
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   Widget _buildSmallBadge(
     String text,
@@ -1412,11 +1587,13 @@ class _RakahCounterScreenState extends State<RakahCounterScreen>
 
 class _ManualPrayerSheet extends StatelessWidget {
   final PrayerName? current;
+  final bool manualMode;
   final ValueChanged<PrayerName> onSelect;
   final VoidCallback onAuto;
 
   const _ManualPrayerSheet({
     required this.current,
+    required this.manualMode,
     required this.onSelect,
     required this.onAuto,
   });
@@ -1469,7 +1646,8 @@ class _ManualPrayerSheet extends StatelessWidget {
               alignment: WrapAlignment.center,
               children: PrayerName.values.map(
                 (p) {
-                  final selected = p == current;
+                  final selected =
+                      manualMode && p == current;
 
                   return ChoiceChip(
                     label: Text(
@@ -1708,9 +1886,11 @@ class _SettingsSheet extends StatelessWidget {
                   ],
                   selected: {uiScale},
                   onSelectionChanged: (selection) {
-                    onScaleChanged(
-                      selection.first,
-                    );
+                    if (selection.isNotEmpty) {
+                      onScaleChanged(
+                        selection.first,
+                      );
+                    }
                   },
                   style: ButtonStyle(
                     foregroundColor:
@@ -1833,7 +2013,8 @@ class _DailyRecordSheet extends StatelessWidget {
 
               ...PrayerName.values.map(
                 (prayer) {
-                  final isDone = completed.contains(prayer);
+                  final isDone =
+                      completed.contains(prayer);
 
                   return Container(
                     margin: const EdgeInsets.only(
@@ -1878,7 +2059,9 @@ class _DailyRecordSheet extends StatelessWidget {
                         ),
 
                         Text(
-                          isDone ? 'مكتملة' : 'غير مكتملة',
+                          isDone
+                              ? 'مكتملة'
+                              : 'غير مكتملة',
                           style: TextStyle(
                             color: isDone
                                 ? AppColors.lightGold
