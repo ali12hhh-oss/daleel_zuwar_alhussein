@@ -1547,88 +1547,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   // ============================================================
-  // بطاقة الأذان القادم
-  // ============================================================
-
-  Widget _buildNextAdhanCard() {
-    return Card(
-      margin:
-          EdgeInsets.zero,
-      elevation: 1,
-      color:
-          AppColors.primaryGreen
-              .withOpacity(
-        0.08,
-      ),
-      shape:
-          RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(
-          16,
-        ),
-        side:
-            BorderSide(
-          color: AppColors
-              .primaryGreen
-              .withOpacity(
-            0.15,
-          ),
-        ),
-      ),
-      child:
-          Padding(
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 15,
-          vertical: 12,
-        ),
-        child:
-            Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration:
-                  BoxDecoration(
-                shape:
-                    BoxShape.circle,
-                color:
-                    AppColors.primaryGreen
-                        .withOpacity(
-                  0.12,
-                ),
-              ),
-              child:
-                  const Icon(
-                Icons.timer_outlined,
-                color:
-                    AppColors.primaryGreen,
-              ),
-            ),
-            const SizedBox(
-              width: 11,
-            ),
-            Expanded(
-              child:
-                  Text(
-                _getNextAdhan(),
-                style:
-                    const TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      FontWeight.bold,
-                  color:
-                      AppColors.primaryGreen,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
   // زر عداد الركعات
   // ============================================================
 
@@ -1820,6 +1738,88 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // بطاقة الأذان القادم
+  // ============================================================
+
+  Widget _buildNextAdhanCard() {
+    return Card(
+      margin:
+          EdgeInsets.zero,
+      elevation: 1,
+      color:
+          AppColors.primaryGreen
+              .withOpacity(
+        0.08,
+      ),
+      shape:
+          RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(
+          16,
+        ),
+        side:
+            BorderSide(
+          color: AppColors
+              .primaryGreen
+              .withOpacity(
+            0.15,
+          ),
+        ),
+      ),
+      child:
+          Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 12,
+        ),
+        child:
+            Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration:
+                  BoxDecoration(
+                shape:
+                    BoxShape.circle,
+                color:
+                    AppColors.primaryGreen
+                        .withOpacity(
+                  0.12,
+                ),
+              ),
+              child:
+                  const Icon(
+                Icons.timer_outlined,
+                color:
+                    AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(
+              width: 11,
+            ),
+            Expanded(
+              child:
+                  Text(
+                _getNextAdhan(),
+                style:
+                    const TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                      FontWeight.bold,
+                  color:
+                      AppColors.primaryGreen,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
