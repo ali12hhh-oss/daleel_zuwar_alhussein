@@ -128,8 +128,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     });
   }
 
-  // غيّرنا v3 إلى v4 حتى لا يبقى Android متمسكًا
-  // بقناة قديمة ذات إعدادات صوت قديمة.
   String get _adhanChannelId =>
       'adhan_channel_v4_${_adhanSoundMode}_$_adhanSoundFile';
 
@@ -171,26 +169,14 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           channelDescription: 'إشعارات أوقات الصلاة مع صوت الأذان',
           importance: Importance.max,
           priority: Priority.max,
-
-          // اسم الملف الموجود داخل:
-          // android/app/src/main/res/raw/
-          //
-          // مثال:
-          // adhan1.mp3
-          //
-          // نكتب هنا فقط:
-          // adhan1
           sound: RawResourceAndroidNotificationSound(
             _adhanSoundFile,
           ),
-
           playSound: true,
           enableVibration: true,
-
           visibility: NotificationVisibility.public,
           category: AndroidNotificationCategory.alarm,
           ticker: 'حان وقت الصلاة',
-
           audioAttributesUsage: AudioAttributesUsage.alarm,
         );
     }
@@ -310,19 +296,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         }
       }
 
-      /*
-       * نستخدم معرفات مستقلة للأذان.
-       *
-       * 7000 = فجر اليوم
-       * 7001 = ظهر اليوم
-       * 7002 = مغرب اليوم
-       *
-       * اليوم التالي:
-       * 7010 / 7011 / 7012
-       *
-       * وهكذا...
-       */
-
       for (int day = 0; day < 7; day++) {
         for (int prayer = 0; prayer < 3; prayer++) {
           final id = 7000 + (day * 10) + prayer;
@@ -334,14 +307,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       }
 
       final baseDate = DateTime.now();
-
-      /*
-       * نحسب 7 أيام من المواقيت من نفس خوارزمية
-       * الحساب الموجودة في التطبيق.
-       *
-       * لا نستخدم توقيتًا ثابتًا يوميًا لأن
-       * أوقات الفجر والظهر والمغرب تتغير كل يوم.
-       */
 
       for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
         final date = DateTime(
@@ -403,7 +368,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
-  // هذا الزر يستخدم لاختبار الإشعار والصوت يدويًا.
   Future<void> _showAdhanNotification(
     String prayerName,
     String time,
@@ -639,7 +603,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   // ============================================================
-  // حساب المواقيت - نفس النظام الموجود سابقًا
+  // حساب المواقيت
   // ============================================================
 
   Map<String, DateTime> _calculateShiaPrayerTimes(
@@ -712,7 +676,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       dhuhrUtc + maghribT,
     );
 
-    // الفجر الصادق لليوم التالي
     final tomorrow =
         date.add(const Duration(days: 1));
 
@@ -742,12 +705,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       dhuhrTomorrowUtc - fajrTomorrowT,
     );
 
-    /*
-     * منتصف الليل الشرعي:
-     *
-     * منتصف المدة بين غروب الشمس
-     * وطلوع الفجر الصادق لليوم التالي.
-     */
     final midnight = sunset.add(
       Duration(
         minutes:
@@ -1129,14 +1086,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       nextName =
           'أذان المغرب';
     } else {
-      /*
-       * بعد المغرب:
-       * الفجر القادم هو فجر الغد.
-       *
-       * نحسبه فعليًا بدل إضافة 24 ساعة
-       * إلى فجر اليوم حتى نأخذ تغير الحساب
-       * اليومي بعين الاعتبار.
-       */
       if (_position != null) {
         final tomorrow =
             DateTime.now().add(
@@ -1219,10 +1168,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             24,
           ),
           children: [
-            // ==================================================
-            // بطاقة المواقيت المختصرة
-            // ==================================================
-
             _buildLocationHeader(),
 
             const SizedBox(
@@ -1290,19 +1235,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             if (!_loading &&
                 _error == null &&
                 _fajrAdhan != null) ...[
-              // ==================================================
-              // الأذان القادم
-              // ==================================================
-
               _buildNextAdhanCard(),
 
               const SizedBox(
                 height: 14,
               ),
-
-              // ==================================================
-              // عداد الركعات - أصبح هنا مباشرة بعد بطاقة المواقيت
-              // ==================================================
 
               _buildRakahCounterButton(),
 
@@ -1409,20 +1346,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 height: 6,
               ),
 
-              // ==================================================
-              // الشروق / الغروب / منتصف الليل
-              // ==================================================
-
               _buildSunTimesCard(),
             ],
 
             const SizedBox(
               height: 18,
             ),
-
-            // ====================================================
-            // الملاحظات
-            // ====================================================
 
             _buildNotesCard(),
           ],
@@ -1540,12 +1469,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   if (_cityName != null)
                     Row(
                       children: [
-                        Icon(
-                          Icons
-                              .location_on,
+                        const Icon(
+                          Icons.location_on,
                           size: 17,
-                          color: AppColors
-                              .primaryGreen,
+                          color:
+                              Colors.black87,
                         ),
                         const SizedBox(
                           width: 4,
@@ -1562,8 +1490,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                               fontSize: 14,
                               fontWeight:
                                   FontWeight.bold,
-                              color: AppColors
-                                  .primaryGreen,
+                              color:
+                                  Colors.black87,
                             ),
                           ),
                         ),
@@ -1587,13 +1515,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     Text(
                       '${_position!.latitude.toStringAsFixed(4)}°N  •  ${_position!.longitude.toStringAsFixed(4)}°E',
                       style:
-                          TextStyle(
+                          const TextStyle(
                         fontSize: 10.5,
-                        color: AppColors
-                            .primaryGreen
-                            .withOpacity(
-                          0.85,
-                        ),
+                        color:
+                            Colors.black87,
                       ),
                     ),
                   ],
