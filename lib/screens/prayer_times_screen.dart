@@ -1,12 +1,10 @@
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math' as math;
 
 import '../theme.dart';
 import 'rakah_counter_screen.dart';
@@ -37,98 +35,101 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   String _adhanSoundMode = 'sound';
   String _adhanSoundFile = 'adhan1';
 
-  Timer? _foregroundTimer;
-
-  String? _activeInAppPrayer;
-  bool _notificationPermissionGranted = false;
-  bool _exactAlarmPermissionGranted = false;
-
-  static const int _fajrNotificationId = 1001;
-  static const int _dhuhrNotificationId = 1002;
-  static const int _maghribNotificationId = 1003;
-  static const int _tomorrowFajrNotificationId = 1004;
+  bool _notificationsInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    _foregroundTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _checkCurrentPrayerForForeground(),
-    );
-
     _initApp();
-  }
-
-  @override
-  void dispose() {
-    _foregroundTimer?.cancel();
-    super.dispose();
   }
 
   Future<void> _initApp() async {
     await _initNotifications();
-    await _loadAdhanSettings();
     await _getLocationAndCalculate();
   }
 
+  // ============================================================
+  // الإشعارات
+  // ============================================================
+
   Future<void> _initNotifications() async {
-    tz_data.initializeTimeZones();
-
     try {
+      tz_data.initializeTimeZones();
+
+      // التطبيق يستهدف العراق حاليًا.
       tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
-    } catch (_) {
-      tz.setLocalLocation(tz.UTC);
-    }
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-    );
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+      );
 
-    await _notificationsPlugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (response) {
-        debugPrint(
-          'تم الضغط على إشعار الأذان: ${response.payload}',
-        );
-      },
-    );
+      await _notificationsPlugin.initialize(
+        initSettings,
+      );
 
-    final androidImpl = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+      final android = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
-    if (androidImpl != null) {
-      try {
-        _notificationPermissionGranted =
-            await androidImpl.requestNotificationsPermission() ?? false;
-      } catch (e) {
-        debugPrint('خطأ في إذن الإشعارات: $e');
+      if (android != null) {
+        // Android 13+
+        await android.requestNotificationsPermission();
+
+        // Android 12+
+        final canScheduleExact =
+            await android.canScheduleExactNotifications();
+
+        if (canScheduleExact == false) {
+          await android.requestExactAlarmsPermission();
+        }
       }
 
-      try {
-        _exactAlarmPermissionGranted =
-            await androidImpl.requestExactAlarmsPermission() ?? false;
-      } catch (e) {
-        debugPrint('خطأ في إذن Exact Alarm: $e');
-      }
+      _notificationsInitialized = true;
+
+      debugPrint('✅ تم تهيئة نظام الإشعارات بنجاح');
+    } catch (e, stackTrace) {
+      _notificationsInitialized = false;
+
+      debugPrint('❌ فشل تهيئة الإشعارات: $e');
+      debugPrint('$stackTrace');
     }
+  }
+
+  tz.TZDateTime _toTZDateTime(DateTime dt) {
+    return tz.TZDateTime(
+      tz.local,
+      dt.year,
+      dt.month,
+      dt.day,
+      dt.hour,
+      dt.minute,
+      dt.second,
+    );
   }
 
   Future<void> _loadAdhanSettings() async {
     final prefs = await SharedPreferences.getInstance();
 
-    if (!mounted) return;
+    final soundMode = prefs.getString('adhanSoundMode') ?? 'sound';
+    final soundFile = prefs.getString('adhanSoundFile') ?? 'adhan1';
+
+    if (!mounted) {
+      _adhanSoundMode = soundMode;
+      _adhanSoundFile = soundFile;
+      return;
+    }
 
     setState(() {
-      _adhanSoundMode = prefs.getString('adhanSoundMode') ?? 'sound';
-      _adhanSoundFile = prefs.getString('adhanSoundFile') ?? 'adhan1';
+      _adhanSoundMode = soundMode;
+      _adhanSoundFile = soundFile;
     });
   }
 
+  // غيّرنا v3 إلى v4 حتى لا يبقى Android متمسكًا
+  // بقناة قديمة ذات إعدادات صوت قديمة.
   String get _adhanChannelId =>
       'adhan_channel_v4_${_adhanSoundMode}_$_adhanSoundFile';
 
@@ -143,8 +144,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           priority: Priority.max,
           playSound: false,
           enableVibration: true,
-          category: AndroidNotificationCategory.alarm,
           visibility: NotificationVisibility.public,
+          category: AndroidNotificationCategory.alarm,
           ticker: 'حان وقت الصلاة',
         );
 
@@ -153,12 +154,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           _adhanChannelId,
           'أذان الصلاة',
           channelDescription: 'إشعارات أوقات الصلاة - صامت',
-          importance: Importance.max,
-          priority: Priority.max,
+          importance: Importance.high,
+          priority: Priority.high,
           playSound: false,
           enableVibration: false,
-          category: AndroidNotificationCategory.alarm,
           visibility: NotificationVisibility.public,
+          category: AndroidNotificationCategory.alarm,
           ticker: 'حان وقت الصلاة',
         );
 
@@ -167,54 +168,66 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         return AndroidNotificationDetails(
           _adhanChannelId,
           'أذان الصلاة',
-          channelDescription: 'إشعارات أوقات الأذان',
+          channelDescription: 'إشعارات أوقات الصلاة مع صوت الأذان',
           importance: Importance.max,
           priority: Priority.max,
-          sound: RawResourceAndroidNotificationSound(_adhanSoundFile),
+
+          // اسم الملف الموجود داخل:
+          // android/app/src/main/res/raw/
+          //
+          // مثال:
+          // adhan1.mp3
+          //
+          // نكتب هنا فقط:
+          // adhan1
+          sound: RawResourceAndroidNotificationSound(
+            _adhanSoundFile,
+          ),
+
           playSound: true,
           enableVibration: true,
-          category: AndroidNotificationCategory.alarm,
+
           visibility: NotificationVisibility.public,
-          audioAttributesUsage: AudioAttributesUsage.alarm,
+          category: AndroidNotificationCategory.alarm,
           ticker: 'حان وقت الصلاة',
+
+          audioAttributesUsage: AudioAttributesUsage.alarm,
         );
     }
   }
 
-  tz.TZDateTime _toTZDateTime(DateTime time) {
-    return tz.TZDateTime(
-      tz.local,
-      time.year,
-      time.month,
-      time.day,
-      time.hour,
-      time.minute,
-      time.second,
-    );
-  }
+  Future<void> _scheduleAdhanNotification(
+    int id,
+    String prayerName,
+    DateTime time,
+  ) async {
+    if (!_notificationsInitialized) {
+      debugPrint(
+        '⚠️ الإشعارات غير مهيأة، لم يتم جدولة $prayerName',
+      );
+      return;
+    }
 
-  Future<void> _scheduleAdhanNotification({
-    required int id,
-    required String prayerName,
-    required DateTime time,
-  }) async {
     final now = DateTime.now();
 
     if (!time.isAfter(now)) {
       debugPrint(
-        'تجاهل إشعار $prayerName لأن وقته أصبح في الماضي: $time',
+        '⏭️ تم تجاهل أذان $prayerName لأن وقته أصبح في الماضي: $time',
+      );
+      return;
+    }
+
+    final scheduledDate = _toTZDateTime(time);
+
+    if (!scheduledDate.isAfter(tz.TZDateTime.now(tz.local))) {
+      debugPrint(
+        '⏭️ وقت أذان $prayerName أصبح في الماضي',
       );
       return;
     }
 
     final notificationDetails = NotificationDetails(
       android: _buildAdhanAndroidDetails(),
-    );
-
-    final scheduledDate = _toTZDateTime(time);
-
-    debugPrint(
-      'جدولة $prayerName في: $scheduledDate',
     );
 
     try {
@@ -226,120 +239,240 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         notificationDetails,
         androidScheduleMode:
             AndroidScheduleMode.exactAllowWhileIdle,
-        payload: prayerName,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'adhan_$prayerName',
       );
 
       debugPrint(
-        'تمت جدولة إشعار $prayerName بنجاح',
+        '✅ تمت جدولة أذان $prayerName في $scheduledDate',
       );
-    } catch (e, stack) {
+    } catch (e, stackTrace) {
       debugPrint(
-        'فشل جدولة إشعار $prayerName: $e',
+        '❌ فشل جدولة أذان $prayerName: $e',
       );
-      debugPrint('$stack');
+      debugPrint('$stackTrace');
     }
   }
 
   Future<void> _scheduleAllAdhans() async {
-    await _loadAdhanSettings();
-
-    /*
-     * نلغي الإشعارات القديمة أولاً.
-     * هذا يمنع تكرار الأذان بعد تحديث الموقع أو إعادة فتح الصفحة.
-     */
-    await _notificationsPlugin.cancel(_fajrNotificationId);
-    await _notificationsPlugin.cancel(_dhuhrNotificationId);
-    await _notificationsPlugin.cancel(_maghribNotificationId);
-    await _notificationsPlugin.cancel(_tomorrowFajrNotificationId);
-
-    if (_fajrAdhan != null) {
-      await _scheduleAdhanNotification(
-        id: _fajrNotificationId,
-        prayerName: 'الفجر',
-        time: _fajrAdhan!,
+    if (!_notificationsInitialized) {
+      debugPrint(
+        '⚠️ الإشعارات غير مهيأة، لن تتم الجدولة',
       );
+      return;
     }
 
-    if (_dhuhrAdhan != null) {
-      await _scheduleAdhanNotification(
-        id: _dhuhrNotificationId,
-        prayerName: 'الظهر',
-        time: _dhuhrAdhan!,
+    if (_position == null) {
+      debugPrint(
+        '⚠️ لا يوجد موقع GPS، لن تتم جدولة الأذان',
       );
+      return;
     }
 
-    if (_maghribAdhan != null) {
-      await _scheduleAdhanNotification(
-        id: _maghribNotificationId,
-        prayerName: 'المغرب',
-        time: _maghribAdhan!,
+    try {
+      await _loadAdhanSettings();
+
+      final android = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (android != null) {
+        final notificationsEnabled =
+            await android.areNotificationsEnabled();
+
+        if (notificationsEnabled == false) {
+          debugPrint(
+            '❌ إشعارات التطبيق غير مفعلة',
+          );
+          return;
+        }
+
+        final exactAllowed =
+            await android.canScheduleExactNotifications();
+
+        if (exactAllowed == false) {
+          debugPrint(
+            '⚠️ Exact Alarm غير مفعّل، سيتم طلب الإذن',
+          );
+
+          await android.requestExactAlarmsPermission();
+
+          final checkAgain =
+              await android.canScheduleExactNotifications();
+
+          if (checkAgain != true) {
+            debugPrint(
+              '❌ لم يتم منح صلاحية Exact Alarm',
+            );
+            return;
+          }
+        }
+      }
+
+      /*
+       * نستخدم معرفات مستقلة للأذان.
+       *
+       * 7000 = فجر اليوم
+       * 7001 = ظهر اليوم
+       * 7002 = مغرب اليوم
+       *
+       * اليوم التالي:
+       * 7010 / 7011 / 7012
+       *
+       * وهكذا...
+       */
+
+      for (int day = 0; day < 7; day++) {
+        for (int prayer = 0; prayer < 3; prayer++) {
+          final id = 7000 + (day * 10) + prayer;
+
+          try {
+            await _notificationsPlugin.cancel(id);
+          } catch (_) {}
+        }
+      }
+
+      final baseDate = DateTime.now();
+
+      /*
+       * نحسب 7 أيام من المواقيت من نفس خوارزمية
+       * الحساب الموجودة في التطبيق.
+       *
+       * لا نستخدم توقيتًا ثابتًا يوميًا لأن
+       * أوقات الفجر والظهر والمغرب تتغير كل يوم.
+       */
+
+      for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+        final date = DateTime(
+          baseDate.year,
+          baseDate.month,
+          baseDate.day,
+        ).add(
+          Duration(days: dayOffset),
+        );
+
+        final times = _calculateShiaPrayerTimes(
+          _position!.latitude,
+          _position!.longitude,
+          date,
+        );
+
+        final fajr = times['fajrAdhan'];
+        final dhuhr = times['dhuhrAdhan'];
+        final maghrib = times['maghribAdhan'];
+
+        final baseId = 7000 + (dayOffset * 10);
+
+        if (fajr != null) {
+          await _scheduleAdhanNotification(
+            baseId,
+            'الفجر',
+            fajr,
+          );
+        }
+
+        if (dhuhr != null) {
+          await _scheduleAdhanNotification(
+            baseId + 1,
+            'الظهر',
+            dhuhr,
+          );
+        }
+
+        if (maghrib != null) {
+          await _scheduleAdhanNotification(
+            baseId + 2,
+            'المغرب',
+            maghrib,
+          );
+        }
+      }
+
+      final pending =
+          await _notificationsPlugin.pendingNotificationRequests();
+
+      debugPrint(
+        '📅 عدد إشعارات الأذان المجدولة: ${pending.length}',
       );
+    } catch (e, stackTrace) {
+      debugPrint(
+        '❌ خطأ في جدولة الأذان: $e',
+      );
+      debugPrint('$stackTrace');
     }
+  }
 
-    /*
-     * مهم:
-     * إذا فتح المستخدم التطبيق بعد المغرب، لا نريد أن ينتظر
-     * إعادة فتح التطبيق في اليوم التالي حتى تتم جدولة الفجر.
-     *
-     * لذلك نحسب فجر اليوم التالي ونضع إشعاره مسبقاً.
-     */
-    if (_position != null) {
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
+  // هذا الزر يستخدم لاختبار الإشعار والصوت يدويًا.
+  Future<void> _showAdhanNotification(
+    String prayerName,
+    String time,
+  ) async {
+    try {
+      if (!_notificationsInitialized) {
+        await _initNotifications();
+      }
 
-      final tomorrowTimes = _calculateShiaPrayerTimes(
-        _position!.latitude,
-        _position!.longitude,
-        tomorrow,
+      await _loadAdhanSettings();
+
+      final android = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (android != null) {
+        final enabled =
+            await android.areNotificationsEnabled();
+
+        if (enabled == false) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'إشعارات التطبيق غير مفعلة من إعدادات الهاتف',
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      final notificationDetails = NotificationDetails(
+        android: _buildAdhanAndroidDetails(),
       );
 
-      final tomorrowFajr = tomorrowTimes['fajrAdhan'];
+      await _notificationsPlugin.show(
+        9900 + prayerName.hashCode.abs() % 100,
+        'حان وقت أذان $prayerName',
+        'الساعة $time',
+        notificationDetails,
+        payload: 'manual_adhan_$prayerName',
+      );
 
-      if (tomorrowFajr != null) {
-        await _scheduleAdhanNotification(
-          id: _tomorrowFajrNotificationId,
-          prayerName: 'الفجر',
-          time: tomorrowFajr,
+      debugPrint(
+        '✅ تم عرض إشعار اختبار الأذان: $prayerName',
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        '❌ فشل عرض إشعار الأذان: $e',
+      );
+      debugPrint('$stackTrace');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'تعذر عرض إشعار الأذان: $e',
+            ),
+          ),
         );
       }
     }
   }
 
-  Future<void> _showAdhanNotification(
-    String prayerName,
-    String time,
-  ) async {
-    await _loadAdhanSettings();
-
-    final notificationDetails = NotificationDetails(
-      android: _buildAdhanAndroidDetails(),
-    );
-
-    try {
-      await _notificationsPlugin.show(
-        prayerName.hashCode,
-        'حان وقت أذان $prayerName',
-        'الساعة $time',
-        notificationDetails,
-        payload: prayerName,
-      );
-    } catch (e) {
-      debugPrint('فشل الإشعار الفوري: $e');
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _adhanSoundMode == 'sound'
-                ? 'تعذر تشغيل إشعار الأذان أو صوته'
-                : 'تعذر تشغيل إشعار الأذان. تحقق من أذونات الإشعارات',
-          ),
-        ),
-      );
-    }
-  }
+  // ============================================================
+  // الموقع والحساب
+  // ============================================================
 
   Future<void> _getLocationAndCalculate() async {
     if (mounted) {
@@ -354,27 +487,34 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
-        throw Exception('يرجى تفعيل خدمة الموقع (GPS)');
+        throw Exception(
+          'يرجى تفعيل خدمة الموقع (GPS)',
+        );
       }
 
       LocationPermission permission =
           await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission =
+            await Geolocator.requestPermission();
 
         if (permission == LocationPermission.denied) {
-          throw Exception('تم رفض إذن الموقع');
+          throw Exception(
+            'تم رفض إذن الموقع',
+          );
         }
       }
 
-      if (permission == LocationPermission.deniedForever) {
+      if (permission ==
+          LocationPermission.deniedForever) {
         throw Exception(
-          'إذن الموقع مرفوض دائماً. افتح إعدادات التطبيق وفعّل الموقع.',
+          'إذن الموقع مرفوض دائماً، يرجى تفعيله من إعدادات الهاتف',
         );
       }
 
-      final position = await Geolocator.getCurrentPosition(
+      final position =
+          await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
@@ -406,137 +546,37 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _loading = false;
       });
 
-      /*
-       * بعد اكتمال حساب الأوقات مباشرة:
-       * أعد جدولة إشعارات اليوم والغد.
-       */
-      await _scheduleAllAdhans();
-
+      try {
+        await _scheduleAllAdhans();
+      } catch (e, stackTrace) {
+        debugPrint(
+          '❌ تعذرت جدولة إشعارات الأذان: $e',
+        );
+        debugPrint('$stackTrace');
+      }
+    } catch (e, stackTrace) {
       debugPrint(
-        'تم تحديث المواقيت والإشعارات للموقع: $city',
+        '❌ خطأ في تحديد الموقع والحساب: $e',
       );
-    } catch (e) {
+      debugPrint('$stackTrace');
+
       if (!mounted) return;
 
       setState(() {
-        _error = e
-            .toString()
-            .replaceFirst('Exception: ', '');
+        _error =
+            e.toString().replaceFirst(
+                  'Exception: ',
+                  '',
+                );
         _loading = false;
       });
     }
   }
 
-  void _checkCurrentPrayerForForeground() {
-    if (!mounted ||
-        _fajrAdhan == null ||
-        _dhuhrAdhan == null ||
-        _maghribAdhan == null) {
-      return;
-    }
-
-    final now = DateTime.now();
-
-    String? prayer;
-    DateTime? prayerTime;
-
-    if (_isSameMinute(now, _fajrAdhan!)) {
-      prayer = 'الفجر';
-      prayerTime = _fajrAdhan;
-    } else if (_isSameMinute(now, _dhuhrAdhan!)) {
-      prayer = 'الظهر';
-      prayerTime = _dhuhrAdhan;
-    } else if (_isSameMinute(now, _maghribAdhan!)) {
-      prayer = 'المغرب';
-      prayerTime = _maghribAdhan;
-    }
-
-    if (prayer == null || prayerTime == null) {
-      return;
-    }
-
-    /*
-     * منع ظهور التنبيه الداخلي عشرات المرات خلال نفس الدقيقة.
-     */
-    if (_activeInAppPrayer == prayer) {
-      return;
-    }
-
-    setState(() {
-      _activeInAppPrayer = prayer;
-    });
-
-    _showInAppPrayerBanner(
-      prayer,
-      _formatTime12Hour(prayerTime),
-    );
-
-    Future.delayed(
-      const Duration(minutes: 1, seconds: 5),
-      () {
-        if (!mounted) return;
-
-        if (_activeInAppPrayer == prayer) {
-          setState(() {
-            _activeInAppPrayer = null;
-          });
-        }
-      },
-    );
-  }
-
-  bool _isSameMinute(DateTime a, DateTime b) {
-    return a.year == b.year &&
-        a.month == b.month &&
-        a.day == b.day &&
-        a.hour == b.hour &&
-        a.minute == b.minute;
-  }
-
-  void _showInAppPrayerBanner(
-    String prayer,
-    String time,
+  String _findNearestCity(
+    double lat,
+    double lng,
   ) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-
-    ScaffoldMessenger.of(context).showMaterialBanner(
-      MaterialBanner(
-        backgroundColor: AppColors.primaryGreen,
-        leading: const Icon(
-          Icons.notifications_active,
-          color: AppColors.lightGold,
-          size: 30,
-        ),
-        content: Text(
-          'حان الآن وقت أذان $prayer\nالساعة $time',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            height: 1.5,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context)
-                  .hideCurrentMaterialBanner();
-            },
-            child: const Text(
-              'حسنًا',
-              style: TextStyle(
-                color: AppColors.lightGold,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _findNearestCity(double lat, double lng) {
     final cities = [
       {'name': 'بغداد', 'lat': 33.3152, 'lng': 44.3661},
       {'name': 'كربلاء المقدسة', 'lat': 32.6160, 'lng': 44.0240},
@@ -573,7 +613,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       {'name': 'القائم', 'lat': 34.3667, 'lng': 41.0833},
       {'name': 'عنة', 'lat': 34.3667, 'lng': 41.9833},
       {'name': 'حديثة', 'lat': 34.1333, 'lng': 42.3833},
-      {'name': 'السويرة', 'lat': 33.9167, 'lng': 44.7833},
+      {'name': 'السويرة', 'lat': 33.9167, 'lng': 44.7830},
       {'name': 'الجلولاء', 'lat': 34.2833, 'lng': 45.4833},
       {'name': 'قره تبة', 'lat': 35.3500, 'lng': 45.4333},
     ];
@@ -598,20 +638,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return nearest;
   }
 
+  // ============================================================
+  // حساب المواقيت - نفس النظام الموجود سابقًا
+  // ============================================================
+
   Map<String, DateTime> _calculateShiaPrayerTimes(
     double lat,
     double lng,
     DateTime date,
   ) {
-    /*
-     * الحساب الحالي محفوظ كما هو:
-     *
-     * الفجر = الفجر الصادق بزاوية 18°
-     * الظهر = الزوال
-     * المغرب = غياب الحمرة المشرقية تقريبياً
-     * منتصف الليل = نصف المدة بين الغروب والفجر التالي
-     */
-
     const fajrAngle = 18.0;
     const maghribAngle = 4.5;
     const sunriseSunsetAngle = 0.833;
@@ -647,34 +682,39 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       sunToday.declination,
     );
 
-    final fajrAdhan = _utcHoursToLocalDateTime(
+    final fajrAdhan =
+        _utcHoursToLocalDateTime(
       date,
       dhuhrUtc - fajrT,
     );
 
-    final dhuhrAdhan = _utcHoursToLocalDateTime(
+    final dhuhrAdhan =
+        _utcHoursToLocalDateTime(
       date,
       dhuhrUtc,
     );
 
-    final sunrise = _utcHoursToLocalDateTime(
+    final sunrise =
+        _utcHoursToLocalDateTime(
       date,
       dhuhrUtc - riseSetT,
     );
 
-    final sunset = _utcHoursToLocalDateTime(
+    final sunset =
+        _utcHoursToLocalDateTime(
       date,
       dhuhrUtc + riseSetT,
     );
 
-    final maghribAdhan = _utcHoursToLocalDateTime(
+    final maghribAdhan =
+        _utcHoursToLocalDateTime(
       date,
       dhuhrUtc + maghribT,
     );
 
-    final tomorrow = date.add(
-      const Duration(days: 1),
-    );
+    // الفجر الصادق لليوم التالي
+    final tomorrow =
+        date.add(const Duration(days: 1));
 
     final sunTomorrow = _sunPosition(
       _julianDate(
@@ -689,17 +729,25 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         (lng / 15.0) -
         sunTomorrow.equationOfTime;
 
-    final fajrTomorrowT = _sunAngleTime(
+    final fajrTomorrowT =
+        _sunAngleTime(
       fajrAngle,
       lat,
       sunTomorrow.declination,
     );
 
-    final nextFajr = _utcHoursToLocalDateTime(
+    final nextFajr =
+        _utcHoursToLocalDateTime(
       tomorrow,
       dhuhrTomorrowUtc - fajrTomorrowT,
     );
 
+    /*
+     * منتصف الليل الشرعي:
+     *
+     * منتصف المدة بين غروب الشمس
+     * وطلوع الفجر الصادق لليوم التالي.
+     */
     final midnight = sunset.add(
       Duration(
         minutes:
@@ -731,70 +779,88 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
 
     final a = (y / 100).floor();
-    final b = 2 - a + (a / 4).floor();
 
-    return (365.25 * (y + 4716)).floor() +
+    final b =
+        2 -
+        a +
+        (a / 4).floor();
+
+    return
+        (365.25 * (y + 4716)).floor() +
         (30.6001 * (m + 1)).floor() +
         day +
         b -
         1524.5;
   }
 
-  _SunPosition _sunPosition(double jd) {
-    final d = jd - 2451545.0;
+  _SunPosition _sunPosition(
+    double jd,
+  ) {
+    final d =
+        jd - 2451545.0;
 
     final g = _fixAngle(
-      357.529 + 0.98560028 * d,
+      357.529 +
+      0.98560028 * d,
     );
 
     final q = _fixAngle(
-      280.459 + 0.98564736 * d,
+      280.459 +
+      0.98564736 * d,
     );
 
     final l = _fixAngle(
       q +
-          1.915 *
-              math.sin(
-                g * math.pi / 180.0,
-              ) +
-          0.020 *
-              math.sin(
-                2 * g * math.pi / 180.0,
-              ),
+      1.915 *
+          math.sin(
+            g * math.pi / 180.0,
+          ) +
+      0.020 *
+          math.sin(
+            2 *
+                g *
+                math.pi /
+                180.0,
+          ),
     );
 
-    final e = 23.439 - 0.00000036 * d;
+    final e =
+        23.439 -
+        0.00000036 * d;
 
-    var ra = math.atan2(
-          math.cos(
-            e * math.pi / 180.0,
-          ) *
-              math.sin(
+    var ra =
+        math.atan2(
+              math.cos(
+                e * math.pi / 180.0,
+              ) *
+                  math.sin(
+                    l * math.pi / 180.0,
+                  ),
+              math.cos(
                 l * math.pi / 180.0,
               ),
-          math.cos(
-            l * math.pi / 180.0,
-          ),
-        ) *
-        180.0 /
-        math.pi /
-        15.0;
+            ) *
+            180.0 /
+            math.pi /
+            15.0;
 
     ra = _fixHour(ra);
 
-    final eqt = q / 15.0 - ra;
+    final eqt =
+        q / 15.0 -
+        ra;
 
     final decl =
         math.asin(
-          math.sin(
+              math.sin(
                 e * math.pi / 180.0,
               ) *
-              math.sin(
-                l * math.pi / 180.0,
-              ),
-        ) *
-        180.0 /
-        math.pi;
+                  math.sin(
+                    l * math.pi / 180.0,
+                  ),
+            ) *
+            180.0 /
+            math.pi;
 
     return _SunPosition(
       decl,
@@ -802,14 +868,26 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  double _fixAngle(double a) {
-    final r = a % 360.0;
-    return r < 0 ? r + 360.0 : r;
+  double _fixAngle(
+    double a,
+  ) {
+    final r =
+        a % 360.0;
+
+    return r < 0
+        ? r + 360.0
+        : r;
   }
 
-  double _fixHour(double h) {
-    final r = h % 24.0;
-    return r < 0 ? r + 24.0 : r;
+  double _fixHour(
+    double h,
+  ) {
+    final r =
+        h % 24.0;
+
+    return r < 0
+        ? r + 24.0
+        : r;
   }
 
   double _sunAngleTime(
@@ -819,33 +897,48 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   ) {
     final numerator =
         -math.sin(
-              angle * math.pi / 180.0,
+              angle *
+                  math.pi /
+                  180.0,
             ) -
-            math.sin(
-              lat * math.pi / 180.0,
+        math.sin(
+              lat *
+                  math.pi /
+                  180.0,
             ) *
-                math.sin(
-                  decl * math.pi / 180.0,
-                );
+            math.sin(
+              decl *
+                  math.pi /
+                  180.0,
+            );
 
     final denominator =
         math.cos(
-              lat * math.pi / 180.0,
+              lat *
+                  math.pi /
+                  180.0,
             ) *
             math.cos(
-              decl * math.pi / 180.0,
+              decl *
+                  math.pi /
+                  180.0,
             );
 
     final ratio =
-        (numerator / denominator).clamp(
+        (numerator /
+                denominator)
+            .clamp(
       -1.0,
       1.0,
     );
 
-    return math.acos(ratio) *
-        180.0 /
-        math.pi /
-        15.0;
+    return
+        math.acos(
+              ratio,
+            ) *
+            180.0 /
+            math.pi /
+            15.0;
   }
 
   DateTime _utcHoursToLocalDateTime(
@@ -861,7 +954,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       date.day,
     )
         .add(
-          Duration(minutes: totalMinutes),
+          Duration(
+            minutes:
+                totalMinutes,
+          ),
         )
         .toLocal();
   }
@@ -876,36 +972,46 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
     final dLat =
         (lat2 - lat1) *
-            math.pi /
-            180.0;
+        math.pi /
+        180.0;
 
     final dLon =
         (lon2 - lon1) *
-            math.pi /
-            180.0;
+        math.pi /
+        180.0;
 
     final a =
-        math.sin(dLat / 2) *
-                math.sin(dLat / 2) +
+        math.sin(
+              dLat / 2,
+            ) *
+            math.sin(
+              dLat / 2,
+            ) +
+        math.cos(
+              lat1 *
+                  math.pi /
+                  180.0,
+            ) *
             math.cos(
-                  lat1 *
-                      math.pi /
-                      180.0,
-                ) *
-                math.cos(
-                  lat2 *
-                      math.pi /
-                      180.0,
-                ) *
-                math.sin(dLon / 2) *
-                math.sin(dLon / 2);
+              lat2 *
+                  math.pi /
+                  180.0,
+            ) *
+            math.sin(
+              dLon / 2,
+            ) *
+            math.sin(
+              dLon / 2,
+            );
 
     final c =
         2 *
-            math.atan2(
-              math.sqrt(a),
-              math.sqrt(1 - a),
-            );
+        math.atan2(
+          math.sqrt(a),
+          math.sqrt(
+            1 - a,
+          ),
+        );
 
     return r * c;
   }
@@ -913,31 +1019,41 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   String _formatTime12Hour(
     DateTime time,
   ) {
-    final hour = time.hour;
+    final hour =
+        time.hour;
 
     final minute =
-        time.minute.toString().padLeft(
+        time.minute
+            .toString()
+            .padLeft(
               2,
               '0',
             );
 
     final period =
-        hour >= 12 ? 'م' : 'ص';
+        hour >= 12
+            ? 'م'
+            : 'ص';
 
     final hour12 =
         hour == 0
             ? 12
-            : hour > 12
+            : (hour > 12
                 ? hour - 12
-                : hour;
+                : hour);
 
     return '$hour12:$minute $period';
   }
 
+  // ============================================================
+  // الأذان القادم
+  // ============================================================
+
   bool _isCurrentPrayer(
     String prayerName,
   ) {
-    final now = DateTime.now();
+    final now =
+        DateTime.now();
 
     if (_fajrAdhan == null ||
         _dhuhrAdhan == null ||
@@ -950,16 +1066,28 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
     switch (prayerName) {
       case 'fajr':
-        return now.isAfter(_fajrAdhan!) &&
-            now.isBefore(_sunrise!);
+        return now.isAfter(
+              _fajrAdhan!,
+            ) &&
+            now.isBefore(
+              _sunrise!,
+            );
 
       case 'dhuhr':
-        return now.isAfter(_dhuhrAdhan!) &&
-            now.isBefore(_sunset!);
+        return now.isAfter(
+              _dhuhrAdhan!,
+            ) &&
+            now.isBefore(
+              _sunset!,
+            );
 
       case 'maghrib':
-        return now.isAfter(_maghribAdhan!) &&
-            now.isBefore(_midnight!);
+        return now.isAfter(
+              _maghribAdhan!,
+            ) &&
+            now.isBefore(
+              _midnight!,
+            );
 
       default:
         return false;
@@ -967,7 +1095,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   String _getNextAdhan() {
-    final now = DateTime.now();
+    final now =
+        DateTime.now();
 
     if (_fajrAdhan == null ||
         _dhuhrAdhan == null ||
@@ -975,244 +1104,138 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       return '';
     }
 
-    DateTime? nextAdhan;
-    String nextName = '';
+    DateTime nextAdhan;
+    String nextName;
 
-    if (now.isBefore(_fajrAdhan!)) {
-      nextAdhan = _fajrAdhan;
-      nextName = 'أذان الفجر';
-    } else if (now.isBefore(_dhuhrAdhan!)) {
-      nextAdhan = _dhuhrAdhan;
-      nextName = 'أذان الظهر';
-    } else if (now.isBefore(_maghribAdhan!)) {
-      nextAdhan = _maghribAdhan;
-      nextName = 'أذان المغرب';
+    if (now.isBefore(
+      _fajrAdhan!,
+    )) {
+      nextAdhan =
+          _fajrAdhan!;
+      nextName =
+          'أذان الفجر';
+    } else if (now.isBefore(
+      _dhuhrAdhan!,
+    )) {
+      nextAdhan =
+          _dhuhrAdhan!;
+      nextName =
+          'أذان الظهر';
+    } else if (now.isBefore(
+      _maghribAdhan!,
+    )) {
+      nextAdhan =
+          _maghribAdhan!;
+      nextName =
+          'أذان المغرب';
     } else {
-      nextAdhan = _fajrAdhan!.add(
-        const Duration(days: 1),
-      );
-      nextName = 'أذان الفجر (غداً)';
+      /*
+       * بعد المغرب:
+       * الفجر القادم هو فجر الغد.
+       *
+       * نحسبه فعليًا بدل إضافة 24 ساعة
+       * إلى فجر اليوم حتى نأخذ تغير الحساب
+       * اليومي بعين الاعتبار.
+       */
+      if (_position != null) {
+        final tomorrow =
+            DateTime.now().add(
+          const Duration(days: 1),
+        );
+
+        final tomorrowTimes =
+            _calculateShiaPrayerTimes(
+          _position!.latitude,
+          _position!.longitude,
+          tomorrow,
+        );
+
+        nextAdhan =
+            tomorrowTimes['fajrAdhan'] ??
+                _fajrAdhan!.add(
+                  const Duration(days: 1),
+                );
+      } else {
+        nextAdhan =
+            _fajrAdhan!.add(
+          const Duration(days: 1),
+        );
+      }
+
+      nextName =
+          'أذان الفجر (غداً)';
     }
 
-    if (nextAdhan == null) {
-      return '';
+    final diff =
+        nextAdhan.difference(now);
+
+    final totalMinutes =
+        diff.inMinutes;
+
+    if (totalMinutes <= 0) {
+      return 'الأذان القادم: $nextName قريباً';
     }
 
-    final diff = nextAdhan.difference(now);
+    final hours =
+        totalMinutes ~/ 60;
 
-    final hours = diff.inHours;
-    final minutes = diff.inMinutes % 60;
+    final minutes =
+        totalMinutes % 60;
 
     if (hours > 0) {
-      return 'الأذان القادم: $nextName بعد $hours ساعة و $minutes دقيقة';
+      return
+          'الأذان القادم: $nextName بعد $hours ساعة و $minutes دقيقة';
     }
 
-    return 'الأذان القادم: $nextName بعد $minutes دقيقة';
+    return
+        'الأذان القادم: $nextName بعد $minutes دقيقة';
   }
 
-  Future<void> _testNotification() async {
-    await _showAdhanNotification(
-      'اختبار',
-      _formatTime12Hour(DateTime.now()),
-    );
-  }
+  // ============================================================
+  // الواجهة
+  // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مواقيت الصلاة'),
-        actions: [
-          IconButton(
-            tooltip: 'اختبار الإشعار',
-            icon: const Icon(
-              Icons.notifications_active_outlined,
-            ),
-            onPressed: _testNotification,
-          ),
-        ],
+        title: const Text(
+          'مواقيت الصلاة',
+        ),
       ),
       body: RefreshIndicator(
-        onRefresh: _getLocationAndCalculate,
+        onRefresh:
+            _getLocationAndCalculate,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          physics:
+              const AlwaysScrollableScrollPhysics(),
+          padding:
+              const EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            24,
+          ),
           children: [
-            /*
-             * بطاقة المواقيت المختصرة.
-             */
-            Card(
-              elevation: 5,
-              shadowColor:
-                  AppColors.primaryGreen.withOpacity(0.25),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              color: AppColors.lightGold.withOpacity(0.25),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 15,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.access_time_filled,
-                          size: 30,
-                          color: AppColors.primaryGreen,
-                        ),
-                        const SizedBox(width: 9),
-                        const Text(
-                          'مواقيت الأذان',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+            // ==================================================
+            // بطاقة المواقيت المختصرة
+            // ==================================================
 
-                    if (_cityName != null) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            size: 20,
-                            color: AppColors.lightGold,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'الموقع: $_cityName',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.lightGold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+            _buildLocationHeader(),
 
-                    if (_position != null) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        '${_position!.latitude.toStringAsFixed(4)}°N, '
-                        '${_position!.longitude.toStringAsFixed(4)}°E',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            /*
-             * زر عداد الركعات أصبح هنا مباشرة أسفل البطاقة.
-             */
-            const SizedBox(height: 14),
-
-            Container(
-              decoration: BoxDecoration(
-                borderRadius:
-                    BorderRadius.circular(18),
-                gradient: const LinearGradient(
-                  colors: [
-                    AppColors.primaryGreen,
-                    Color(0xFF0B2A21),
-                  ],
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.20),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius:
-                      BorderRadius.circular(18),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          RakahCounterScreen(
-                        fajrAdhan: _fajrAdhan,
-                        sunrise: _sunrise,
-                        dhuhrAdhan: _dhuhrAdhan,
-                        maghribAdhan: _maghribAdhan,
-                        midnight: _midnight,
-                      ),
-                    ),
-                  ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 17,
-                      horizontal: 20,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.self_improvement,
-                          size: 34,
-                          color: AppColors.lightGold,
-                        ),
-                        SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'عداد الركعات',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 19,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 3),
-                              Text(
-                                'عدّ السجدات والركعات أثناء الصلاة',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_back_ios_new,
-                          color: AppColors.lightGold,
-                          size: 19,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            const SizedBox(
+              height: 12,
             ),
 
             if (_loading)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(40),
+                  padding:
+                      EdgeInsets.all(
+                    40,
+                  ),
                   child:
                       CircularProgressIndicator(),
                 ),
@@ -1220,23 +1243,44 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
             if (_error != null)
               Card(
-                color: Colors.red[50],
+                color:
+                    Colors.red.shade50,
                 child: Padding(
                   padding:
-                      const EdgeInsets.all(16),
+                      const EdgeInsets.all(
+                    16,
+                  ),
                   child: Column(
                     children: [
+                      Icon(
+                        Icons
+                            .location_off,
+                        size: 42,
+                        color:
+                            Colors.red.shade400,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
                       Text(
                         _error!,
                         textAlign:
                             TextAlign.center,
                       ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      ElevatedButton.icon(
                         onPressed:
                             _getLocationAndCalculate,
-                        child:
-                            const Text('إعادة المحاولة'),
+                        icon:
+                            const Icon(
+                          Icons.refresh,
+                        ),
+                        label:
+                            const Text(
+                          'إعادة المحاولة',
+                        ),
                       ),
                     ],
                   ),
@@ -1246,56 +1290,39 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             if (!_loading &&
                 _error == null &&
                 _fajrAdhan != null) ...[
-              const SizedBox(height: 16),
+              // ==================================================
+              // الأذان القادم
+              // ==================================================
 
-              Card(
-                color: AppColors.primaryGreen
-                    .withOpacity(0.10),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.all(15),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.timer,
-                        color:
-                            AppColors.primaryGreen,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _getNextAdhan(),
-                          style:
-                              const TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                                FontWeight.bold,
-                            color:
-                                AppColors.primaryGreen,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _buildNextAdhanCard(),
+
+              const SizedBox(
+                height: 14,
               ),
 
-              const SizedBox(height: 16),
+              // ==================================================
+              // عداد الركعات - أصبح هنا مباشرة بعد بطاقة المواقيت
+              // ==================================================
+
+              _buildRakahCounterButton(),
+
+              const SizedBox(
+                height: 20,
+              ),
 
               const Text(
                 'أوقات الأذان اليوم',
-                style: TextStyle(
-                  fontSize: 16,
+                style:
+                    TextStyle(
+                  fontSize: 18,
                   fontWeight:
                       FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: 12,
+              ),
 
               _AdhanCard(
                 name: 'أذان الفجر',
@@ -1310,8 +1337,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 icon:
                     Icons.wb_twilight,
                 isCurrent:
-                    _isCurrentPrayer('fajr'),
-                color: Colors.indigo,
+                    _isCurrentPrayer(
+                  'fajr',
+                ),
+                color:
+                    Colors.indigo,
                 onAdhan: () =>
                     _showAdhanNotification(
                   'الفجر',
@@ -1328,12 +1358,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   _dhuhrAdhan!,
                 ),
                 subtitle:
-                    'من الزوال إلى مغيب قرص الشمس',
+                    'من زوال الشمس إلى مغيب قرص الشمس',
                 endTime:
                     'ينتهي: ${_formatTime12Hour(_sunset!)}',
-                icon: Icons.sunny,
+                icon:
+                    Icons.sunny,
                 isCurrent:
-                    _isCurrentPrayer('dhuhr'),
+                    _isCurrentPrayer(
+                  'dhuhr',
+                ),
                 color:
                     Colors.amber.shade700,
                 onAdhan: () =>
@@ -1358,7 +1391,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 icon:
                     Icons.nights_stay,
                 isCurrent:
-                    _isCurrentPrayer('maghrib'),
+                    _isCurrentPrayer(
+                  'maghrib',
+                ),
                 color:
                     Colors.deepPurple,
                 onAdhan: () =>
@@ -1370,135 +1405,295 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
               ),
 
-              const SizedBox(height: 6),
-
-              Card(
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceEvenly,
-                    children: [
-                      _SunTimeInfo(
-                        icon: Icons
-                            .wb_sunny_outlined,
-                        label: 'الشروق',
-                        time:
-                            _formatTime12Hour(
-                          _sunrise!,
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.grey[300],
-                      ),
-                      _SunTimeInfo(
-                        icon:
-                            Icons.wb_twilight,
-                        label: 'الغروب',
-                        time:
-                            _formatTime12Hour(
-                          _sunset!,
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.grey[300],
-                      ),
-                      _SunTimeInfo(
-                        icon: Icons
-                            .bedtime_outlined,
-                        label: 'منتصف الليل',
-                        time:
-                            _formatTime12Hour(
-                          _midnight!,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(
+                height: 6,
               ),
+
+              // ==================================================
+              // الشروق / الغروب / منتصف الليل
+              // ==================================================
+
+              _buildSunTimesCard(),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(
+              height: 18,
+            ),
 
-            Card(
-              child: const Padding(
-                padding:
-                    EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ملاحظات مهمة:',
-                      style: TextStyle(
-                        fontWeight:
-                            FontWeight.bold,
+            // ====================================================
+            // الملاحظات
+            // ====================================================
+
+            _buildNotesCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // بطاقة مواقيت الأذان + الموقع
+  // ============================================================
+
+  Widget _buildLocationHeader() {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.zero,
+      shape:
+          RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(
+          18,
+        ),
+      ),
+      child: Container(
+        decoration:
+            BoxDecoration(
+          borderRadius:
+              BorderRadius.circular(
+            18,
+          ),
+          gradient:
+              LinearGradient(
+            begin:
+                Alignment.topRight,
+            end:
+                Alignment.bottomLeft,
+            colors: [
+              AppColors.lightGold
+                  .withOpacity(
+                0.28,
+              ),
+              AppColors.lightGold
+                  .withOpacity(
+                0.10,
+              ),
+            ],
+          ),
+        ),
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 13,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration:
+                  BoxDecoration(
+                shape:
+                    BoxShape.circle,
+                color:
+                    AppColors.primaryGreen,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors
+                        .primaryGreen
+                        .withOpacity(
+                      0.25,
+                    ),
+                    blurRadius: 10,
+                    offset:
+                        const Offset(
+                      0,
+                      4,
+                    ),
+                  ),
+                ],
+              ),
+              child:
+                  const Icon(
+                Icons.access_time_filled,
+                color:
+                    Colors.white,
+                size: 25,
+              ),
+            ),
+
+            const SizedBox(
+              width: 13,
+            ),
+
+            Expanded(
+              child:
+                  Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                children: [
+                  const Text(
+                    'مواقيت الأذان',
+                    style:
+                        TextStyle(
+                      fontSize: 19,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 4,
+                  ),
+
+                  if (_cityName != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons
+                              .location_on,
+                          size: 17,
+                          color: AppColors
+                              .primaryGreen,
+                        ),
+                        const SizedBox(
+                          width: 4,
+                        ),
+                        Flexible(
+                          child: Text(
+                            _cityName!,
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow
+                                    .ellipsis,
+                            style:
+                                const TextStyle(
+                              fontSize: 14,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color: AppColors
+                                  .primaryGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    const Text(
+                      'جاري تحديد موقعك...',
+                      style:
+                          TextStyle(
+                        fontSize: 13,
+                        color:
+                            Colors.black54,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      '• أذان الفجر: وقت صلاة الصبح من طلوع الفجر الصادق (18°) إلى طلوع الشمس',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
-                      ),
+
+                  if (_position != null) ...[
+                    const SizedBox(
+                      height: 2,
                     ),
                     Text(
-                      '• أذان الظهر: وقت صلاة الظهرين من الزوال إلى مغيب قرص الشمس',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
-                      ),
-                    ),
-                    Text(
-                      '  - يستحب تأخير صلاة العصر قليلاً',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
-                      ),
-                    ),
-                    Text(
-                      '• أذان المغرب: وقت صلاة العشائين من غياب الحمرة المشرقية إلى منتصف الليل',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
-                      ),
-                    ),
-                    Text(
-                      '  - يستحب تأخير صلاة العشاء إلى ثلث الليل',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
-                      ),
-                    ),
-                    Text(
-                      '• منتصف الليل الشرعي = منتصف المدة بين غروب الشمس وطلوع الفجر الصادق لليوم التالي',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
-                      ),
-                    ),
-                    Text(
-                      '• الأوقات تقريبية وتحدد حسب الموقع الجغرافي',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.8,
+                      '${_position!.latitude.toStringAsFixed(4)}°N  •  ${_position!.longitude.toStringAsFixed(4)}°E',
+                      style:
+                          TextStyle(
+                        fontSize: 10.5,
+                        color: AppColors
+                            .primaryGreen
+                            .withOpacity(
+                          0.85,
+                        ),
                       ),
                     ),
                   ],
+                ],
+              ),
+            ),
+
+            IconButton(
+              tooltip:
+                  'تحديث الموقع والمواقيت',
+              onPressed:
+                  _loading
+                      ? null
+                      : _getLocationAndCalculate,
+              icon:
+                  const Icon(
+                Icons.my_location,
+              ),
+              color:
+                  AppColors.primaryGreen,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // بطاقة الأذان القادم
+  // ============================================================
+
+  Widget _buildNextAdhanCard() {
+    return Card(
+      margin:
+          EdgeInsets.zero,
+      elevation: 1,
+      color:
+          AppColors.primaryGreen
+              .withOpacity(
+        0.08,
+      ),
+      shape:
+          RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(
+          16,
+        ),
+        side:
+            BorderSide(
+          color: AppColors
+              .primaryGreen
+              .withOpacity(
+            0.15,
+          ),
+        ),
+      ),
+      child:
+          Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 12,
+        ),
+        child:
+            Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration:
+                  BoxDecoration(
+                shape:
+                    BoxShape.circle,
+                color:
+                    AppColors.primaryGreen
+                        .withOpacity(
+                  0.12,
+                ),
+              ),
+              child:
+                  const Icon(
+                Icons.timer_outlined,
+                color:
+                    AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(
+              width: 11,
+            ),
+            Expanded(
+              child:
+                  Text(
+                _getNextAdhan(),
+                style:
+                    const TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                      FontWeight.bold,
+                  color:
+                      AppColors.primaryGreen,
                 ),
               ),
             ),
@@ -1507,7 +1702,396 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       ),
     );
   }
+
+  // ============================================================
+  // زر عداد الركعات
+  // ============================================================
+
+  Widget _buildRakahCounterButton() {
+    return Material(
+      color:
+          Colors.transparent,
+      child:
+          InkWell(
+        borderRadius:
+            BorderRadius.circular(
+          22,
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  RakahCounterScreen(
+                fajrAdhan:
+                    _fajrAdhan,
+                sunrise:
+                    _sunrise,
+                dhuhrAdhan:
+                    _dhuhrAdhan,
+                maghribAdhan:
+                    _maghribAdhan,
+                midnight:
+                    _midnight,
+              ),
+            ),
+          );
+        },
+        child:
+            Container(
+          width:
+              double.infinity,
+          padding:
+              const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 17,
+          ),
+          decoration:
+              BoxDecoration(
+            borderRadius:
+                BorderRadius.circular(
+              22,
+            ),
+            gradient:
+                const LinearGradient(
+              begin:
+                  Alignment.topRight,
+              end:
+                  Alignment.bottomLeft,
+              colors: [
+                Color(
+                  0xFF17634C,
+                ),
+                Color(
+                  0xFF0B2A21,
+                ),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    Colors.black
+                        .withOpacity(
+                  0.22,
+                ),
+                blurRadius: 15,
+                offset:
+                    const Offset(
+                  0,
+                  7,
+                ),
+              ),
+              BoxShadow(
+                color:
+                    AppColors.lightGold
+                        .withOpacity(
+                  0.16,
+                ),
+                blurRadius: 18,
+                spreadRadius:
+                    -4,
+              ),
+            ],
+            border:
+                Border.all(
+              color:
+                  AppColors.lightGold
+                      .withOpacity(
+                0.55,
+              ),
+              width: 1.2,
+            ),
+          ),
+          child:
+              Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration:
+                    BoxDecoration(
+                  shape:
+                      BoxShape.circle,
+                  color:
+                      AppColors.lightGold
+                          .withOpacity(
+                    0.14,
+                  ),
+                  border:
+                      Border.all(
+                    color:
+                        AppColors.lightGold
+                            .withOpacity(
+                      0.45,
+                    ),
+                  ),
+                ),
+                child:
+                    const Icon(
+                  Icons.self_improvement,
+                  color:
+                      AppColors.lightGold,
+                  size: 31,
+                ),
+              ),
+
+              const SizedBox(
+                width: 15,
+              ),
+
+              const Expanded(
+                child:
+                    Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .start,
+                  children: [
+                    Text(
+                      'عداد الركعات',
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white,
+                        fontSize: 20,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 4,
+                    ),
+                    Text(
+                      'عداد السجدات والركعات أثناء الصلاة',
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(
+                width: 40,
+                height: 40,
+                decoration:
+                    BoxDecoration(
+                  shape:
+                      BoxShape.circle,
+                  color:
+                      AppColors.lightGold,
+                ),
+                child:
+                    const Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 18,
+                  color:
+                      Color(
+                    0xFF0B2A21,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // الشروق والغروب ومنتصف الليل
+  // ============================================================
+
+  Widget _buildSunTimesCard() {
+    return Card(
+      margin:
+          EdgeInsets.zero,
+      elevation: 1,
+      shape:
+          RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(
+          16,
+        ),
+      ),
+      child:
+          Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          vertical: 14,
+        ),
+        child:
+            Row(
+          mainAxisAlignment:
+              MainAxisAlignment
+                  .spaceEvenly,
+          children: [
+            _SunTimeInfo(
+              icon:
+                  Icons.wb_sunny_outlined,
+              label:
+                  'الشروق',
+              time:
+                  _formatTime12Hour(
+                _sunrise!,
+              ),
+            ),
+
+            Container(
+              width: 1,
+              height: 42,
+              color:
+                  Colors.grey[300],
+            ),
+
+            _SunTimeInfo(
+              icon:
+                  Icons.wb_twilight,
+              label:
+                  'الغروب',
+              time:
+                  _formatTime12Hour(
+                _sunset!,
+              ),
+            ),
+
+            Container(
+              width: 1,
+              height: 42,
+              color:
+                  Colors.grey[300],
+            ),
+
+            _SunTimeInfo(
+              icon:
+                  Icons.bedtime_outlined,
+              label:
+                  'منتصف الليل',
+              time:
+                  _formatTime12Hour(
+                _midnight!,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // الملاحظات
+  // ============================================================
+
+  Widget _buildNotesCard() {
+    return Card(
+      elevation: 1,
+      shape:
+          RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(
+          16,
+        ),
+      ),
+      child:
+          const Padding(
+        padding:
+            EdgeInsets.all(
+          15,
+        ),
+        child:
+            Column(
+          crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+          children: [
+            Text(
+              'ملاحظات مهمة:',
+              style:
+                  TextStyle(
+                fontWeight:
+                    FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+            SizedBox(
+              height: 8,
+            ),
+            Text(
+              '• أذان الفجر: وقت صلاة الصبح من طلوع الفجر الصادق (18°) إلى طلوع الشمس',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '• أذان الظهر: وقت صلاة الظهرين من الزوال إلى مغيب قرص الشمس',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '  - يستحب تأخير صلاة العصر قليلاً',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '• أذان المغرب: وقت صلاة العشائين من غياب الحمرة المشرقية إلى منتصف الليل',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '  - يستحب تأخير صلاة العشاء إلى ثلث الليل',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '• منتصف الليل الشرعي = منتصف المدة بين غروب الشمس وطلوع الفجر الصادق لليوم التالي',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '• الأوقات تقريبية وتحدد حسب رؤية الهلال والموقع الجغرافي',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+            Text(
+              '• يُفضل الرجوع إلى التقويم الرسمي للسيد السيستاني دام ظله',
+              style:
+                  TextStyle(
+                fontSize: 12,
+                height: 1.8,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
+// ================================================================
+// بيانات الشمس
+// ================================================================
 
 class _SunPosition {
   final double declination;
@@ -1518,6 +2102,10 @@ class _SunPosition {
     this.equationOfTime,
   );
 }
+
+// ================================================================
+// معلومات الشروق والغروب
+// ================================================================
 
 class _SunTimeInfo
     extends StatelessWidget {
@@ -1543,18 +2131,25 @@ class _SunTimeInfo
           color:
               AppColors.primaryGreen,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(
+          height: 4,
+        ),
         Text(
           label,
-          style: TextStyle(
+          style:
+              TextStyle(
             fontSize: 11,
-            color: Colors.grey[600],
+            color:
+                Colors.grey[600],
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(
+          height: 2,
+        ),
         Text(
           time,
-          style: const TextStyle(
+          style:
+              const TextStyle(
             fontSize: 14,
             fontWeight:
                 FontWeight.bold,
@@ -1566,6 +2161,10 @@ class _SunTimeInfo
     );
   }
 }
+
+// ================================================================
+// بطاقة الأذان
+// ================================================================
 
 class _AdhanCard
     extends StatelessWidget {
@@ -1598,11 +2197,14 @@ class _AdhanCard
           const EdgeInsets.only(
         bottom: 10,
       ),
-      elevation: isCurrent ? 5 : 2,
+      elevation:
+          isCurrent ? 4 : 1,
       shape:
           RoundedRectangleBorder(
         borderRadius:
-            BorderRadius.circular(14),
+            BorderRadius.circular(
+          16,
+        ),
         side: isCurrent
             ? const BorderSide(
                 color:
@@ -1611,34 +2213,61 @@ class _AdhanCard
               )
             : BorderSide.none,
       ),
-      child: Padding(
+      child:
+          Padding(
         padding:
-            const EdgeInsets.all(16),
-        child: Row(
+            const EdgeInsets.all(
+          14,
+        ),
+        child:
+            Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 52,
+              height: 52,
               decoration:
                   BoxDecoration(
-                color: isCurrent
-                    ? AppColors.gold
-                    : color,
-                borderRadius:
-                    BorderRadius.circular(
-                  25,
-                ),
+                color:
+                    isCurrent
+                        ? AppColors.gold
+                        : color,
+                shape:
+                    BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Colors.black
+                            .withOpacity(
+                      0.12,
+                    ),
+                    blurRadius:
+                        7,
+                    offset:
+                        const Offset(
+                      0,
+                      3,
+                    ),
+                  ),
+                ],
               ),
               alignment:
                   Alignment.center,
-              child: Icon(
+              child:
+                  Icon(
                 icon,
-                color: Colors.white,
+                color:
+                    Colors.white,
+                size: 25,
               ),
             ),
-            const SizedBox(width: 16),
+
+            const SizedBox(
+              width: 13,
+            ),
+
             Expanded(
-              child: Column(
+              child:
+                  Column(
                 crossAxisAlignment:
                     CrossAxisAlignment
                         .start,
@@ -1646,27 +2275,30 @@ class _AdhanCard
                   Row(
                     children: [
                       Flexible(
-                        child: Text(
+                        child:
+                            Text(
                           name,
                           style:
                               const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight:
-                                FontWeight
-                                    .bold,
+                                FontWeight.bold,
                           ),
                         ),
                       ),
+
                       if (isCurrent) ...[
                         const SizedBox(
-                          width: 8,
+                          width: 7,
                         ),
                         Container(
                           padding:
                               const EdgeInsets
                                   .symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                            horizontal:
+                                7,
+                            vertical:
+                                2,
                           ),
                           decoration:
                               BoxDecoration(
@@ -1676,7 +2308,7 @@ class _AdhanCard
                             borderRadius:
                                 BorderRadius
                                     .circular(
-                              12,
+                              10,
                             ),
                           ),
                           child:
@@ -1686,50 +2318,57 @@ class _AdhanCard
                                 TextStyle(
                               color:
                                   Colors.white,
-                              fontSize: 11,
+                              fontSize:
+                                  10,
                               fontWeight:
-                                  FontWeight
-                                      .bold,
+                                  FontWeight.bold,
                             ),
                           ),
                         ),
                       ],
                     ],
                   ),
+
                   const SizedBox(
-                    height: 4,
+                    height: 2,
                   ),
+
                   Text(
                     time,
                     style:
                         const TextStyle(
-                      fontSize: 26,
+                      fontSize: 25,
                       fontWeight:
                           FontWeight.bold,
-                      color: AppColors
-                          .primaryGreen,
+                      color:
+                          AppColors
+                              .primaryGreen,
                     ),
                   ),
+
                   const SizedBox(
-                    height: 2,
+                    height: 1,
                   ),
+
                   Text(
                     subtitle,
                     style:
                         TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       color:
                           Colors.grey[600],
                     ),
                   ),
+
                   const SizedBox(
                     height: 2,
                   ),
+
                   Text(
                     endTime,
                     style:
                         TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       color:
                           Colors.red[400],
                       fontWeight:
@@ -1739,25 +2378,43 @@ class _AdhanCard
                 ],
               ),
             ),
+
             if (onAdhan != null)
               Column(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.volume_up,
+                  Material(
+                    color:
+                        AppColors
+                            .primaryGreen
+                            .withOpacity(
+                      0.10,
                     ),
-                    color: AppColors
-                        .primaryGreen,
-                    tooltip:
-                        'تشغيل صوت الأذان',
-                    onPressed:
-                        onAdhan,
+                    shape:
+                        const CircleBorder(),
+                    child:
+                        IconButton(
+                      icon:
+                          const Icon(
+                        Icons
+                            .volume_up_rounded,
+                      ),
+                      color:
+                          AppColors
+                              .primaryGreen,
+                      tooltip:
+                          'اختبار إشعار وصوت الأذان',
+                      onPressed:
+                          onAdhan,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 1,
                   ),
                   const Text(
-                    'الأذان',
+                    'اختبار',
                     style:
                         TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color:
                           Colors.grey,
                     ),
