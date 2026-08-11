@@ -1586,7 +1586,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     }
 
     // ثم حفظ القيمة في الشاشة الرئيسية والتخزين.
-    await widget.onTravelerChanged(value);
+    widget.onTravelerChanged(value);
   }
 
   // ---------------------------------------------------------------------------
@@ -1601,7 +1601,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       });
     }
 
-    await widget.onVibrationChanged(value);
+    widget.onVibrationChanged(value);
   }
 
   // ---------------------------------------------------------------------------
@@ -1616,7 +1616,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       });
     }
 
-    await widget.onInputModeChanged(value);
+    widget.onInputModeChanged(value);
   }
 
   // ---------------------------------------------------------------------------
@@ -1631,7 +1631,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       });
     }
 
-    await widget.onScaleChanged(value);
+    widget.onScaleChanged(value);
   }
 
   @override
