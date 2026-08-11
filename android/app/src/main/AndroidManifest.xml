@@ -1,25 +1,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- أذونات مطلوبة لقسم "طريق زائر الحسين" (تحديد الموقع عبر GPS) -->
+
+    <!-- الموقع -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <!-- مطلوب لفتح روابط المواقع الرسمية للمراجع ولفتح خرائط جوجل -->
+
+    <!-- الإنترنت -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- أذونات إشعارات أذان الصلاة: بدون هذي الثلاثة، لا يعمل أي إشعار
-         مجدول إطلاقاً على أندرويد 13+ (POST_NOTIFICATIONS)، ولا تنطلق
-         الجدولة بدقة الثانية على أندرويد 12+ بدون إذن التنبيهات الدقيقة -->
+
+    <!-- الإشعارات -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- جدولة الإشعارات الدقيقة -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+
+    <!-- إعادة جدولة الإشعارات بعد إعادة تشغيل الهاتف -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- الاهتزاز -->
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <!-- يسمح للتطبيق بطلب استثناء "تحسين البطارية" برمجياً عبر نافذة
-         نظام قياسية، لضمان استمرار عمل إشعارات الأذان المجدولة حتى بعد
-         إغلاق التطبيق لفترة طويلة (انظر settings_screen.dart) -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+
+    <!-- تحسين البطارية -->
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+
     <application
         android:label="دليل زوار الحسين"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -29,29 +38,61 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <!-- يظهر خلال إقلاع فلاتر قبل رسم أول إطار -->
+
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
         </activity>
-        <!-- يخبر فلاتر أن هذا التطبيق يستخدم نظام التضمين الجديد (v2) -->
+
+        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- ================================================= -->
+        <!-- flutter_local_notifications -->
+        <!-- استقبال الإشعارات المجدولة -->
+        <!-- ================================================= -->
+
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+
+        <!-- إعادة الإشعارات المجدولة بعد إعادة تشغيل الهاتف -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+
+        </receiver>
+
     </application>
-    <!-- مطلوب على أندرويد 11+ لفتح تطبيق خرائط جوجل عبر url_launcher -->
+
+    <!-- فتح الروابط والخرائط -->
     <queries>
+
         <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="https" />
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
+
         <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="geo" />
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="geo"/>
         </intent>
+
     </queries>
+
 </manifest>
