@@ -1235,13 +1235,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             if (!_loading &&
                 _error == null &&
                 _fajrAdhan != null) ...[
-              _buildNextAdhanCard(),
+              _buildRakahCounterButton(),
 
               const SizedBox(
                 height: 14,
               ),
 
-              _buildRakahCounterButton(),
+              _buildNextAdhanCard(),
 
               const SizedBox(
                 height: 20,
