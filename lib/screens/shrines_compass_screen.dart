@@ -29,9 +29,6 @@ class SacredPlace {
 
 /// ===============================================================
 /// الأماكن المقدسة
-///
-/// الإحداثيات هنا تمثل موقع المبنى/المرقد أو المسجد نفسه،
-/// وليس مركز المدينة.
 /// ===============================================================
 
 const List<SacredPlace> sacredPlaces = [
@@ -44,8 +41,7 @@ const List<SacredPlace> sacredPlaces = [
 
   SacredPlace(
     name: 'البقيع الشريف',
-    subtitle:
-        'مراقد أئمة أهل البيت (ع) - المدينة المنورة',
+    subtitle: 'مراقد أئمة أهل البيت (ع) - المدينة المنورة',
     lat: 24.46667,
     lng: 39.61633,
   ),
@@ -126,12 +122,7 @@ class ShrinesCompassScreen extends StatefulWidget {
       _ShrinesCompassScreenState();
 }
 
-class _ShrinesCompassScreenState
-    extends State<ShrinesCompassScreen> {
-  // =============================================================
-  // الحالة
-  // =============================================================
-
+class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
   bool _loading = true;
   String? _error;
 
@@ -139,16 +130,11 @@ class _ShrinesCompassScreenState
 
   double? _targetDirection;
 
-  /// الاتجاه الحقيقي للجهاز
   double _deviceHeading = 0;
-
-  /// آخر اتجاه ناعم
   double _smoothHeading = 0;
 
-  /// الانحراف المغناطيسي
   double _declination = 0;
 
-  /// دقة البوصلة
   double? _headingAccuracy;
 
   bool _compassAvailable = false;
@@ -156,14 +142,9 @@ class _ShrinesCompassScreenState
 
   bool _hasFirstHeading = false;
 
-  /// عدد القراءات المتتالية الموافقة للهدف
   int _targetMatchCounter = 0;
 
   SacredPlace _selectedPlace = sacredPlaces.first;
-
-  // =============================================================
-  // Sensor subscriptions
-  // =============================================================
 
   StreamSubscription<CompassEvent>? _compassSubscription;
 
@@ -173,21 +154,12 @@ class _ShrinesCompassScreenState
   StreamSubscription<MagnetometerEvent>?
       _magnetometerSubscription;
 
-  // =============================================================
-  // آخر قراءات المستشعرات
-  // =============================================================
-
   AccelerometerEvent? _lastAccelerometer;
   MagnetometerEvent? _lastMagnetometer;
-
-  // =============================================================
-  // Init
-  // =============================================================
 
   @override
   void initState() {
     super.initState();
-
     _getLocationAndCalculate();
   }
 
@@ -245,18 +217,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // Fallback
-  //
-  // مهم:
-  //
-  // لا نستخدم:
-  //
-  // atan2(magnetometer.y, magnetometer.x)
-  //
-  // لأنها تصبح غير دقيقة جدًا عند ميل الهاتف.
-  //
-  // بدل ذلك نستخدم Accelerometer + Magnetometer
-  // مع تعويض الميل Tilt Compensation.
+  // البوصلة الاحتياطية
   // =============================================================
 
   void _startTiltCompensatedFallback() {
@@ -295,7 +256,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // حساب البوصلة مع تعويض الميل
+  // حساب الاتجاه مع تعويض الميل
   // =============================================================
 
   void _calculateTiltCompensatedHeading() {
@@ -307,10 +268,6 @@ class _ShrinesCompassScreenState
     if (acc == null || mag == null) return;
 
     try {
-      // ----------------------------------------------------------
-      // Gravity
-      // ----------------------------------------------------------
-
       double ax = acc.x;
       double ay = acc.y;
       double az = acc.z;
@@ -326,10 +283,6 @@ class _ShrinesCompassScreenState
       ax /= aLength;
       ay /= aLength;
       az /= aLength;
-
-      // ----------------------------------------------------------
-      // Magnetic field
-      // ----------------------------------------------------------
 
       double mx = mag.x;
       double my = mag.y;
@@ -403,19 +356,10 @@ class _ShrinesCompassScreenState
       ny /= nLength;
       nz /= nLength;
 
-      // ----------------------------------------------------------
-      // اتجاه أعلى الهاتف Y بالنسبة للشمال
-      //
-      // يتم إسقاط محور Y على المستوى الأفقي.
-      //
-      // هذا يعوض ميل الهاتف.
-      // ----------------------------------------------------------
-
-      final headingRad =
-          math.atan2(
-            ey,
-            ny,
-          );
+      final headingRad = math.atan2(
+        ey,
+        ny,
+      );
 
       var heading =
           headingRad *
@@ -429,7 +373,6 @@ class _ShrinesCompassScreenState
       heading %= 360;
 
       _compassAvailable = true;
-
       _headingAccuracy = null;
 
       _updateHeading(
@@ -441,12 +384,10 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // تحويل الشمال المغناطيسي إلى الحقيقي
+  // تحويل المغناطيسي إلى الحقيقي
   // =============================================================
 
-  double _toTrueHeading(
-    double magneticHeading,
-  ) {
+  double _toTrueHeading(double magneticHeading) {
     var trueHeading =
         magneticHeading +
         _declination;
@@ -464,9 +405,7 @@ class _ShrinesCompassScreenState
   // تحديث الاتجاه
   // =============================================================
 
-  void _updateHeading(
-    double heading,
-  ) {
+  void _updateHeading(double heading) {
     if (heading.isNaN ||
         heading.isInfinite) {
       return;
@@ -475,8 +414,6 @@ class _ShrinesCompassScreenState
     heading =
         (heading + 360) % 360;
 
-    // أول قراءة:
-    // لا نبدأ من صفر حتى لا يحدث دوران وهمي طويل.
     if (!_hasFirstHeading) {
       _hasFirstHeading = true;
       _smoothHeading = heading;
@@ -489,8 +426,7 @@ class _ShrinesCompassScreenState
       );
     }
 
-    _deviceHeading =
-        _smoothHeading;
+    _deviceHeading = _smoothHeading;
 
     if (mounted) {
       setState(() {});
@@ -498,7 +434,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // تنعيم زاوي صحيح
+  // تنعيم الاتجاه
   // =============================================================
 
   double _lerpAngle(
@@ -517,14 +453,15 @@ class _ShrinesCompassScreenState
       difference -= 360;
     }
 
-    return (current +
-            difference * factor +
-            360) %
-        360;
+    return (
+      current +
+      difference * factor +
+      360
+    ) % 360;
   }
 
   // =============================================================
-  // الموقع وحساب الاتجاه
+  // الموقع
   // =============================================================
 
   Future<void> _getLocationAndCalculate() async {
@@ -537,8 +474,7 @@ class _ShrinesCompassScreenState
 
     try {
       final serviceEnabled =
-          await Geolocator
-              .isLocationServiceEnabled();
+          await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
         throw Exception(
@@ -552,8 +488,7 @@ class _ShrinesCompassScreenState
       if (permission ==
           LocationPermission.denied) {
         permission =
-            await Geolocator
-                .requestPermission();
+            await Geolocator.requestPermission();
 
         if (permission ==
             LocationPermission.denied) {
@@ -570,19 +505,21 @@ class _ShrinesCompassScreenState
         );
       }
 
+      // ==========================================================
+      // تم تعديل هذا الجزء
+      //
+      // لا نستخدم locationSettings لأن نسخة geolocator الموجودة
+      // في بيئة البناء الحالية لا تقبله.
+      // ==========================================================
+
       final position =
-          await Geolocator
-              .getCurrentPosition(
-        locationSettings:
-            const LocationSettings(
-          accuracy:
-              LocationAccuracy.best,
-        ),
+          await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
       );
 
-      // ----------------------------------------------------------
-      // Magnetic declination
-      // ----------------------------------------------------------
+      // ==========================================================
+      // Magnetic Declination
+      // ==========================================================
 
       double declination = 0;
 
@@ -597,8 +534,7 @@ class _ShrinesCompassScreenState
           DateTime.now(),
         );
 
-        declination =
-            result.dec;
+        declination = result.dec;
       } catch (_) {
         declination = 0;
       }
@@ -615,17 +551,10 @@ class _ShrinesCompassScreenState
 
       setState(() {
         _position = position;
-
-        _declination =
-            declination;
-
-        _targetDirection =
-            target;
-
+        _declination = declination;
+        _targetDirection = target;
         _loading = false;
-
         _hasFirstHeading = false;
-
         _targetMatchCounter = 0;
       });
 
@@ -658,10 +587,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // حساب Bearing
-  //
-  // من موقع المستخدم إلى المكان الهدف.
-  // النتيجة بالنسبة للشمال الحقيقي.
+  // Bearing
   // =============================================================
 
   double _calculateBearing(
@@ -709,7 +635,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // اختيار المكان
+  // اختيار مكان
   // =============================================================
 
   void _onPlaceSelected(
@@ -784,7 +710,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // ثبات الاتجاه قبل إعلان الوصول
+  // التأكد من ثبات الاتجاه
   // =============================================================
 
   bool _isFacingTarget() {
@@ -807,9 +733,7 @@ class _ShrinesCompassScreenState
   // =============================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
           const Color(0xFFF3F1EC),
@@ -935,16 +859,15 @@ class _ShrinesCompassScreenState
                 fontWeight:
                     FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color:
+                    Colors.black87,
               ),
             ),
 
             const SizedBox(height: 12),
 
-            DropdownButtonFormField<
-                SacredPlace>(
-              initialValue:
-                  _selectedPlace,
+            DropdownButtonFormField<SacredPlace>(
+              value: _selectedPlace,
               isExpanded: true,
               decoration:
                   InputDecoration(
@@ -1004,7 +927,8 @@ class _ShrinesCompassScreenState
               _selectedPlace.subtitle,
               textDirection:
                   TextDirection.rtl,
-              style: const TextStyle(
+              style:
+                  const TextStyle(
                 fontSize: 12,
                 color:
                     Colors.black87,
@@ -1075,7 +999,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // Compass warning
+  // تحذير البوصلة
   // =============================================================
 
   Widget _buildCompassWarning() {
@@ -1191,7 +1115,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // Info
+  // Info Card
   // =============================================================
 
   Widget _buildInfoCard() {
@@ -1217,6 +1141,7 @@ class _ShrinesCompassScreenState
               color:
                   AppColors.primaryGreen,
             ),
+
             _InfoBox(
               label:
                   'اتجاه الهاتف',
@@ -1225,6 +1150,7 @@ class _ShrinesCompassScreenState
               color:
                   Colors.blue.shade700,
             ),
+
             _InfoBox(
               label:
                   'الفرق',
@@ -1242,7 +1168,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // Location information
+  // Location Card
   // =============================================================
 
   Widget _buildLocationCard() {
@@ -1315,8 +1241,7 @@ class _ShrinesCompassScreenState
               ),
             ),
 
-            if (_headingAccuracy !=
-                null) ...[
+            if (_headingAccuracy != null) ...[
               const SizedBox(height: 6),
               Text(
                 'دقة الحساس: '
@@ -1336,7 +1261,7 @@ class _ShrinesCompassScreenState
   }
 
   // =============================================================
-  // تعليمات واضحة
+  // التعليمات
   // =============================================================
 
   Widget _buildInstructions() {
@@ -1463,8 +1388,7 @@ class _ShrinesCompassScreenState
 // Compass Dial
 // ===================================================================
 
-class _CompassDialPainter
-    extends CustomPainter {
+class _CompassDialPainter extends CustomPainter {
   final double headingDeg;
 
   _CompassDialPainter({
@@ -1476,39 +1400,35 @@ class _CompassDialPainter
     Canvas canvas,
     Size size,
   ) {
-    final center =
-        Offset(
+    final center = Offset(
       size.width / 2,
       size.height / 2,
     );
 
-    final radius =
-        size.width / 2;
+    final radius = size.width / 2;
 
     // ---------------------------------------------------------------
     // الإطار
     // ---------------------------------------------------------------
 
-    final bezelPaint =
-        Paint()
-          ..shader =
-              const RadialGradient(
-            colors: [
-              Color(0xFFFFF6D8),
-              Color(0xFFD4AF37),
-              Color(0xFF765A18),
-            ],
-            stops: [
-              0.72,
-              0.91,
-              1.0,
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: center,
-              radius: radius,
-            ),
-          );
+    final bezelPaint = Paint()
+      ..shader = const RadialGradient(
+        colors: [
+          Color(0xFFFFF6D8),
+          Color(0xFFD4AF37),
+          Color(0xFF765A18),
+        ],
+        stops: [
+          0.72,
+          0.91,
+          1.0,
+        ],
+      ).createShader(
+        Rect.fromCircle(
+          center: center,
+          radius: radius,
+        ),
+      );
 
     canvas.drawCircle(
       center,
@@ -1521,8 +1441,7 @@ class _CompassDialPainter
         ..addOval(
           Rect.fromCircle(
             center: center,
-            radius:
-                radius - 2,
+            radius: radius - 2,
           ),
         ),
       Colors.black,
@@ -1534,24 +1453,20 @@ class _CompassDialPainter
     // الوجه
     // ---------------------------------------------------------------
 
-    final faceRadius =
-        radius - 14;
+    final faceRadius = radius - 14;
 
-    final facePaint =
-        Paint()
-          ..shader =
-              const RadialGradient(
-            colors: [
-              Colors.white,
-              Color(0xFFE5E5E5),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: center,
-              radius:
-                  faceRadius,
-            ),
-          );
+    final facePaint = Paint()
+      ..shader = const RadialGradient(
+        colors: [
+          Colors.white,
+          Color(0xFFE5E5E5),
+        ],
+      ).createShader(
+        Rect.fromCircle(
+          center: center,
+          radius: faceRadius,
+        ),
+      );
 
     canvas.drawCircle(
       center,
@@ -1559,20 +1474,20 @@ class _CompassDialPainter
       facePaint,
     );
 
+    final faceBorderPaint = Paint()
+      ..color =
+          AppColors.primaryGreen.withOpacity(0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
     canvas.drawCircle(
       center,
       faceRadius,
-      Paint()
-        ..color =
-            AppColors.primaryGreen
-                .withOpacity(0.6)
-        ..style =
-            PaintingStyle.stroke
-        ..strokeWidth = 2,
+      faceBorderPaint,
     );
 
     // ---------------------------------------------------------------
-    // القرص الدوار
+    // القرص
     // ---------------------------------------------------------------
 
     canvas.save();
@@ -1591,10 +1506,11 @@ class _CompassDialPainter
     final tickRadius =
         faceRadius - 8;
 
-    // تدريجات
-    for (int deg = 0;
-        deg < 360;
-        deg += 5) {
+    // ---------------------------------------------------------------
+    // التدريجات
+    // ---------------------------------------------------------------
+
+    for (int deg = 0; deg < 360; deg += 5) {
       final isMajor =
           deg % 30 == 0;
 
@@ -1613,40 +1529,55 @@ class _CompassDialPainter
           math.pi /
           180;
 
-      final outer =
-          Offset(
+      final outer = Offset(
         tickRadius *
             math.sin(angle),
         -tickRadius *
             math.cos(angle),
       );
 
-      final inner =
-          Offset(
+      final inner = Offset(
         (tickRadius - length) *
             math.sin(angle),
         -(tickRadius - length) *
             math.cos(angle),
       );
 
+      // -------------------------------------------------------------
+      // إصلاح خطأ drawLine
+      //
+      // تم إنشاء Paint منفصل حتى لا يحدث خطأ:
+      // Expected an identifier, but got '..'
+      // Too many positional arguments
+      // -------------------------------------------------------------
+
+      final tickPaint = Paint();
+
+      if (isCardinal) {
+        tickPaint.color =
+            deg == 0
+                ? Colors.red.shade700
+                : Colors.black87;
+      } else {
+        tickPaint.color =
+            Colors.grey.shade600;
+      }
+
+      if (isCardinal) {
+        tickPaint.strokeWidth = 2.5;
+      } else if (isMajor) {
+        tickPaint.strokeWidth = 1.6;
+      } else {
+        tickPaint.strokeWidth = 1.0;
+      }
+
+      tickPaint.strokeCap =
+          StrokeCap.round;
+
       canvas.drawLine(
         inner,
         outer,
-        Paint()
-          ..color =
-              isCardinal
-                  ? (deg == 0
-                      ? Colors.red.shade700
-                      : Colors.black87)
-                  : Colors.grey.shade600
-          ..strokeWidth =
-              isCardinal
-                  ? 2.5
-                  : isMajor
-                      ? 1.6
-                      : 1,
-          ..strokeCap =
-              StrokeCap.round,
+        tickPaint,
       );
     }
 
@@ -1671,22 +1602,22 @@ class _CompassDialPainter
         final labelRadius =
             tickRadius - 30;
 
-        final pos =
-            Offset(
+        final pos = Offset(
           labelRadius *
               math.sin(angle),
           -labelRadius *
               math.cos(angle),
         );
 
-        final painter =
+        final textPainter =
             TextPainter(
           text: TextSpan(
             text: label,
             style: TextStyle(
-              color: deg == 0
-                  ? Colors.red.shade700
-                  : Colors.black87,
+              color:
+                  deg == 0
+                      ? Colors.red.shade700
+                      : Colors.black87,
               fontSize: 13,
               fontWeight:
                   FontWeight.bold,
@@ -1694,7 +1625,9 @@ class _CompassDialPainter
           ),
           textDirection:
               TextDirection.rtl,
-        )..layout();
+        );
+
+        textPainter.layout();
 
         canvas.save();
 
@@ -1709,11 +1642,11 @@ class _CompassDialPainter
               180,
         );
 
-        painter.paint(
+        textPainter.paint(
           canvas,
           Offset(
-            -painter.width / 2,
-            -painter.height / 2,
+            -textPainter.width / 2,
+            -textPainter.height / 2,
           ),
         );
 
@@ -1724,63 +1657,66 @@ class _CompassDialPainter
     canvas.restore();
 
     // ---------------------------------------------------------------
-    // مؤشر الهاتف الثابت
+    // مؤشر أعلى الهاتف
     // ---------------------------------------------------------------
 
-    final pointer =
-        Path()
-          ..moveTo(
-            center.dx,
-            center.dy -
-                radius +
-                5,
-          )
-          ..lineTo(
-            center.dx - 8,
-            center.dy -
-                radius +
-                22,
-          )
-          ..lineTo(
-            center.dx + 8,
-            center.dy -
-                radius +
-                22,
-          )
-          ..close();
+    final pointer = Path()
+      ..moveTo(
+        center.dx,
+        center.dy -
+            radius +
+            5,
+      )
+      ..lineTo(
+        center.dx - 8,
+        center.dy -
+            radius +
+            22,
+      )
+      ..lineTo(
+        center.dx + 8,
+        center.dy -
+            radius +
+            22,
+      )
+      ..close();
+
+    final pointerPaint = Paint()
+      ..color = Colors.red.shade700;
 
     canvas.drawPath(
       pointer,
-      Paint()
-        ..color =
-            Colors.red.shade700,
+      pointerPaint,
     );
 
-    // نقطة المركز
-    canvas.drawCircle(
-      center,
-      7,
-      Paint()
-        ..color =
-            Colors.white,
-    );
+    // ---------------------------------------------------------------
+    // المركز
+    // ---------------------------------------------------------------
+
+    final centerPaint = Paint()
+      ..color = Colors.white;
 
     canvas.drawCircle(
       center,
       7,
-      Paint()
-        ..color =
-            Colors.black87
-        ..style =
-            PaintingStyle.stroke
-        ..strokeWidth = 2,
+      centerPaint,
+    );
+
+    final centerBorderPaint = Paint()
+      ..color = Colors.black87
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    canvas.drawCircle(
+      center,
+      7,
+      centerBorderPaint,
     );
   }
 
   @override
   bool shouldRepaint(
-    covariant _CompassDialPainter
-        oldDelegate,
+    covariant _CompassDialPainter oldDelegate,
   ) {
     return oldDelegate.headingDeg !=
         headingDeg;
@@ -1791,8 +1727,7 @@ class _CompassDialPainter
 // Needle
 // ===================================================================
 
-class _CompassNeedlePainter
-    extends CustomPainter {
+class _CompassNeedlePainter extends CustomPainter {
   final double pointerAngleDeg;
   final bool isAligned;
 
@@ -1806,8 +1741,7 @@ class _CompassNeedlePainter
     Canvas canvas,
     Size size,
   ) {
-    final center =
-        Offset(
+    final center = Offset(
       size.width / 2,
       size.height / 2,
     );
@@ -1834,123 +1768,123 @@ class _CompassNeedlePainter
         size.width * 0.35;
 
     // ---------------------------------------------------------------
-    // ظل
+    // الظل
     // ---------------------------------------------------------------
 
-    final shadow =
-        Path()
-          ..moveTo(
-            0,
-            -length + 3,
-          )
-          ..lineTo(
-            11,
-            7,
-          )
-          ..lineTo(
-            -11,
-            7,
-          )
-          ..close();
+    final shadow = Path()
+      ..moveTo(
+        0,
+        -length + 3,
+      )
+      ..lineTo(
+        11,
+        7,
+      )
+      ..lineTo(
+        -11,
+        7,
+      )
+      ..close();
+
+    final shadowPaint = Paint()
+      ..color =
+          Colors.black.withOpacity(0.25)
+      ..maskFilter =
+          const MaskFilter.blur(
+        BlurStyle.normal,
+        4,
+      );
 
     canvas.drawPath(
       shadow,
-      Paint()
-        ..color =
-            Colors.black
-                .withOpacity(0.25)
-        ..maskFilter =
-            const MaskFilter.blur(
-          BlurStyle.normal,
-          4,
-        ),
+      shadowPaint,
     );
 
     // ---------------------------------------------------------------
     // الإبرة
     // ---------------------------------------------------------------
 
-    final needle =
-        Path()
-          ..moveTo(
-            0,
-            -length,
-          )
-          ..lineTo(
-            10,
-            7,
-          )
-          ..lineTo(
-            -10,
-            7,
-          )
-          ..close();
+    final needle = Path()
+      ..moveTo(
+        0,
+        -length,
+      )
+      ..lineTo(
+        10,
+        7,
+      )
+      ..lineTo(
+        -10,
+        7,
+      )
+      ..close();
+
+    final needlePaint = Paint()
+      ..shader =
+          LinearGradient(
+        begin:
+            Alignment.topCenter,
+        end:
+            Alignment.bottomCenter,
+        colors: [
+          color,
+          color.withOpacity(0.55),
+        ],
+      ).createShader(
+        Rect.fromLTWH(
+          -10,
+          -length,
+          20,
+          length + 7,
+        ),
+      );
 
     canvas.drawPath(
       needle,
-      Paint()
-        ..shader =
-            LinearGradient(
-          begin:
-              Alignment.topCenter,
-          end:
-              Alignment.bottomCenter,
-          colors: [
-            color,
-            color.withOpacity(
-              0.55,
-            ),
-          ],
-        ).createShader(
-          Rect.fromLTWH(
-            -10,
-            -length,
-            20,
-            length + 7,
-          ),
-        ),
+      needlePaint,
     );
 
+    final needleBorderPaint = Paint()
+      ..color =
+          Colors.white.withOpacity(0.6)
+      ..style =
+          PaintingStyle.stroke
+      ..strokeWidth = 1;
+
     canvas.drawPath(
       needle,
-      Paint()
-        ..color =
-            Colors.white
-                .withOpacity(0.6)
-        ..style =
-            PaintingStyle.stroke
-        ..strokeWidth = 1,
+      needleBorderPaint,
     );
 
     // ---------------------------------------------------------------
-    // ذيل
+    // الذيل
     // ---------------------------------------------------------------
 
     final tailLength =
         size.width * 0.14;
 
-    final tail =
-        Path()
-          ..moveTo(
-            0,
-            tailLength,
-          )
-          ..lineTo(
-            6,
-            5,
-          )
-          ..lineTo(
-            -6,
-            5,
-          )
-          ..close();
+    final tail = Path()
+      ..moveTo(
+        0,
+        tailLength,
+      )
+      ..lineTo(
+        6,
+        5,
+      )
+      ..lineTo(
+        -6,
+        5,
+      )
+      ..close();
+
+    final tailPaint = Paint()
+      ..color =
+          AppColors.gold.withOpacity(0.8);
 
     canvas.drawPath(
       tail,
-      Paint()
-        ..color =
-            AppColors.gold
-                .withOpacity(0.8),
+      tailPaint,
     );
 
     canvas.restore();
@@ -1959,35 +1893,41 @@ class _CompassNeedlePainter
     // مركز الإبرة
     // ---------------------------------------------------------------
 
-    canvas.drawCircle(
-      center,
-      13,
-      Paint()
-        ..shader =
-            const RadialGradient(
-          colors: [
-            Colors.white,
-            Color(0xFFBDBDBD),
-            Color(0xFF616161),
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: center,
-            radius: 13,
-          ),
+    final centerPaint = Paint()
+      ..shader =
+          const RadialGradient(
+        colors: [
+          Colors.white,
+          Color(0xFFBDBDBD),
+          Color(0xFF616161),
+        ],
+      ).createShader(
+        Rect.fromCircle(
+          center: center,
+          radius: 13,
         ),
-    );
+      );
 
     canvas.drawCircle(
       center,
       13,
-      Paint()
-        ..color =
-            Colors.black54
-        ..style =
-            PaintingStyle.stroke
-        ..strokeWidth = 1,
+      centerPaint,
     );
+
+    final centerBorderPaint = Paint()
+      ..color = Colors.black54
+      ..style =
+          PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawCircle(
+      center,
+      13,
+      centerBorderPaint,
+    );
+
+    final highlightPaint = Paint()
+      ..color = Colors.white;
 
     canvas.drawCircle(
       Offset(
@@ -1995,16 +1935,13 @@ class _CompassNeedlePainter
         center.dy - 3,
       ),
       3,
-      Paint()
-        ..color =
-            Colors.white,
+      highlightPaint,
     );
   }
 
   @override
   bool shouldRepaint(
-    covariant _CompassNeedlePainter
-        oldDelegate,
+    covariant _CompassNeedlePainter oldDelegate,
   ) {
     return oldDelegate.pointerAngleDeg !=
             pointerAngleDeg ||
@@ -2017,8 +1954,7 @@ class _CompassNeedlePainter
 // Info Box
 // ===================================================================
 
-class _InfoBox
-    extends StatelessWidget {
+class _InfoBox extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
@@ -2039,7 +1975,8 @@ class _InfoBox
           label,
           textAlign:
               TextAlign.center,
-          style: const TextStyle(
+          style:
+              const TextStyle(
             fontSize: 11,
             color:
                 Colors.black87,
