@@ -272,8 +272,13 @@ class _QiblaScreenState extends State<QiblaScreen>
       // محور Y هو اتجاه الشمال
       // ----------------------------------------------------------
 
+      // اتجاه أعلى الهاتف (+Y) بالنسبة إلى الشمال/الشرق.
+      // الخطأ السابق كان يستخدم hx/nx، أي محور X، مما يسبب
+      // انحرافاً واضحاً في الاتجاه عند استخدام الوضع الاحتياطي.
+      // في الوضع العمودي للهاتف نستخدم مركبتي الشرق والشمال
+      // لمحور Y: atan2(E_y, N_y).
       var heading =
-          math.atan2(hx, nx) *
+          math.atan2(hy, ny) *
           180 /
           math.pi;
 
@@ -530,13 +535,11 @@ class _QiblaScreenState extends State<QiblaScreen>
   // ============================================================
 
   double get _trueHeading {
-    final value =
-        _deviceHeading +
-        _magneticDeclination;
-
-    return (
-      value + 360
-    ) % 360;
+    // flutter_compass على Android يعطينا الاتجاه المغناطيسي.
+    // نضيف الانحراف المغناطيسي (East positive / West negative)
+    // للحصول على الاتجاه الجغرافي الحقيقي.
+    final value = _deviceHeading + _magneticDeclination;
+    return (value + 360) % 360;
   }
 
   // ============================================================
