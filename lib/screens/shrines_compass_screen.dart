@@ -356,10 +356,9 @@ class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
       ny /= nLength;
       nz /= nLength;
 
-      final headingRad = math.atan2(
-        ey,
-        ny,
-      );
+      // اتجاه أعلى الهاتف (+Y) بالنسبة إلى الشمال والشرق.
+      // هذه هي الصيغة الصحيحة مع تعويض الميل.
+      final headingRad = math.atan2(ey, ny);
 
       var heading =
           headingRad *
@@ -388,6 +387,8 @@ class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
   // =============================================================
 
   double _toTrueHeading(double magneticHeading) {
+    // flutter_compass يعطي الاتجاه المغناطيسي.
+    // GeoMag.dec موجب للانحراف شرقاً وسالب غرباً، لذلك نضيفه.
     var trueHeading =
         magneticHeading +
         _declination;
