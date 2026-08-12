@@ -25,7 +25,7 @@
         android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <application
-        android:label="دليل زوار الحسين"
+        android:label="دليل الزائر"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
