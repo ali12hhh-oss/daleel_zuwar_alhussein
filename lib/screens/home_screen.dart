@@ -84,13 +84,13 @@ class HomeScreen extends StatelessWidget {
             ),
             child: const Column(
               children: [
-                Text('السلام عليك يا أبا عبدالله',
+                Text('اللهم صل على محمد وال محمد ',
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 SizedBox(height: 6),
-                Text('دليلك الشامل لزيارة الإمام الحسين عليه السلام',
+                Text('دليلك الشامل لزيارة المرقد والمكن المقدسة',
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                     textAlign: TextAlign.center),
               ],
@@ -98,10 +98,10 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // 1. طريق زائر الحسين
+          // 1.طريق الزائر 
           SectionCard(
-            title: 'طريق زائر الحسين',
-            subtitle: 'حدد موقعك واعرف أقرب المسارات إلى كربلاء والمسافة',
+            title: 'دليلك الشامل لزيارة المراقد',
+            subtitle: 'حدد موقعك واعرف أقرب المسارات',
             icon: Icons.directions_walk,
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const RouteScreen())),
@@ -110,7 +110,7 @@ class HomeScreen extends StatelessWidget {
           // 2. أسئلة شرعية
           SectionCard(
             title: 'أسئلة شرعية',
-            subtitle: 'اختر المرجع الديني الشيعي واطّلع على الأجوبة الشرعية',
+            subtitle: 'اختر المرجع الديني واطّلع على الأجوبة الشرعية',
             icon: Icons.menu_book,
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ScholarsScreen())),
@@ -174,7 +174,7 @@ class HomeScreen extends StatelessWidget {
           // 8. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
           SectionCard(
             title: 'المكتبة',
-            subtitle: 'القرآن الكريم، مفاتيح الجنان، منهاج الصالحين',
+            subtitle: 'القرآن الكريم، مفاتيح الجنان، الصحيفة السجادية ',
             icon: Icons.library_books,
             onTap: () => Navigator.push(
                 context,
