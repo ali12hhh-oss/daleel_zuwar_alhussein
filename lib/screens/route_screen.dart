@@ -1,39 +1,27 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/cities_data.dart';
-import '../models/models.dart';
-import '../theme.dart';
 import '../services/offline_map_service.dart';
+import '../theme.dart';
 
-/// ===============================================================
-/// RouteOption
-/// ===============================================================
-
+/// مسار أعاده محرك التوجيه.
 class RouteOption {
   final double distanceKm;
   final double durationMin;
   final List<LatLng> points;
-
-  /// اسم المسار
   final String name;
-
-  /// هل هو المسار الأقصر؟
   final bool isMain;
-
-  /// مصدر المسار:
-  /// online / offline
   final String source;
 
-  RouteOption({
+  const RouteOption({
     required this.distanceKm,
     required this.durationMin,
     required this.points,
@@ -41,12 +29,15 @@ class RouteOption {
     required this.isMain,
     required this.source,
   });
+
+  SavedRoute toSavedRoute() => SavedRoute(
+        distanceKm: distanceKm,
+        durationMin: durationMin,
+        points: points,
+      );
 }
 
-/// ===============================================================
-/// الوجهات المقدسة
-/// ===============================================================
-
+/// وجهة مقدسة يمكن للمستخدم اختيارها.
 class SacredPlace {
   final String name;
   final String subtitle;
@@ -63,62 +54,93 @@ class SacredPlace {
   });
 }
 
-/// يمكنك إضافة أي مرقد أو مكان مقدس هنا.
-/// ===============================================================
-
-const List<SacredPlace> sacredPlaces = [
+/// قائمة الوجهات. المدن العراقية لا تزال محفوظة بالكامل في cities_data.dart.
+const List<SacredPlace> sacredPlaces = <SacredPlace>[
   SacredPlace(
     name: 'ضريح الإمام الحسين (ع)',
     subtitle: 'كربلاء المقدسة - العراق',
-    lat: 32.6163,
-    lng: 44.0326,
+    lat: 32.61639,
+    lng: 44.03250,
     icon: Icons.mosque,
   ),
-
   SacredPlace(
-    name: 'ضريح الإمام العباس (ع)',
+    name: 'ضريح أبي الفضل العباس (ع)',
     subtitle: 'كربلاء المقدسة - العراق',
-    lat: 32.6167,
-    lng: 44.0336,
+    lat: 32.61670,
+    lng: 44.03360,
     icon: Icons.mosque,
   ),
-
-  SacredPlace(
-    name: 'مسجد الكوفة',
-    subtitle: 'النجف - العراق',
-    lat: 32.0280,
-    lng: 44.4010,
-    icon: Icons.mosque,
-  ),
-
-  SacredPlace(
-    name: 'مسجد السهلة',
-    subtitle: 'الكوفة - العراق',
-    lat: 32.0157,
-    lng: 44.3758,
-    icon: Icons.mosque,
-  ),
-
   SacredPlace(
     name: 'ضريح الإمام علي (ع)',
     subtitle: 'النجف الأشرف - العراق',
-    lat: 32.0006,
-    lng: 44.3240,
+    lat: 32.00060,
+    lng: 44.32400,
     icon: Icons.mosque,
   ),
-
   SacredPlace(
     name: 'مقبرة وادي السلام',
     subtitle: 'النجف الأشرف - العراق',
-    lat: 32.0078,
-    lng: 44.3097,
+    lat: 32.00910,
+    lng: 44.31880,
     icon: Icons.location_city,
   ),
+  SacredPlace(
+    name: 'مسجد الكوفة',
+    subtitle: 'الكوفة - العراق',
+    lat: 32.02800,
+    lng: 44.40100,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مسجد السهلة',
+    subtitle: 'الكوفة - العراق',
+    lat: 32.01570,
+    lng: 44.37580,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مرقد الإمامين الكاظم والجواد (ع)',
+    subtitle: 'الكاظمية - بغداد - العراق',
+    lat: 33.37500,
+    lng: 44.34480,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مرقد الإمامين العسكريين (ع)',
+    subtitle: 'سامراء - العراق',
+    lat: 34.19950,
+    lng: 43.87500,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مرقد الإمام علي بن موسى الرضا (ع)',
+    subtitle: 'مشهد - إيران',
+    lat: 36.28750,
+    lng: 59.61680,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مرقد السيدة فاطمة المعصومة (ع)',
+    subtitle: 'قم - إيران',
+    lat: 34.64160,
+    lng: 50.87570,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مرقد السيدة زينب (ع)',
+    subtitle: 'ريف دمشق - سوريا',
+    lat: 33.45040,
+    lng: 36.34980,
+    icon: Icons.mosque,
+  ),
+  SacredPlace(
+    name: 'مرقد السيدة رقية (ع)',
+    subtitle: 'دمشق - سوريا',
+    lat: 33.51550,
+    lng: 36.29460,
+    icon: Icons.mosque,
+  ),
 ];
-
-/// ===============================================================
-/// RouteScreen
-/// ===============================================================
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -129,9 +151,6 @@ class RouteScreen extends StatefulWidget {
 
 class _RouteScreenState extends State<RouteScreen> {
   SacredPlace? _selectedPlace;
-
-  /// false = صفحة الاختيار
-  /// true = صفحة الخرائط
   bool _showMapsPage = false;
 
   @override
@@ -139,94 +158,48 @@ class _RouteScreenState extends State<RouteScreen> {
     if (_showMapsPage && _selectedPlace != null) {
       return _MapsPage(
         place: _selectedPlace!,
-        onBack: () {
-          setState(() {
-            _showMapsPage = false;
-          });
-        },
+        onBack: () => setState(() => _showMapsPage = false),
       );
     }
 
     return _PlacesPage(
-      onPlaceSelected: (place) {
-        setState(() {
-          _selectedPlace = place;
-          _showMapsPage = true;
-        });
-      },
+      onPlaceSelected: (place) => setState(() {
+        _selectedPlace = place;
+        _showMapsPage = true;
+      }),
     );
   }
 }
 
-/// ===============================================================
-/// صفحة الأماكن المقدسة
-/// ===============================================================
-
 class _PlacesPage extends StatelessWidget {
   final ValueChanged<SacredPlace> onPlaceSelected;
 
-  const _PlacesPage({
-    required this.onPlaceSelected,
-  });
+  const _PlacesPage({required this.onPlaceSelected});
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final cardText = dark ? Colors.white : Colors.black;
+    final secondary = dark ? Colors.white70 : Colors.black87;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'المراقد والأماكن المقدسة',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppColors.primaryGreen,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('المراقد والأماكن المقدسة'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Column(
-              children: [
-                Icon(
-                  Icons.map,
-                  color: Colors.white,
-                  size: 42,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'اختر المرقد أو المكان المقدس',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'بعد الاختيار ستنتقل إلى صفحة الخرائط لاختيار الخريطة الأونلاين أو الأوفلاين.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+          _HeaderBox(
+            icon: Icons.map,
+            title: 'اختر المرقد أو المكان المقدس',
+            subtitle: 'بعد الاختيار ستنتقل إلى صفحة الخرائط، ثم تختار أونلاين أو أوفلاين.',
           ),
-
           const SizedBox(height: 18),
-
           ...sacredPlaces.map(
             (place) => _SacredPlaceCard(
               place: place,
+              titleColor: cardText,
+              subtitleColor: secondary,
               onTap: () => onPlaceSelected(place),
             ),
           ),
@@ -236,16 +209,60 @@ class _PlacesPage extends StatelessWidget {
   }
 }
 
-/// ===============================================================
-/// بطاقة المكان
-/// ===============================================================
+class _HeaderBox extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _HeaderBox({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 42),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SacredPlaceCard extends StatelessWidget {
   final SacredPlace place;
+  final Color titleColor;
+  final Color subtitleColor;
   final VoidCallback onTap;
 
   const _SacredPlaceCard({
     required this.place,
+    required this.titleColor,
+    required this.subtitleColor,
     required this.onTap,
   });
 
@@ -253,61 +270,45 @@ class _SacredPlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 54,
+                height: 54,
                 decoration: BoxDecoration(
                   color: AppColors.primaryGreen,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                child: Icon(
-                  place.icon,
-                  color: Colors.white,
-                  size: 30,
-                ),
+                child: Icon(place.icon, color: Colors.white, size: 30),
               ),
-
               const SizedBox(width: 14),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       place.name,
-                      style: const TextStyle(
-                        color: Colors.black,
+                      style: TextStyle(
+                        color: titleColor,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       place.subtitle,
-                      style: TextStyle(
-                        color: Colors.grey.shade800,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: subtitleColor, fontSize: 13),
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(width: 8),
-
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.black,
-                size: 20,
-              ),
+              Icon(Icons.arrow_forward_ios, color: titleColor, size: 20),
             ],
           ),
         ),
@@ -316,18 +317,11 @@ class _SacredPlaceCard extends StatelessWidget {
   }
 }
 
-/// ===============================================================
-/// صفحة الخرائط
-/// ===============================================================
-
 class _MapsPage extends StatefulWidget {
   final SacredPlace place;
   final VoidCallback onBack;
 
-  const _MapsPage({
-    required this.place,
-    required this.onBack,
-  });
+  const _MapsPage({required this.place, required this.onBack});
 
   @override
   State<_MapsPage> createState() => _MapsPageState();
@@ -335,24 +329,20 @@ class _MapsPage extends StatefulWidget {
 
 class _MapsPageState extends State<_MapsPage> {
   Position? _position;
-
   bool _loadingLocation = true;
   bool _loadingRoutes = false;
-
+  bool _downloadingMap = false;
   String? _error;
+  String _downloadStatus = '';
 
-  List<RouteOption> _routes = [];
-
+  List<RouteOption> _routes = <RouteOption>[];
   int _selectedRoute = 0;
-
   bool _onlineMode = true;
-
   double? _straightDistance;
 
   final MapController _mapController = MapController();
 
-  static const String _tileUrl =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const String _tileUrl = OfflineMapService.tileUrlTemplate;
 
   @override
   void initState() {
@@ -365,120 +355,71 @@ class _MapsPageState extends State<_MapsPage> {
     await _getLocation();
   }
 
-  /// ===============================================================
-  /// تحديد الموقع
-  /// متوافق مع geolocator 11.1.0
-  /// ===============================================================
-
   Future<void> _getLocation() async {
-    setState(() {
-      _loadingLocation = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loadingLocation = true;
+        _error = null;
+      });
+    }
 
     try {
-      final enabled = await Geolocator.isLocationServiceEnabled();
-
-      if (!enabled) {
-        throw Exception(
-          'يرجى تفعيل خدمة الموقع GPS من إعدادات الجهاز.',
-        );
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('يرجى تفعيل خدمة الموقع GPS من إعدادات الجهاز.');
       }
 
-      LocationPermission permission =
-          await Geolocator.checkPermission();
-
+      var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
       if (permission == LocationPermission.denied) {
-        throw Exception(
-          'تم رفض إذن الوصول إلى الموقع.',
-        );
+        throw Exception('تم رفض إذن الوصول إلى الموقع.');
       }
-
       if (permission == LocationPermission.deniedForever) {
-        throw Exception(
-          'إذن الموقع مرفوض بشكل دائم. فعّل الإذن من إعدادات التطبيق.',
-        );
+        throw Exception('إذن الموقع مرفوض بشكل دائم. فعّل الإذن من إعدادات التطبيق.');
       }
 
-      /// لا تستخدم locationSettings هنا.
+      // متوافق مع geolocator 11.x: لا نستخدم locationSettings هنا.
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final distance = _haversineKm(
-        position.latitude,
-        position.longitude,
-        widget.place.lat,
-        widget.place.lng,
-      );
-
       if (!mounted) return;
-
       setState(() {
         _position = position;
-        _straightDistance = distance;
+        _straightDistance = _haversineKm(
+          position.latitude,
+          position.longitude,
+          widget.place.lat,
+          widget.place.lng,
+        );
         _loadingLocation = false;
       });
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _loadingLocation = false;
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
 
-  /// ===============================================================
-  /// Haversine
-  /// ===============================================================
-
-  double _haversineKm(
-    double lat1,
-    double lng1,
-    double lat2,
-    double lng2,
-  ) {
+  double _haversineKm(double lat1, double lng1, double lat2, double lng2) {
     const radius = 6371.0;
-
-    final dLat = _deg2rad(lat2 - lat1);
-    final dLng = _deg2rad(lng2 - lng1);
-
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(_deg2rad(lat1)) *
-            cos(_deg2rad(lat2)) *
+    final dLat = (lat2 - lat1) * pi / 180;
+    final dLng = (lng2 - lng1) * pi / 180;
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1 * pi / 180) *
+            cos(lat2 * pi / 180) *
             sin(dLng / 2) *
             sin(dLng / 2);
-
-    final c = 2 * atan2(
-      sqrt(a),
-      sqrt(1 - a),
-    );
-
-    return radius * c;
+    return radius * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
-
-  double _deg2rad(double degree) {
-    return degree * pi / 180;
-  }
-
-  /// ===============================================================
-  /// تشغيل المحرك
-  /// ===============================================================
 
   Future<void> _calculateRoutes() async {
     if (_position == null) {
       await _getLocation();
     }
-
     if (_position == null) return;
 
     if (_onlineMode) {
@@ -488,16 +429,10 @@ class _MapsPageState extends State<_MapsPage> {
     }
   }
 
-  /// ===============================================================
-  /// محرك أونلاين
-  ///
-  /// OSRM
-  /// ===============================================================
-
   Future<void> _calculateOnlineRoutes() async {
     setState(() {
       _loadingRoutes = true;
-      _routes = [];
+      _routes = <RouteOption>[];
       _error = null;
     });
 
@@ -505,460 +440,393 @@ class _MapsPageState extends State<_MapsPage> {
       final fromLat = _position!.latitude;
       final fromLng = _position!.longitude;
 
-      final url = Uri.parse(
+      final uri = Uri.parse(
         'https://router.project-osrm.org/route/v1/driving/'
-        '$fromLng,$fromLat;'
-        '${widget.place.lng},${widget.place.lat}'
-        '?overview=full'
-        '&geometries=geojson'
-        '&alternatives=true'
-        '&steps=true',
+        '$fromLng,$fromLat;${widget.place.lng},${widget.place.lat}'
+        '?overview=full&geometries=geojson&alternatives=true&steps=false',
       );
 
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-            },
-          )
-          .timeout(
-            const Duration(seconds: 30),
-          );
+      final response = await http.get(
+        uri,
+        headers: const {
+          'Accept': 'application/json',
+          'User-Agent': 'daleel-zuwar-alhussein/1.0',
+        },
+      ).timeout(const Duration(seconds: 35));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'تعذر الاتصال بمحرك حساب الطرق.',
-        );
+        throw Exception('تعذر الاتصال بمحرك حساب الطرق. حاول مرة أخرى.');
       }
 
       final data = jsonDecode(response.body);
-
-      if (data['code'] != 'Ok') {
-        throw Exception(
-          'لم يتم العثور على طريق مناسب لهذه الوجهة.',
-        );
+      if (data is! Map || data['code'] != 'Ok') {
+        throw Exception('لم يتم العثور على طريق مناسب لهذه الوجهة.');
       }
 
-      final rawRoutes = data['routes'] as List;
-
-      if (rawRoutes.isEmpty) {
-        throw Exception(
-          'لم يعثر محرك الخرائط على أي مسار.',
-        );
+      final rawRoutes = data['routes'];
+      if (rawRoutes is! List || rawRoutes.isEmpty) {
+        throw Exception('لم يعثر محرك الخرائط على أي مسار.');
       }
 
-      final List<RouteOption> calculated = [];
-
-      for (int i = 0; i < rawRoutes.length; i++) {
-        final route = rawRoutes[i];
-
-        final coordinates =
-            route['geometry']['coordinates'] as List;
+      final calculated = <RouteOption>[];
+      for (final raw in rawRoutes) {
+        if (raw is! Map) continue;
+        final geometry = raw['geometry'];
+        final coordinates = geometry is Map ? geometry['coordinates'] : null;
+        if (coordinates is! List) continue;
 
         final points = <LatLng>[];
-
         for (final coordinate in coordinates) {
-          if (coordinate is List &&
-              coordinate.length >= 2) {
-            final lng =
-                (coordinate[0] as num).toDouble();
-
-            final lat =
-                (coordinate[1] as num).toDouble();
-
-            points.add(
-              LatLng(lat, lng),
-            );
+          if (coordinate is List && coordinate.length >= 2) {
+            final lng = (coordinate[0] as num?)?.toDouble();
+            final lat = (coordinate[1] as num?)?.toDouble();
+            if (lat != null && lng != null) points.add(LatLng(lat, lng));
           }
         }
 
-        final distanceKm =
-            (route['distance'] as num).toDouble() /
-                1000.0;
+        final distance = (raw['distance'] as num?)?.toDouble();
+        final duration = (raw['duration'] as num?)?.toDouble();
+        if (distance == null || duration == null || points.length < 2) continue;
 
-        final durationMin =
-            (route['duration'] as num).toDouble() /
-                60.0;
-
-        calculated.add(
-          RouteOption(
-            distanceKm: distanceKm,
-            durationMin: durationMin,
-            points: points,
-            name: 'المسار ${i + 1}',
-            isMain: false,
-            source: 'online',
-          ),
-        );
+        calculated.add(RouteOption(
+          distanceKm: distance / 1000,
+          durationMin: duration / 60,
+          points: points,
+          name: 'مسار',
+          isMain: false,
+          source: 'online',
+        ));
       }
 
-      /// ترتيب المسارات حسب المسافة.
-      calculated.sort(
-        (a, b) =>
-            a.distanceKm.compareTo(b.distanceKm),
-      );
+      if (calculated.isEmpty) {
+        throw Exception('المحرك أعاد نتيجة غير صالحة للمسار.');
+      }
 
+      calculated.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
       final finalRoutes = <RouteOption>[];
-
-      for (int i = 0; i < calculated.length; i++) {
+      for (var i = 0; i < calculated.length; i++) {
         final r = calculated[i];
-
-        finalRoutes.add(
-          RouteOption(
-            distanceKm: r.distanceKm,
-            durationMin: r.durationMin,
-            points: r.points,
-            name: i == 0
-                ? 'المسار الرئيسي'
-                : 'مسار بديل ${i}',
-            isMain: i == 0,
-            source: 'online',
-          ),
-        );
+        finalRoutes.add(RouteOption(
+          distanceKm: r.distanceKm,
+          durationMin: r.durationMin,
+          points: r.points,
+          name: i == 0 ? 'المسار الأقرب' : 'مسار بديل ${i}',
+          isMain: i == 0,
+          source: 'online',
+        ));
       }
 
-      /// حفظ المسارات للأوفلاين.
       await OfflineMapService.saveRoutes(
         latitude: fromLat,
         longitude: fromLng,
         destinationLatitude: widget.place.lat,
         destinationLongitude: widget.place.lng,
         destinationName: widget.place.name,
-        routes: finalRoutes,
+        routes: finalRoutes.map((r) => r.toSavedRoute()).toList(),
       );
 
       if (!mounted) return;
-
       setState(() {
         _routes = finalRoutes;
         _selectedRoute = 0;
         _loadingRoutes = false;
       });
-
-      _fitMapToRoute();
+      _fitMapToPoints(finalRoutes.first.points);
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _loadingRoutes = false;
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
-
-  /// ===============================================================
-  /// محرك أوفلاين
-  ///
-  /// يستخدم المسارات التي تم تنزيلها وحفظها سابقًا.
-  /// ===============================================================
 
   Future<void> _calculateOfflineRoutes() async {
     setState(() {
       _loadingRoutes = true;
-      _routes = [];
+      _routes = <RouteOption>[];
       _error = null;
     });
 
     try {
-      final routes =
-          await OfflineMapService.getSavedRoutes(
+      final saved = await OfflineMapService.getSavedRoutes(
         destinationLatitude: widget.place.lat,
         destinationLongitude: widget.place.lng,
         destinationName: widget.place.name,
+        fromLatitude: _position?.latitude,
+        fromLongitude: _position?.longitude,
       );
 
-      if (routes.isEmpty) {
+      if (saved.isEmpty) {
         throw Exception(
-          'لا توجد مسارات أوفلاين محفوظة لهذه الوجهة.\n'
-          'اتصل بالإنترنت أولًا واختر الخريطة الأونلاين '
-          'لحساب المسارات وحفظها للاستخدام بدون إنترنت.',
+          'لا توجد مسارات محفوظة لهذه الوجهة من موقعك الحالي.\n'
+          'اتصل بالإنترنت، احسب المسارات أولاً، ثم استخدم الأوفلاين لاحقاً.',
         );
       }
 
-      /// إعادة ترتيب حسب المسافة.
-      routes.sort(
-        (a, b) =>
-            a.distanceKm.compareTo(b.distanceKm),
-      );
-
-      final fixed = <RouteOption>[];
-
-      for (int i = 0; i < routes.length; i++) {
-        final route = routes[i];
-
-        fixed.add(
-          RouteOption(
-            distanceKm: route.distanceKm,
-            durationMin: route.durationMin,
-            points: route.points,
-            name: i == 0
-                ? 'المسار الرئيسي'
-                : 'مسار بديل $i',
-            isMain: i == 0,
-            source: 'offline',
-          ),
-        );
+      saved.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+      final routes = <RouteOption>[];
+      for (var i = 0; i < saved.length; i++) {
+        final r = saved[i];
+        routes.add(RouteOption(
+          distanceKm: r.distanceKm,
+          durationMin: r.durationMin,
+          points: r.points,
+          name: i == 0 ? 'المسار الأقرب' : 'مسار بديل $i',
+          isMain: i == 0,
+          source: 'offline',
+        ));
       }
 
       if (!mounted) return;
-
       setState(() {
-        _routes = fixed;
+        _routes = routes;
         _selectedRoute = 0;
         _loadingRoutes = false;
       });
-
-      _fitMapToRoute();
+      _fitMapToPoints(routes.first.points);
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _loadingRoutes = false;
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
 
-  /// ===============================================================
-  /// تغيير المحرك
-  /// ===============================================================
-
   void _setMapMode(bool online) {
     if (_onlineMode == online) return;
-
     setState(() {
       _onlineMode = online;
-      _routes = [];
+      _routes = <RouteOption>[];
       _error = null;
+      _downloadStatus = '';
     });
   }
-
-  /// ===============================================================
-  /// اختيار المسار
-  /// ===============================================================
 
   void _selectRoute(int index) {
-    if (index < 0 || index >= _routes.length) {
-      return;
-    }
-
-    setState(() {
-      _selectedRoute = index;
-    });
-
-    _fitMapToRoute();
+    if (index < 0 || index >= _routes.length) return;
+    setState(() => _selectedRoute = index);
+    _fitMapToPoints(_routes[index].points);
   }
 
-  /// ===============================================================
-  /// ضبط الخريطة
-  /// ===============================================================
-
-  void _fitMapToRoute() {
-    if (_routes.isEmpty) return;
-
-    final points = _routes[_selectedRoute].points;
-
+  void _fitMapToPoints(List<LatLng> points) {
     if (points.isEmpty) return;
 
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
+    var minLat = points.first.latitude;
+    var maxLat = points.first.latitude;
+    var minLng = points.first.longitude;
+    var maxLng = points.first.longitude;
 
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final point in points) {
-      minLat = min(minLat, point.latitude);
-      maxLat = max(maxLat, point.latitude);
-
-      minLng = min(minLng, point.longitude);
-      maxLng = max(maxLng, point.longitude);
+    for (final p in points) {
+      minLat = min(minLat, p.latitude);
+      maxLat = max(maxLat, p.latitude);
+      minLng = min(minLng, p.longitude);
+      maxLng = max(maxLng, p.longitude);
     }
 
-    final center = LatLng(
-      (minLat + maxLat) / 2,
-      (minLng + maxLng) / 2,
-    );
-
-    final latDiff = maxLat - minLat;
-    final lngDiff = maxLng - minLng;
-
-    final maxDiff = max(
-      latDiff,
-      lngDiff,
-    );
-
-    double zoom = 10;
-
-    if (maxDiff < 0.02) {
-      zoom = 14;
-    } else if (maxDiff < 0.05) {
-      zoom = 12;
-    } else if (maxDiff < 0.15) {
-      zoom = 10;
-    } else if (maxDiff < 0.5) {
-      zoom = 8;
-    } else if (maxDiff < 1.5) {
-      zoom = 7;
-    } else {
-      zoom = 6;
-    }
+    final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
+    final diff = max(maxLat - minLat, maxLng - minLng);
+    final zoom = diff < 0.02
+        ? 14.0
+        : diff < 0.05
+            ? 12.0
+            : diff < 0.15
+                ? 10.0
+                : diff < 0.5
+                    ? 8.0
+                    : diff < 1.5
+                        ? 7.0
+                        : 5.5;
 
     try {
-      _mapController.move(
-        center,
-        zoom,
-      );
+      _mapController.move(center, zoom);
     } catch (_) {}
   }
 
-  /// ===============================================================
-  /// فتح Google Maps للملاحة الخارجية
-  /// ===============================================================
+  Future<void> _downloadCurrentRouteMap() async {
+    if (_routes.isEmpty) return;
+
+    final allPoints = <LatLng>[];
+    for (final route in _routes) {
+      allPoints.addAll(route.points);
+    }
+    if (allPoints.isEmpty) return;
+
+    setState(() {
+      _downloadingMap = true;
+      _downloadStatus = 'جاري تجهيز خريطة الرحلة للأوفلاين...';
+    });
+
+    try {
+      var minLat = allPoints.first.latitude;
+      var maxLat = allPoints.first.latitude;
+      var minLng = allPoints.first.longitude;
+      var maxLng = allPoints.first.longitude;
+      for (final p in allPoints) {
+        minLat = min(minLat, p.latitude);
+        maxLat = max(maxLat, p.latitude);
+        minLng = min(minLng, p.longitude);
+        maxLng = max(maxLng, p.longitude);
+      }
+
+      const margin = 0.08;
+      minLat = max(-85.0, minLat - margin);
+      maxLat = min(85.0, maxLat + margin);
+      minLng = max(-180.0, minLng - margin);
+      maxLng = min(180.0, maxLng + margin);
+
+      final diff = max(maxLat - minLat, maxLng - minLng);
+      final maxZoom = diff > 10
+          ? 7
+          : diff > 5
+              ? 8
+              : diff > 2
+                  ? 9
+                  : 11;
+
+      await OfflineMapService.downloadRegion(
+        minLat: minLat,
+        maxLat: maxLat,
+        minLng: minLng,
+        maxLng: maxLng,
+        minZoom: 5,
+        maxZoom: maxZoom,
+        onProgress: (downloaded, total, failed) {
+          if (!mounted) return;
+          setState(() {
+            final percent = total == 0 ? 100 : (downloaded / total * 100).round();
+            _downloadStatus = 'تحميل خريطة الرحلة: $percent%  •  فشل: $failed';
+          });
+        },
+      );
+
+      final size = await OfflineMapService.getCacheSizeMb();
+      if (!mounted) return;
+      setState(() {
+        _downloadingMap = false;
+        _downloadStatus = 'تم حفظ خريطة الرحلة والمسارات للأوفلاين (${size.toStringAsFixed(1)} م.ب).';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _downloadingMap = false;
+        _downloadStatus = 'تعذر تحميل خريطة الرحلة. تحقق من الإنترنت وحاول مرة أخرى.';
+      });
+    }
+  }
 
   Future<void> _openExternalNavigation() async {
     if (_position == null) return;
-
     final uri = Uri.parse(
       'https://www.google.com/maps/dir/?api=1'
       '&origin=${_position!.latitude},${_position!.longitude}'
       '&destination=${widget.place.lat},${widget.place.lng}'
       '&travelmode=driving',
     );
-
-    await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      _showMessage('تعذر فتح تطبيق الخرائط الخارجي.');
+    }
   }
 
-  /// ===============================================================
-  /// بناء
-  /// ===============================================================
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _formatDuration(double minutes) {
+    final total = max(0, minutes.round());
+    if (total < 60) return '$total دقيقة';
+    final hours = total ~/ 60;
+    final mins = total % 60;
+    return mins == 0 ? '$hours ساعة' : '$hours س و $mins د';
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingLocation) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(onPressed: widget.onBack, icon: const Icon(Icons.arrow_back)),
+          title: const Text('الخرائط'),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: widget.onBack,
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ),
-        ),
-        title: const Text(
-          'الخرائط',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppColors.primaryGreen,
+        leading: IconButton(onPressed: widget.onBack, icon: const Icon(Icons.arrow_back)),
+        title: const Text('الخرائط'),
       ),
-      body: _loadingLocation
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(12),
-              children: [
-                _buildDestinationHeader(),
-                const SizedBox(height: 12),
-                _buildMapModeSelector(),
-                const SizedBox(height: 12),
-                _buildRouteEngineButton(),
-                const SizedBox(height: 12),
-                if (_error != null) _buildError(),
-                if (_routes.isNotEmpty) ...[
-                  _buildRouteSummary(),
-                  const SizedBox(height: 12),
-                  _buildMap(),
-                  const SizedBox(height: 12),
-                  _buildRouteCards(),
-                ],
-                const SizedBox(height: 12),
-                _buildExternalNavigationButton(),
-                const SizedBox(height: 20),
-                _buildIraqiProvinces(),
+      body: RefreshIndicator(
+        onRefresh: _getLocation,
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [
+            _buildDestinationHeader(context),
+            const SizedBox(height: 12),
+            _buildMapModeSelector(context),
+            const SizedBox(height: 12),
+            _buildRouteEngineButton(context),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              _buildError(context),
+            ],
+            if (_routes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildRouteSummary(context),
+              const SizedBox(height: 12),
+              _buildMap(context),
+              const SizedBox(height: 12),
+              _buildRouteCards(context),
+              const SizedBox(height: 12),
+              if (_onlineMode) _buildOfflineSaveButton(context),
+              if (_downloadStatus.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _downloadStatus,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
-            ),
-    );
-  }
-
-  /// ===============================================================
-  /// الوجهة
-  /// ===============================================================
-
-  Widget _buildDestinationHeader() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            widget.place.icon,
-            color: Colors.white,
-            size: 42,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.place.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 19,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 5),
-          Text(
-            widget.place.subtitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (_straightDistance != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              'المسافة المباشرة: '
-              '${_straightDistance!.toStringAsFixed(1)} كم',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-              ),
-            ),
+              const SizedBox(height: 12),
+              _buildExternalNavigationButton(context),
+            ],
+            const SizedBox(height: 16),
+            _buildCities(context),
+            const SizedBox(height: 20),
           ],
-        ],
+        ),
       ),
     );
   }
 
-  /// ===============================================================
-  /// اختيار أونلاين / أوفلاين
-  /// ===============================================================
+  Widget _buildDestinationHeader(BuildContext context) {
+    return _HeaderBox(
+      icon: widget.place.icon,
+      title: widget.place.name,
+      subtitle: widget.place.subtitle +
+          (_straightDistance == null
+              ? ''
+              : '\nالمسافة المستقيمة: ${_straightDistance!.toStringAsFixed(1)} كم'),
+    );
+  }
 
-  Widget _buildMapModeSelector() {
+  Widget _buildMapModeSelector(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            const Text(
+            Text(
               'اختر نوع الخريطة',
               style: TextStyle(
-                color: Colors.black,
+                color: _textColor(context),
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
@@ -968,8 +836,8 @@ class _MapsPageState extends State<_MapsPage> {
               children: [
                 Expanded(
                   child: _ModeButton(
-                    title: 'الخريطة أونلاين',
-                    subtitle: 'حساب المسارات مباشرة',
+                    title: 'أونلاين',
+                    subtitle: 'حساب المسارات من المحرك',
                     icon: Icons.public,
                     selected: _onlineMode,
                     color: AppColors.primaryGreen,
@@ -979,11 +847,11 @@ class _MapsPageState extends State<_MapsPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _ModeButton(
-                    title: 'الخريطة أوفلاين',
-                    subtitle: 'المسارات المحفوظة',
-                    icon: Icons.download,
+                    title: 'أوفلاين',
+                    subtitle: 'المسارات والبلاطات المحفوظة',
+                    icon: Icons.cloud_off,
                     selected: !_onlineMode,
-                    color: Colors.brown,
+                    color: Colors.blueGrey.shade800,
                     onTap: () => _setMapMode(false),
                   ),
                 ),
@@ -995,160 +863,87 @@ class _MapsPageState extends State<_MapsPage> {
     );
   }
 
-  /// ===============================================================
-  /// زر تشغيل المحرك
-  /// ===============================================================
-
-  Widget _buildRouteEngineButton() {
+  Widget _buildRouteEngineButton(BuildContext context) {
+    final buttonColor = _onlineMode ? AppColors.primaryGreen : Colors.blueGrey.shade800;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed:
-            _loadingRoutes ? null : _calculateRoutes,
+        onPressed: _loadingRoutes ? null : _calculateRoutes,
         icon: _loadingRoutes
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
-            : const Icon(
-                Icons.alt_route,
-                color: Colors.white,
-              ),
-        label: Text(
-          _loadingRoutes
-              ? 'جاري حساب المسارات...'
-              : _onlineMode
-                  ? 'حساب جميع المسارات'
-                  : 'عرض المسارات الأوفلاين',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+            : const Icon(Icons.alt_route),
+        label: Text(_loadingRoutes
+            ? 'جاري حساب المسارات...'
+            : _onlineMode
+                ? 'عرض المسارات وحساب المسافة والوقت'
+                : 'عرض المسارات المحفوظة أوفلاين'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _onlineMode
-              ? AppColors.primaryGreen
-              : Colors.brown,
+          backgroundColor: buttonColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(
-            vertical: 15,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );
   }
 
-  /// ===============================================================
-  /// خطأ
-  /// ===============================================================
-
-  Widget _buildError() {
+  Widget _buildError(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        border: Border.all(
-          color: Colors.red.shade300,
-        ),
+        color: dark ? const Color(0xFF3A1717) : const Color(0xFFFFE7E7),
+        border: Border.all(color: Colors.redAccent),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 30,
-          ),
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 30),
           const SizedBox(height: 8),
           Text(
             _error!,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: _textColor(context), fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: _calculateRoutes,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text(
-              'إعادة المحاولة',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('إعادة المحاولة'),
           ),
         ],
       ),
     );
   }
 
-  /// ===============================================================
-  /// ملخص المسار
-  /// ===============================================================
-
-  Widget _buildRouteSummary() {
-    if (_routes.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
+  Widget _buildRouteSummary(BuildContext context) {
     final route = _routes[_selectedRoute];
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
             Text(
-              route.isMain
-                  ? '⭐ المسار الرئيسي'
-                  : route.name,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              route.isMain ? '⭐ المسار الأقرب' : route.name,
+              style: TextStyle(color: _textColor(context), fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _InfoBox(
-                    icon: Icons.route,
-                    title: 'المسافة',
-                    value:
-                        '${route.distanceKm.toStringAsFixed(1)} كم',
-                  ),
-                ),
+                Expanded(child: _InfoBox(icon: Icons.route, title: 'المسافة', value: '${route.distanceKm.toStringAsFixed(1)} كم')),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: _InfoBox(
-                    icon: Icons.access_time,
-                    title: 'الوقت',
-                    value:
-                        _formatDuration(route.durationMin),
-                  ),
-                ),
+                Expanded(child: _InfoBox(icon: Icons.access_time, title: 'الوقت', value: _formatDuration(route.durationMin))),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               _onlineMode
-                  ? 'المعلومات محسوبة من محرك التوجيه الأونلاين.'
-                  : 'المعلومات من المسارات المحفوظة على الجهاز.',
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontSize: 11,
-              ),
+                  ? 'المسافة والوقت حسب محرك التوجيه. الوقت لا يتضمن حركة المرور اللحظية.'
+                  : 'المعلومات مأخوذة من المسارات المحفوظة على الجهاز.',
+              style: TextStyle(color: _secondaryTextColor(context), fontSize: 11),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1157,180 +952,84 @@ class _MapsPageState extends State<_MapsPage> {
     );
   }
 
-  String _formatDuration(double minutes) {
-    final totalMinutes = minutes.round();
-
-    if (totalMinutes < 60) {
-      return '$totalMinutes دقيقة';
-    }
-
-    final hours = totalMinutes ~/ 60;
-    final mins = totalMinutes % 60;
-
-    if (mins == 0) {
-      return '$hours ساعة';
-    }
-
-    return '$hours س و $mins د';
-  }
-
-  /// ===============================================================
-  /// الخريطة
-  /// ===============================================================
-
-  Widget _buildMap() {
-    final selected =
-        _routes.isNotEmpty
-            ? _routes[_selectedRoute]
-            : null;
-
-    final center = _position != null
-        ? LatLng(
-            _position!.latitude,
-            _position!.longitude,
-          )
-        : LatLng(
-            widget.place.lat,
-            widget.place.lng,
-          );
+  Widget _buildMap(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final selected = _routes[_selectedRoute];
+    final center = _position == null
+        ? LatLng(widget.place.lat, widget.place.lng)
+        : LatLng(_position!.latitude, _position!.longitude);
 
     return Card(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
         height: 520,
-        child: FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: center,
-            initialZoom: 7,
-          ),
+        child: Stack(
           children: [
-            TileLayer(
-              urlTemplate: _tileUrl,
-              userAgentPackageName:
-                  'com.daleelzuwar.alhussein',
-              tileProvider:
-                  OfflineFirstTileProvider(),
-            ),
-
-            /// جميع المسارات
-            if (_routes.isNotEmpty)
-              PolylineLayer(
-                polylines: [
-                  for (int i = 0;
-                      i < _routes.length;
-                      i++)
-                    if (i != _selectedRoute)
-                      Polyline(
-                        points:
-                            _routes[i].points,
-                        color:
-                            Colors.grey.shade600,
-                        strokeWidth: 4,
-                      ),
-
-                  /// المسار المحدد
-                  if (selected != null)
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(initialCenter: center, initialZoom: 7),
+              children: [
+                TileLayer(
+                  urlTemplate: _tileUrl,
+                  subdomains: const <String>[],
+                  userAgentPackageName: 'com.daleelzuwar.alhussein',
+                  tileProvider: _onlineMode
+                      ? NetworkTileProvider()
+                      : OfflineOnlyTileProvider(),
+                ),
+                PolylineLayer(
+                  polylines: [
+                    for (var i = 0; i < _routes.length; i++)
+                      if (i != _selectedRoute)
+                        Polyline(
+                          points: _routes[i].points,
+                          color: dark ? Colors.white54 : Colors.black38,
+                          strokeWidth: 4,
+                        ),
                     Polyline(
-                      points:
-                          selected.points,
-                      color:
-                          selected.isMain
-                              ? AppColors
-                                  .primaryGreen
-                              : Colors.blue,
+                      points: selected.points,
+                      color: AppColors.primaryGreen,
                       strokeWidth: 7,
                       borderStrokeWidth: 2,
-                      borderColor:
-                          Colors.white,
+                      borderColor: Colors.white,
                     ),
-                ],
-              ),
-
-            MarkerLayer(
-              markers: [
-                /// الموقع
-                if (_position != null)
-                  Marker(
-                    point: LatLng(
-                      _position!.latitude,
-                      _position!.longitude,
-                    ),
-                    width: 65,
-                    height: 65,
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.person_pin_circle,
-                          color: Colors.blue,
-                          size: 42,
-                        ),
-                        Container(
-                          padding:
-                              const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 2,
-                          ),
-                          color: Colors.blue,
-                          child: const Text(
-                            'أنت هنا',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                /// الوجهة
-                Marker(
-                  point: LatLng(
-                    widget.place.lat,
-                    widget.place.lng,
-                  ),
-                  width: 90,
-                  height: 75,
-                  child: Column(
-                    children: [
-                      Icon(
-                        widget.place.icon,
-                        color:
-                            AppColors.primaryGreen,
-                        size: 42,
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    if (_position != null)
+                      Marker(
+                        point: LatLng(_position!.latitude, _position!.longitude),
+                        width: 80,
+                        height: 70,
+                        child: const _LocationMarker(),
                       ),
-                      Container(
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 2,
-                        ),
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              AppColors.primaryGreen,
-                          borderRadius:
-                              BorderRadius.circular(
-                            4,
-                          ),
-                        ),
-                        child: Text(
-                          widget.place.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    Marker(
+                      point: LatLng(widget.place.lat, widget.place.lng),
+                      width: 130,
+                      height: 78,
+                      child: _DestinationMarker(place: widget.place),
+                    ),
+                  ],
                 ),
               ],
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: dark ? Colors.black87 : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  child: Text(
+                    _onlineMode ? 'الخريطة الأونلاين' : 'الخريطة الأوفلاين',
+                    style: TextStyle(color: dark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -1338,202 +1037,121 @@ class _MapsPageState extends State<_MapsPage> {
     );
   }
 
-  /// ===============================================================
-  /// بطاقات المسارات
-  /// ===============================================================
-
-  Widget _buildRouteCards() {
+  Widget _buildRouteCards(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'المسارات المتاحة',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+        Text(
+          'المسارات التي أعادها المحرك',
+          style: TextStyle(color: _textColor(context), fontSize: 17, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        ...List.generate(
-          _routes.length,
-          (index) {
-            final route = _routes[index];
-            final selected =
-                index == _selectedRoute;
-
-            return Card(
-              margin:
-                  const EdgeInsets.only(bottom: 8),
-              color: selected
-                  ? AppColors.primaryGreen
-                  : Colors.white,
-              child: InkWell(
-                onTap: () =>
-                    _selectRoute(index),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.all(13),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor:
-                            selected
-                                ? Colors.white
-                                : AppColors
-                                    .primaryGreen,
-                        child: Icon(
-                          route.isMain
-                              ? Icons.star
-                              : Icons.alt_route,
-                          color: selected
-                              ? AppColors
-                                  .primaryGreen
-                              : Colors.white,
-                        ),
+        ...List.generate(_routes.length, (index) {
+          final route = _routes[index];
+          final selected = index == _selectedRoute;
+          final bg = selected ? AppColors.primaryGreen : Theme.of(context).cardColor;
+          final fg = selected ? Colors.white : _textColor(context);
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            color: bg,
+            child: InkWell(
+              onTap: () => _selectRoute(index),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(13),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: selected ? Colors.white : AppColors.primaryGreen,
+                      child: Icon(route.isMain ? Icons.star : Icons.alt_route, color: selected ? AppColors.primaryGreen : Colors.white),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            route.isMain ? '⭐ المسار الأقرب' : route.name,
+                            style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${route.distanceKm.toStringAsFixed(1)} كم  •  ${_formatDuration(route.durationMin)}',
+                            style: TextStyle(color: fg, fontSize: 13),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              route.isMain
-                                  ? '⭐ المسار الرئيسي'
-                                  : route.name,
-                              style: TextStyle(
-                                color: selected
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontWeight:
-                                    FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '${route.distanceKm.toStringAsFixed(1)} كم • '
-                              '${_formatDuration(route.durationMin)}',
-                              style: TextStyle(
-                                color: selected
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        selected
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: selected
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                    ],
-                  ),
+                    ),
+                    Icon(selected ? Icons.check_circle : Icons.radio_button_unchecked, color: fg),
+                  ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
       ],
     );
   }
 
-  /// ===============================================================
-  /// زر الملاحة الخارجية
-  /// ===============================================================
-
-  Widget _buildExternalNavigationButton() {
+  Widget _buildOfflineSaveButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed:
-            _openExternalNavigation,
-        icon: const Icon(
-          Icons.navigation,
-          color: Colors.white,
-        ),
-        label: const Text(
-          'فتح الملاحة الخارجية',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        onPressed: _downloadingMap ? null : _downloadCurrentRouteMap,
+        icon: _downloadingMap
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.download),
+        label: Text(_downloadingMap ? 'جاري تحميل الخريطة...' : 'تحميل خريطة الرحلة للأوفلاين'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: Colors.blueGrey.shade800,
           foregroundColor: Colors.white,
-          padding:
-              const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
     );
   }
 
-  /// ===============================================================
-  /// المحافظات العراقية
-  /// ===============================================================
+  Widget _buildExternalNavigationButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _openExternalNavigation,
+        icon: const Icon(Icons.navigation),
+        label: const Text('عرض الملاحة الخارجية'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  }
 
-  Widget _buildIraqiProvinces() {
-    final provinces = _getProvinces();
-
+  Widget _buildCities(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'المحافظات العراقية',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 5),
             Text(
-              'يمكنك استخدام المحافظات كنقاط انطلاق للبحث عن الطرق.',
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontSize: 12,
-              ),
+              'المدن العراقية',
+              style: TextStyle(color: _textColor(context), fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'مدن عراقية معروفة للمستخدم على الخريطة. القائمة الأصلية لم تُحذف.',
+              style: TextStyle(color: _secondaryTextColor(context), fontSize: 12),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: provinces
-                  .map(
-                    (province) => Chip(
-                      avatar: const Icon(
-                        Icons.location_city,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      label: Text(
-                        province,
-                        style:
-                            const TextStyle(
-                          color: Colors.white,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                      backgroundColor:
-                          AppColors.primaryGreen,
-                    ),
-                  )
-                  .toList(),
+              children: iraqiCities.map((city) => Chip(
+                    avatar: const Icon(Icons.location_city, color: Colors.white, size: 18),
+                    label: Text(city.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    backgroundColor: AppColors.primaryGreen,
+                  )).toList(),
             ),
           ],
         ),
@@ -1541,33 +1159,12 @@ class _MapsPageState extends State<_MapsPage> {
     );
   }
 
-  List<String> _getProvinces() {
-    return [
-      'بغداد',
-      'الأنبار',
-      'بابل',
-      'كربلاء',
-      'النجف',
-      'الديوانية',
-      'المثنى',
-      'ذي قار',
-      'ميسان',
-      'البصرة',
-      'واسط',
-      'ديالى',
-      'صلاح الدين',
-      'كركوك',
-      'نينوى',
-      'أربيل',
-      'السليمانية',
-      'دهوك',
-    ];
-  }
-}
+  Color _textColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
 
-/// ===============================================================
-/// Mode Button
-/// ===============================================================
+  Color _secondaryTextColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87;
+}
 
 class _ModeButton extends StatelessWidget {
   final String title;
@@ -1588,49 +1185,24 @@ class _ModeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final unselectedBg = dark ? const Color(0xFF26332F) : const Color(0xFFF0F0F0);
+    final unselectedFg = dark ? Colors.white : Colors.black;
     return Material(
-      color: selected
-          ? color
-          : Colors.grey.shade200,
+      color: selected ? color : unselectedBg,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding:
-              const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
           child: Column(
             children: [
-              Icon(
-                icon,
-                color: selected
-                    ? Colors.white
-                    : Colors.black,
-                size: 32,
-              ),
+              Icon(icon, color: selected ? Colors.white : unselectedFg, size: 32),
               const SizedBox(height: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  color: selected
-                      ? Colors.white
-                      : Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              Text(title, style: TextStyle(color: selected ? Colors.white : unselectedFg, fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center),
               const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: selected
-                      ? Colors.white
-                      : Colors.black,
-                  fontSize: 10,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              Text(subtitle, style: TextStyle(color: selected ? Colors.white : unselectedFg, fontSize: 10), textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -1639,57 +1211,75 @@ class _ModeButton extends StatelessWidget {
   }
 }
 
-/// ===============================================================
-/// Info Box
-/// ===============================================================
-
 class _InfoBox extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
 
-  const _InfoBox({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
+  const _InfoBox({required this.icon, required this.title, required this.value});
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final bg = dark ? const Color(0xFF24322E) : const Color(0xFFF1F1F1);
+    final fg = dark ? Colors.white : Colors.black;
     return Container(
-      padding:
-          const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius:
-            BorderRadius.circular(10),
-      ),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: Colors.black,
-            size: 24,
-          ),
+          Icon(icon, color: fg, size: 24),
           const SizedBox(height: 5),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey.shade800,
-              fontSize: 11,
-            ),
-          ),
+          Text(title, style: TextStyle(color: fg, fontSize: 11)),
           const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
+          Text(value, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 14)),
         ],
       ),
+    );
+  }
+}
+
+class _LocationMarker extends StatelessWidget {
+  const _LocationMarker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Icon(Icons.person_pin_circle, color: Colors.blue, size: 44),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(4)),
+          child: const Text('أنت هنا', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+}
+
+class _DestinationMarker extends StatelessWidget {
+  final SacredPlace place;
+
+  const _DestinationMarker({required this.place});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(place.icon, color: AppColors.primaryGreen, size: 42),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 125),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: AppColors.primaryGreen, borderRadius: BorderRadius.circular(4)),
+          child: Text(
+            place.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 }
