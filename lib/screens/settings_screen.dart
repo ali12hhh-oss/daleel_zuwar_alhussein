@@ -526,9 +526,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _shareToWhatsApp() async {
     final text = Uri.encodeComponent(
-      '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+      '''حمل تطبيق دليل الزائر - تطبيق ديني شيعي شامل
 يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-حصراً على المذهب الشيعي الإثني عشري'''
+حصراً على المذهب الشيعي'''
     );
     final url = Uri.parse('https://wa.me/?text=$text');
     await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -536,7 +536,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _shareToTelegram() async {
     final text = Uri.encodeComponent(
-      '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+      '''حمل تطبيق دليل الزائر - تطبيق ديني حسيني شامل
 يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
 حصراً على المذهب الشيعي الإثني عشري'''
     );
@@ -546,7 +546,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _shareGeneral() {
     Clipboard.setData(const ClipboardData(
-      text: '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+      text: '''حمل تطبيق دليل الزائر - تطبيق ديني حسيني شامل
 يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
 حصراً على المذهب الشيعي الإثني عشري
 https://github.com/daleelzuwar/alhussein''',
@@ -579,7 +579,7 @@ https://github.com/daleelzuwar/alhussein''',
             ),
             const SizedBox(height: 8),
             const Text(
-              'انشر دليل زوار الحسين مع أصدقائك وعائلتك',
+              'انشر دليل الزائر مع أصدقائك وعائلتك',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 20),
@@ -589,7 +589,7 @@ https://github.com/daleelzuwar/alhussein''',
               subtitle: const Text('انسخ الرابط والصقه في أي مكان'),
               onTap: () {
                 Clipboard.setData(const ClipboardData(
-                  text: '''حمل تطبيق دليل زوار الحسين - تطبيق ديني حسيني شامل
+                  text: '''حمل تطبيق دليل الزائر - تطبيق ديني حسيني شامل
 يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
 حصراً على المذهب الشيعي الإثني عشري
 https://github.com/daleelzuwar/alhussein''',
@@ -654,7 +654,7 @@ https://github.com/daleelzuwar/alhussein''',
                   Icon(Icons.mosque, size: 48, color: AppColors.primaryGreen),
                   SizedBox(height: 12),
                   Text(
-                    'دليل زوار الحسين',
+                    'دليل الزائر',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -878,7 +878,7 @@ https://github.com/daleelzuwar/alhussein''',
                         'الشريط أعلاه يتحكم بصوت أزرار "▶ تجربة" داخل التطبيق فقط.\n'
                         'صوت إشعار الأذان الفعلي عند إغلاق التطبيق يتبع مستوى '
                         'صوت الإشعارات في إعدادات الجهاز نفسه (قيد تحكم أندرويد) - '
-                        'يمكنك ضبطه من: إعدادات الهاتف ← التطبيقات ← دليل زوار الحسين ← الإشعارات.',
+                        'يمكنك ضبطه من: إعدادات الهاتف ← التطبيقات ← دليل الزائر ← الإشعارات.',
                         style: TextStyle(fontSize: 11, color: Colors.grey[600], height: 1.6),
                       ),
                     ],
@@ -994,7 +994,7 @@ https://github.com/daleelzuwar/alhussein''',
                       Icon(Icons.info, color: AppColors.primaryGreen),
                       SizedBox(width: 8),
                       Text(
-                        'دليل زوار الحسين',
+                        'دليل الزائر',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1048,7 +1048,7 @@ https://github.com/daleelzuwar/alhussein''',
                   const Row(
                     children: [
                       Text('المطور: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('فريق دليل زوار الحسين'),
+                      Text('فريق دليل الزائر'),
                     ],
                   ),
                 ],
