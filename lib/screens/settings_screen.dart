@@ -1068,7 +1068,7 @@ https://github.com/daleelzuwar/alhussein''',
                   scheme: 'mailto',
                   path: 'mhtraf6@gmail.com',
                   queryParameters: {
-                    'subject': 'اقتراح/ملاحظة - دليل زوار الحسين',
+                    'subject': 'اقتراح/ملاحظة - دليل الزائر',
                   },
                 );
                 await launchUrl(emailUri);
