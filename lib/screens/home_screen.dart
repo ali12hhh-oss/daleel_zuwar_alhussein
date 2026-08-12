@@ -48,7 +48,7 @@ class HomeScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Text(
-            'دليل زوار الحسين',
+            'دليل الزائر',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
