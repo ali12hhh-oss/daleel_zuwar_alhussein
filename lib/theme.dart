@@ -11,12 +11,12 @@ class AppColors {
   // وضع نهاري
   static const Color lightBackground = Color(0xFFF7F5EF);
   static const Color lightCard = Color(0xFFFFFFFF);
-  static const Color lightText = Color(0xFF222222);
+  static const Color lightText = Colors.black;
 
   // وضع ليلي
   static const Color darkBackground = Color(0xFF0E1512);
   static const Color darkCard = Color(0xFF162420);
-  static const Color darkText = Color(0xFFEFEAD9);
+  static const Color darkText = Colors.white;
 }
 
 ThemeData buildLightTheme() {
