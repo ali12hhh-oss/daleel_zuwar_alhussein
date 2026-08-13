@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../models/models.dart';
 
 import '../data/cities_data.dart';
 import '../services/offline_map_service.dart';
@@ -417,8 +418,7 @@ class _MapsPageState extends State<_MapsPage> {
     return radius * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
-  double get _originLat => _selectedCity?.lat ?? _position!.latitude;
-  double get _originLng => _selectedCity?.lng ?? _position!.lng;
+  double get _originLng => _selectedCity?.lng ?? _position!.longitude;
   bool get _usingCityOrigin => _selectedCity != null;
 
   String get _originName => _selectedCity?.name ?? 'موقعي الحالي';
