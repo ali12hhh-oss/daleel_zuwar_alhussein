@@ -1,4 +1,4 @@
-name: بناء تطبيق دليل زوار الحسين (APK)
+name: بناء تطبيق دليل الزائر (APK)
 on:
   push:
     branches: [ "main", "master" ]
