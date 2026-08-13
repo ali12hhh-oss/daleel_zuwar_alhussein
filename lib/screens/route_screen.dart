@@ -339,6 +339,7 @@ class _MapsPageState extends State<_MapsPage> {
   int _selectedRoute = 0;
   bool _onlineMode = true;
   double? _straightDistance;
+  IraqiCity? _selectedCity;
 
   final MapController _mapController = MapController();
 
@@ -416,11 +417,55 @@ class _MapsPageState extends State<_MapsPage> {
     return radius * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
+  double get _originLat => _selectedCity?.lat ?? _position!.latitude;
+  double get _originLng => _selectedCity?.lng ?? _position!.lng;
+  bool get _usingCityOrigin => _selectedCity != null;
+
+  String get _originName => _selectedCity?.name ?? 'موقعي الحالي';
+
+  void _selectCity(IraqiCity city) {
+    setState(() {
+      _selectedCity = city;
+      _routes = <RouteOption>[];
+      _selectedRoute = 0;
+      _error = null;
+      _straightDistance = _haversineKm(
+        city.lat,
+        city.lng,
+        widget.place.lat,
+        widget.place.lng,
+      );
+    });
+
+    _mapController.move(LatLng(city.lat, city.lng), 8);
+    _calculateRoutes();
+  }
+
+  void _selectCurrentLocation() {
+    setState(() {
+      _selectedCity = null;
+      _routes = <RouteOption>[];
+      _selectedRoute = 0;
+      _error = null;
+      if (_position != null) {
+        _straightDistance = _haversineKm(
+          _position!.latitude,
+          _position!.longitude,
+          widget.place.lat,
+          widget.place.lng,
+        );
+      }
+    });
+    if (_position != null) {
+      _mapController.move(LatLng(_position!.latitude, _position!.longitude), 8);
+    }
+  }
+
   Future<void> _calculateRoutes() async {
-    if (_position == null) {
+    if (_selectedCity == null && _position == null) {
       await _getLocation();
     }
-    if (_position == null) return;
+    if (_selectedCity == null && _position == null) return;
 
     if (_onlineMode) {
       await _calculateOnlineRoutes();
@@ -437,8 +482,8 @@ class _MapsPageState extends State<_MapsPage> {
     });
 
     try {
-      final fromLat = _position!.latitude;
-      final fromLng = _position!.longitude;
+      final fromLat = _originLat;
+      final fromLng = _originLng;
 
       final uri = Uri.parse(
         'https://router.project-osrm.org/route/v1/driving/'
@@ -553,13 +598,13 @@ class _MapsPageState extends State<_MapsPage> {
         destinationLatitude: widget.place.lat,
         destinationLongitude: widget.place.lng,
         destinationName: widget.place.name,
-        fromLatitude: _position?.latitude,
-        fromLongitude: _position?.longitude,
+        fromLatitude: _selectedCity?.lat ?? _position?.latitude,
+        fromLongitude: _selectedCity?.lng ?? _position?.longitude,
       );
 
       if (saved.isEmpty) {
         throw Exception(
-          'لا توجد مسارات محفوظة لهذه الوجهة من موقعك الحالي.\n'
+          'لا توجد مسارات محفوظة لهذه الوجهة من $_originName.\n'
           'اتصل بالإنترنت، احسب المسارات أولاً، ثم استخدم الأوفلاين لاحقاً.',
         );
       }
@@ -717,10 +762,10 @@ class _MapsPageState extends State<_MapsPage> {
   }
 
   Future<void> _openExternalNavigation() async {
-    if (_position == null) return;
+    if (_selectedCity == null && _position == null) return;
     final uri = Uri.parse(
       'https://www.google.com/maps/dir/?api=1'
-      '&origin=${_position!.latitude},${_position!.longitude}'
+      '&origin=${_originLat},${_originLng}'
       '&destination=${widget.place.lat},${widget.place.lng}'
       '&travelmode=driving',
     );
@@ -863,6 +908,36 @@ class _MapsPageState extends State<_MapsPage> {
     );
   }
 
+  Widget _buildOriginSelector(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(Icons.trip_origin, color: AppColors.primaryGreen, size: 30),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('نقطة الانطلاق', style: TextStyle(color: dark ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 3),
+                  Text(_originName, style: TextStyle(color: dark ? Colors.white70 : Colors.black87)),
+                ],
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _position == null ? null : _selectCurrentLocation,
+              icon: const Icon(Icons.my_location),
+              label: const Text('موقعي الحالي'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRouteEngineButton(BuildContext context) {
     final buttonColor = _onlineMode ? AppColors.primaryGreen : Colors.blueGrey.shade800;
     return SizedBox(
@@ -955,9 +1030,11 @@ class _MapsPageState extends State<_MapsPage> {
   Widget _buildMap(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final selected = _routes[_selectedRoute];
-    final center = _position == null
-        ? LatLng(widget.place.lat, widget.place.lng)
-        : LatLng(_position!.latitude, _position!.longitude);
+    final center = _selectedCity != null
+        ? LatLng(_selectedCity!.lat, _selectedCity!.lng)
+        : (_position == null
+            ? LatLng(widget.place.lat, widget.place.lng)
+            : LatLng(_position!.latitude, _position!.longitude));
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -997,7 +1074,14 @@ class _MapsPageState extends State<_MapsPage> {
                 ),
                 MarkerLayer(
                   markers: [
-                    if (_position != null)
+                    if (_selectedCity != null)
+                      Marker(
+                        point: LatLng(_selectedCity!.lat, _selectedCity!.lng),
+                        width: 150,
+                        height: 78,
+                        child: _CityOriginMarker(city: _selectedCity!),
+                      )
+                    else if (_position != null)
                       Marker(
                         point: LatLng(_position!.latitude, _position!.longitude),
                         width: 80,
@@ -1140,17 +1224,23 @@ class _MapsPageState extends State<_MapsPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              'مدن عراقية معروفة للمستخدم على الخريطة. القائمة الأصلية لم تُحذف.',
+              'مدن عراقية — اضغط على أي مدينة لتصبح نقطة الانطلاق وحساب الطريق إلى الوجهة.',
               style: TextStyle(color: _secondaryTextColor(context), fontSize: 12),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: iraqiCities.map((city) => Chip(
+              children: iraqiCities.map((city) => ActionChip(
                     avatar: const Icon(Icons.location_city, color: Colors.white, size: 18),
-                    label: Text(city.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    backgroundColor: AppColors.primaryGreen,
+                    label: Text(
+                      city.name,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: _selectedCity?.name == city.name
+                        ? Colors.blueGrey.shade800
+                        : AppColors.primaryGreen,
+                    onPressed: () => _selectCity(city),
                   )).toList(),
             ),
           ],
@@ -1235,6 +1325,30 @@ class _InfoBox extends StatelessWidget {
           Text(value, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 14)),
         ],
       ),
+    );
+  }
+}
+
+class _CityOriginMarker extends StatelessWidget {
+  final IraqiCity city;
+  const _CityOriginMarker({required this.city});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.blueGrey.shade900,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white, width: 1.5),
+          ),
+          child: Text(city.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+        ),
+        const Icon(Icons.location_on, color: Colors.blue, size: 32),
+      ],
     );
   }
 }
