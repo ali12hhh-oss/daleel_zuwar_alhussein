@@ -100,7 +100,7 @@ class HomeScreen extends StatelessWidget {
 
           // 1.طريق الزائر 
           SectionCard(
-            title: 'دليلك الشامل لزيارة المراقد',
+            title: 'دليل مسار الزائر',
             subtitle: 'حدد موقعك واعرف أقرب المسارات',
             icon: Icons.directions_walk,
             onTap: () => Navigator.push(context,
@@ -109,7 +109,7 @@ class HomeScreen extends StatelessWidget {
 
           // 2. أسئلة شرعية
           SectionCard(
-            title: 'أسئلة شرعية',
+            title: 'المسائل الشرعية',
             subtitle: 'اختر المرجع الديني واطّلع على الأجوبة الشرعية',
             icon: Icons.menu_book,
             onTap: () => Navigator.push(context,
@@ -141,7 +141,7 @@ class HomeScreen extends StatelessWidget {
           // 5. اتجاه مراقد المعصومين (ع)
           SectionCard(
             title: 'اتجاه مراقد المعصومين (ع)',
-            subtitle: 'حدد اتجاه المسجد النبوي والمراقد الشريفة حسب موقعك',
+            subtitle: 'حدد موقع المراقد الشريفة والاماكن المقدسة حسب موقعك',
             icon: Icons.explore_outlined,
             onTap: () => Navigator.push(
                 context,
@@ -152,7 +152,7 @@ class HomeScreen extends StatelessWidget {
           // 6. مواقيت الأهلة
           SectionCard(
             title: 'مواقيت الأهلة',
-            subtitle: 'حسب كتيب الأهلة للسيد السيستاني',
+            subtitle: 'حسب كراس الأهلة للسيد السيستاني',
             icon: Icons.nightlight_round,
             onTap: () => Navigator.push(
                 context,
@@ -163,7 +163,7 @@ class HomeScreen extends StatelessWidget {
           // 7. الأدعية والزيارات
           SectionCard(
             title: 'الأدعية والزيارات',
-            subtitle: 'دعاء كميل والتوسل، زيارة عاشوراء ووارث والأربعين وغيرها',
+            subtitle: 'بعض الزيارات والادعية, لمراجعة كل الزيارات والادعية راجع قسم المكتبة',
             icon: Icons.mosque,
             onTap: () => Navigator.push(
                 context,
@@ -171,7 +171,7 @@ class HomeScreen extends StatelessWidget {
                     builder: (_) => const DuasZiaratScreen())),
           ),
 
-          // 8. الكتب الدينية -> تم تغيير الاسم إلى "المكتبة"
+          // 8. المكتبة
           SectionCard(
             title: 'المكتبة',
             subtitle: 'القرآن الكريم، مفاتيح الجنان، الصحيفة السجادية ',
