@@ -90,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 SizedBox(height: 6),
-                Text('دليلك الشامل لزيارة المرقد والمكن المقدسة',
+                Text('دليلك الشامل لزيارة المراقد والاماكن المقدسة',
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                     textAlign: TextAlign.center),
               ],
