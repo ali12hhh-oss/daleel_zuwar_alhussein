@@ -29,7 +29,7 @@ class _DaleelAppState extends State<DaleelApp> {
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: _themeMode,
-      // ✅ نبدأ الآن من شاشة splash (صورة الضريح + صوت + 5 ثوانٍ)
+      // ✅ نبدأ الآن من شاشة splash (صورة الضريح + صوت + 3 ثوانٍ)
       // بدل فتح الشاشة الرئيسية مباشرة
       home: SplashScreen(
         themeMode: _themeMode,
