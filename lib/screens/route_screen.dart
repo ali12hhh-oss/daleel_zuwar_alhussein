@@ -7,9 +7,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/models.dart';
 
 import '../data/cities_data.dart';
+import '../models/models.dart';
 import '../services/offline_map_service.dart';
 import '../theme.dart';
 
@@ -418,6 +418,7 @@ class _MapsPageState extends State<_MapsPage> {
     return radius * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
+  double get _originLat => _selectedCity?.lat ?? _position!.latitude;
   double get _originLng => _selectedCity?.lng ?? _position!.longitude;
   bool get _usingCityOrigin => _selectedCity != null;
 
@@ -767,7 +768,10 @@ class _MapsPageState extends State<_MapsPage> {
       'https://www.google.com/maps/dir/?api=1'
       '&origin=${_originLat},${_originLng}'
       '&destination=${widget.place.lat},${widget.place.lng}'
-      '&travelmode=driving',
+      // وضع المشي هو الأنسب لطبيعة التطبيق (زائر يمشي إلى العتبة)؛
+      // خرائط جوجل تدعم وضع المشي مباشرة (بخلاف محرك OSRM المستخدم
+      // للمسارات داخل التطبيق، الذي يوفر خادمه العام وضع القيادة فقط).
+      '&travelmode=walking',
     );
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
       _showMessage('تعذر فتح تطبيق الخرائط الخارجي.');
@@ -810,6 +814,10 @@ class _MapsPageState extends State<_MapsPage> {
           children: [
             _buildDestinationHeader(context),
             const SizedBox(height: 12),
+            _buildOriginSelector(context),
+            const SizedBox(height: 12),
+            _buildCities(context),
+            const SizedBox(height: 12),
             _buildMapModeSelector(context),
             const SizedBox(height: 12),
             _buildRouteEngineButton(context),
@@ -839,11 +847,7 @@ class _MapsPageState extends State<_MapsPage> {
                   textAlign: TextAlign.center,
                 ),
               ],
-              const SizedBox(height: 12),
-              _buildExternalNavigationButton(context),
             ],
-            const SizedBox(height: 16),
-            _buildCities(context),
             const SizedBox(height: 20),
           ],
         ),
@@ -869,7 +873,7 @@ class _MapsPageState extends State<_MapsPage> {
         child: Column(
           children: [
             Text(
-              'اختر نوع الخريطة',
+              'اختر طريقة عرض الخريطة',
               style: TextStyle(
                 color: _textColor(context),
                 fontSize: 17,
@@ -898,6 +902,22 @@ class _MapsPageState extends State<_MapsPage> {
                     selected: !_onlineMode,
                     color: Colors.blueGrey.shade800,
                     onTap: () => _setMapMode(false),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ModeButton(
+                    title: 'خرائط جوجل',
+                    subtitle: 'فتح الملاحة في تطبيق خارجي',
+                    icon: Icons.map,
+                    // زر إجرائي (يفتح تطبيقاً خارجياً) وليس اختياراً دائماً،
+                    // لذا لا نلوّنه كـ"محدَّد" أبداً — فقط شكل مميز بالذهبي.
+                    selected: false,
+                    color: AppColors.gold,
+                    onTap: (_selectedCity == null && _position == null)
+                        ? () => _showMessage(
+                            'يرجى تفعيل الموقع أو اختيار مدينة انطلاق أولاً.')
+                        : _openExternalNavigation,
                   ),
                 ),
               ],
