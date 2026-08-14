@@ -22,6 +22,26 @@ const Map<int, List<String>> _hijriMonthAliases = {
   12: ['ذو الحجة', 'ذي الحجة'],
 };
 
+/// يحول أي أرقام غربية داخل نص إلى أرقام عربية شرقية (١٢٣...)، ويترك
+/// باقي النص كما هو. يُستخدم في كل مكان تُعرض فيه أرقام للمستخدم.
+String _arabicDigits(Object value) {
+  const western = '0123456789';
+  const eastern = '٠١٢٣٤٥٦٧٨٩';
+  var text = value.toString();
+  for (var i = 0; i < western.length; i++) {
+    text = text.replaceAll(western[i], eastern[i]);
+  }
+  return text;
+}
+
+/// يرجع التسمية القياسية (الأكثر تداولًا) لشهر هجري برقمه، أو null لو
+/// الرقم غير معروف.
+String? _canonicalMonthName(int monthNumber) {
+  final aliases = _hijriMonthAliases[monthNumber];
+  if (aliases == null || aliases.isEmpty) return null;
+  return aliases.first;
+}
+
 class _ParsedHijriDate {
   final int day;
   final int monthNumber;
@@ -45,6 +65,37 @@ _ParsedHijriDate? _parseNarrationDate(String text) {
     }
   }
   return null;
+}
+
+/// يبني نص التاريخ الهجري بالترتيب العربي الصحيح دائمًا: اليوم ثم الشهر
+/// ثم السنة (مثال: "١٧ ربيع الأول ١١٧ هـ")، بأرقام عربية شرقية، بغض
+/// النظر عن الترتيب الذي كُتب فيه النص الأصلي في مصدر البيانات. يعتمد
+/// على نفس منطق تحليل التاريخ المستخدم لحساب "المناسبة القادمة"، فلا
+/// حاجة لتعديل ملف البيانات نفسه.
+String formatHijriNarrationDate(Narration n) {
+  final parsed = _parseNarrationDate(n.hijriDate);
+  final buffer = StringBuffer();
+
+  if (parsed != null) {
+    buffer.write(_arabicDigits(parsed.day));
+    final monthName = _canonicalMonthName(parsed.monthNumber);
+    if (monthName != null) {
+      buffer.write(' ');
+      buffer.write(monthName);
+    }
+  } else {
+    // تعذر تحليل اليوم والشهر بدقة؛ نعرض النص الأصلي بعد تحويل أرقامه فقط
+    // بدل إخفائه بالكامل.
+    buffer.write(_arabicDigits(n.hijriDate));
+  }
+
+  if (n.hijriYear != null) {
+    buffer.write(' ');
+    buffer.write(_arabicDigits(n.hijriYear!));
+    buffer.write(' هـ');
+  }
+
+  return buffer.toString();
 }
 
 class NextOccasionResult {
@@ -244,9 +295,8 @@ class _AhlulBaytDatesScreenState extends State<AhlulBaytDatesScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${r.narration.hijriDate}'
-                        '${r.narration.hijriYear != null ? " — ${r.narration.hijriYear}" : ""}'
-                        '  •  ${daysLeft <= 0 ? "اليوم" : "بعد $daysLeft يوماً"}',
+                        '${formatHijriNarrationDate(r.narration)}'
+                        '  •  ${daysLeft <= 0 ? "اليوم" : "بعد ${_arabicDigits(daysLeft)} يوماً"}',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -381,7 +431,7 @@ class _EventsList extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   e.narrations.length > 1
-                      ? 'الروايات الواردة في تاريخ الحدث (${e.narrations.length}):'
+                      ? 'الروايات الواردة في تاريخ الحدث (${_arabicDigits(e.narrations.length)}):'
                       : 'التاريخ:',
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 13),
@@ -406,7 +456,7 @@ class _EventsList extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  '${n.hijriDate}${n.hijriYear != null ? " — ${n.hijriYear}" : ""}',
+                                  formatHijriNarrationDate(n),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold),
                                 ),
