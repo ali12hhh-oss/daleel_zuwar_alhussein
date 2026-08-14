@@ -1099,7 +1099,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
   String _formatDate(DateTime date) => '${_arabicNumber(date.day)}/${_arabicNumber(date.month)}/${_arabicNumber(date.year)}';
 
-  String _formatTime(DateTime date) => '${_arabicNumber(date.hour.toString().padLeft(2, '0'))}:${_arabicDigits(date.minute.toString().padLeft(2, '0'))}';
+  String _formatTime(DateTime date) => '${_arabicDigits(date.hour.toString().padLeft(2, '0'))}:${_arabicDigits(date.minute.toString().padLeft(2, '0'))}';
 
 
   Map<String, dynamic> get _extraTotals {
