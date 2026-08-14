@@ -10,6 +10,22 @@ import 'package:geomag/geomag.dart';
 import '../theme.dart';
 
 /// ===============================================================
+/// أداة تباين تلقائي: تختار لون نص واضح حسب سطوع لون الخلفية.
+/// خلفية فاتحة (سطوع عالٍ) ← لون غامق (أخضر افتراضيًا).
+/// خلفية غامقة (سطوع منخفض) ← لون فاتح (أبيض افتراضيًا).
+/// بهذا الشكل أي مكان يستخدمها يصير تباينه تلقائيًا صحيحًا مهما تغيّر
+/// لون الخلفية لاحقًا، بدون الحاجة لتثبيت لون النص يدويًا في كل مكان.
+/// ===============================================================
+
+Color contrastTextColor(
+  Color background, {
+  Color darkColor = AppColors.primaryGreen,
+  Color lightColor = Colors.white,
+}) {
+  return background.computeLuminance() > 0.5 ? darkColor : lightColor;
+}
+
+/// ===============================================================
 /// مكان مقدس
 /// ===============================================================
 
@@ -838,6 +854,12 @@ class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
   // =============================================================
 
   Widget _buildPlaceSelector() {
+    // لون خلفية مربع الاختيار وقائمة الخيارات المنسدلة، بمكان واحد.
+    // لو غيّرته لاحقًا (مثلاً لخلفية غامقة)، لون النص والسهم يتغيران
+    // تلقائيًا معه عبر contrastTextColor بدون أي تعديل إضافي.
+    const dropdownBackground = Colors.white;
+    final dropdownTextColor = contrastTextColor(dropdownBackground);
+
     return Card(
       elevation: 3,
       shape:
@@ -870,11 +892,17 @@ class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
             DropdownButtonFormField<SacredPlace>(
               value: _selectedPlace,
               isExpanded: true,
+              // نثبّت لون خلفية القائمة المنسدلة صراحة بدل ما نتركها
+              // ترث لون الثيم الافتراضي (كان يطلع غامقًا ويصير النص
+              // شبه مخفي فوقه). الآن اللون معروف دائمًا، فالتباين
+              // مضمون تلقائيًا مهما كان.
+              dropdownColor: dropdownBackground,
+              iconEnabledColor: dropdownTextColor,
               decoration:
                   InputDecoration(
                 filled: true,
                 fillColor:
-                    Colors.white,
+                    dropdownBackground,
                 border:
                     OutlineInputBorder(
                   borderRadius:
@@ -902,9 +930,9 @@ class _ShrinesCompassScreenState extends State<ShrinesCompassScreen> {
                       overflow:
                           TextOverflow.ellipsis,
                       style:
-                          const TextStyle(
+                          TextStyle(
                         color:
-                            Colors.black87,
+                            dropdownTextColor,
                         fontWeight:
                             FontWeight.w600,
                       ),
