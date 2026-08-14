@@ -709,13 +709,18 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
         raw = utf8.decode(picked.bytes!);
       } else if (picked.path != null) {
         raw = await File(picked.path!).readAsString();
-      } else {
+      } else if (picked.readStream != null) {
         try {
-          final bytes = await picked.readAsBytes();
+          final bytes = <int>[];
+          await for (final chunk in picked.readStream!) {
+            bytes.addAll(chunk);
+          }
           raw = utf8.decode(bytes);
         } catch (_) {
           raw = null;
         }
+      } else {
+        raw = null;
       }
       if (raw == null) {
         throw Exception('تعذر قراءة الملف المختار.');
