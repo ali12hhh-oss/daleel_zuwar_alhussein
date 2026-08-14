@@ -46,11 +46,40 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
   Future<void> _load() async {
     final data = await QadaPrayerService.load();
     if (!mounted) return;
+    final expanded = _ensureLogRangeCoversToday(data);
     setState(() {
       _data = data;
       _loading = false;
     });
+    if (expanded) {
+      await QadaPrayerService.save(_data);
+    }
     await _initNotifications();
+  }
+
+  /// يتأكد أن نطاق أيام الجدول (days) يغطي دائمًا تاريخ اليوم الحالي.
+  /// إذا مرّ وقت طويل منذ التثبيت أو آخر فتح للتطبيق، يوسّع النطاق تلقائيًا
+  /// بدل ما يبقى محصورًا بعدد الأيام المحدد وقت التثبيت.
+  /// يرجع true إذا تم تعديل البيانات (يستدعي حفظًا).
+  bool _ensureLogRangeCoversToday(Map<String, dynamic> data) {
+    final now = DateTime.now();
+    final rawStart = DateTime.tryParse(data['startDate']?.toString() ?? '');
+    final start = rawStart == null
+        ? DateTime(now.year, now.month, now.day)
+        : DateTime(rawStart.year, rawStart.month, rawStart.day);
+    final startChanged = data['startDate']?.toString() != start.toIso8601String();
+    data['startDate'] = start.toIso8601String();
+
+    final today = DateTime(now.year, now.month, now.day);
+    final todayIndex = today.difference(start).inDays;
+    final currentDays = data['days'] is num ? (data['days'] as num).toInt() : 30;
+
+    var daysChanged = false;
+    if (todayIndex >= currentDays) {
+      data['days'] = (todayIndex + 30).clamp(1, 3650);
+      daysChanged = true;
+    }
+    return startChanged || daysChanged;
   }
 
   Future<void> _initNotifications() async {
@@ -79,6 +108,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
   }
 
   bool _boolValue(String key) => _data[key] == true;
+
   /// يحول الأرقام التي تظهر للمستخدم إلى أرقام عربية شرقية.
   String _arabicDigits(Object value) {
     const western = '0123456789';
@@ -120,7 +150,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     }
     return <Map<String, dynamic>>[];
   }
-
 
   Map<String, dynamic> get _targets {
     final raw = _data['targets'];
@@ -203,6 +232,24 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     return start.add(Duration(days: day));
   }
 
+  /// يفتح منتقي تاريخ (من بداية السجل وحتى اليوم) ويرجع التاريخ المختار،
+  /// مع الحفاظ على الوقت الحالي بالساعة والدقيقة.
+  Future<DateTime?> _pickPastDate(DateTime initial) async {
+    final rawStart = DateTime.tryParse(_data['startDate']?.toString() ?? '');
+    final firstDate = rawStart == null
+        ? DateTime(2000)
+        : DateTime(rawStart.year, rawStart.month, rawStart.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: firstDate.isBefore(DateTime(2000)) ? DateTime(2000) : firstDate,
+      lastDate: DateTime.now(),
+    );
+    if (picked == null) return null;
+    final now = DateTime.now();
+    return DateTime(picked.year, picked.month, picked.day, now.hour, now.minute);
+  }
+
   Future<void> _registerQadaPrayer() async {
     if (_targetTotal <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -216,33 +263,58 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       );
       return;
     }
-    _PrayerInfo? selected = _prayers.first;
-    final result = await showDialog<_PrayerInfo>(
+
+    _PrayerInfo selected = _prayers.first;
+    DateTime selectedDate = DateTime.now();
+
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, dialogSetState) => AlertDialog(
           title: const Text('تسجيل صلاة قضاء', textDirection: TextDirection.rtl),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Align(
-                alignment: Alignment.centerRight,
-                child: Text('اختر الصلاة التي أديتها قضاءً:'),
-              ),
-              const SizedBox(height: 10),
-              ..._prayers.map((prayer) => RadioListTile<_PrayerInfo>(
-                    value: prayer,
-                    groupValue: selected,
-                    onChanged: (value) => dialogSetState(() => selected = value),
-                    title: Text(prayer.name, textDirection: TextDirection.rtl),
-                    secondary: Icon(prayer.icon),
-                  )),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('اختر الصلاة التي أديتها قضاءً:'),
+                ),
+                const SizedBox(height: 10),
+                ..._prayers.map((prayer) => RadioListTile<_PrayerInfo>(
+                      value: prayer,
+                      groupValue: selected,
+                      onChanged: (value) {
+                        if (value != null) dialogSetState(() => selected = value);
+                      },
+                      title: Text(prayer.name, textDirection: TextDirection.rtl),
+                      secondary: Icon(prayer.icon),
+                    )),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event),
+                  title: const Text('تاريخ الأداء'),
+                  subtitle: Text(_formatDate(selectedDate)),
+                  trailing: const Icon(Icons.edit_calendar),
+                  onTap: () async {
+                    final picked = await _pickPastDate(selectedDate);
+                    if (picked != null) {
+                      dialogSetState(() => selectedDate = picked);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             FilledButton.icon(
-              onPressed: () => Navigator.pop(context, selected),
+              onPressed: () => Navigator.pop(context, <String, dynamic>{
+                'prayer': selected,
+                'date': selectedDate,
+              }),
               icon: const Icon(Icons.check),
               label: const Text('تم قضاء الصلاة'),
             ),
@@ -251,26 +323,30 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       ),
     );
     if (result == null) return;
-    final selectedTarget = (_targets[result.key] is num ? (_targets[result.key] as num).toInt() : 0);
-    if (_completedFor(result.key) >= selectedTarget) {
+
+    final prayer = result['prayer'] as _PrayerInfo;
+    final date = result['date'] as DateTime;
+
+    final selectedTarget = (_targets[prayer.key] is num ? (_targets[prayer.key] as num).toInt() : 0);
+    if (_completedFor(prayer.key) >= selectedTarget) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('لا توجد صلوات ${result.name} متبقية حسب العدد المسجل لها.')),
+          SnackBar(content: Text('لا توجد صلوات ${prayer.name} متبقية حسب العدد المسجل لها.')),
         );
       }
       return;
     }
 
     final manual = _manualCompleted;
-    manual[result.key] = _manualCompletedFor(result.key) + 1;
+    manual[prayer.key] = _manualCompletedFor(prayer.key) + 1;
     _data['manualCompleted'] = manual;
 
     final events = _events;
     events.insert(0, <String, dynamic>{
       'id': DateTime.now().microsecondsSinceEpoch.toString(),
-      'prayer': result.key,
-      'prayerName': result.name,
-      'date': DateTime.now().toIso8601String(),
+      'prayer': prayer.key,
+      'prayerName': prayer.name,
+      'date': date.toIso8601String(),
       'source': 'direct',
     });
     if (events.length > 1000) events.removeRange(1000, events.length);
@@ -279,10 +355,13 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('تم تسجيل قضاء ${result.name} بنجاح. تقبل الله منك 🤍')),
+      SnackBar(content: Text('تم تسجيل قضاء ${prayer.name} بنجاح. تقبل الله منك 🤍')),
     );
   }
 
+  /// تحديد/إلغاء تحديد خانة في جدول السجل اليومي.
+  /// كل تحديد يُسجَّل أيضًا كحدث حقيقي بتاريخ ذلك اليوم بالذات، بحيث يظهر
+  /// مباشرة في بطاقة "سجل الإنجاز حسب التاريخ" وليس فقط كعدّاد.
   Future<void> _toggleCheck(int day, _PrayerInfo prayer) async {
     final key = '$day-${prayer.key}';
     final currentlyChecked = _isChecked(day, prayer.key);
@@ -297,12 +376,25 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     }
 
     final checks = _checks;
+    final events = _events;
+
     if (currentlyChecked) {
       checks.remove(key);
+      events.removeWhere((e) => e['gridKey'] == key);
     } else {
       checks[key] = true;
+      events.insert(0, <String, dynamic>{
+        'id': DateTime.now().microsecondsSinceEpoch.toString(),
+        'prayer': prayer.key,
+        'prayerName': prayer.name,
+        'date': _dateForDay(day).toIso8601String(),
+        'source': 'grid',
+        'gridKey': key,
+      });
     }
+
     _data['checks'] = checks;
+    _data['events'] = events;
     await _persist();
   }
 
@@ -363,6 +455,16 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     final current = (targets[prayer.key] is num ? (targets[prayer.key] as num).toInt() : 0);
     final minimum = _completedFor(prayer.key);
     final next = (current + delta).clamp(minimum, 1000000).toInt();
+
+    if (next == current) {
+      if (delta < 0 && current <= minimum && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('لا يمكن أن يقل العدد عن ${_arabicNumber(minimum)} (عدد المنجز حاليًا من ${prayer.name}).')),
+        );
+      }
+      return;
+    }
+
     targets[prayer.key] = next;
     _data['targets'] = targets;
     await _persist();
@@ -408,7 +510,9 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
             onPressed: () {
               final values = <String, int>{};
               for (final prayer in _prayers) {
-                values[prayer.key] = _parseUserInt(controllers[prayer.key]!.text.trim());
+                final minimum = _completedFor(prayer.key);
+                final entered = _parseUserInt(controllers[prayer.key]!.text.trim());
+                values[prayer.key] = entered < minimum ? minimum : entered;
               }
               Navigator.pop(context, values);
             },
@@ -443,7 +547,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           FilledButton(
-            onPressed: () => Navigator.pop(context, _parseUserInt(controller.text.trim())),
+            onPressed: () => Navigator.pop(context, _parseUserInt(controller.text.trim(), 30)),
             child: const Text('حفظ'),
           ),
         ],
@@ -451,7 +555,12 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     );
     controller.dispose();
     if (result == null) return;
-    final days = result.clamp(1, 3650).toInt();
+
+    // لا نسمح بتصغير السجل إلى ما دون اليوم الحالي حتى لا يختفي تاريخ اليوم من الجدول.
+    final now = DateTime.now();
+    final todayIndex = _dayIndexForDate(now);
+    final minDays = todayIndex >= 0 ? todayIndex + 1 : 1;
+    final days = result.clamp(minDays, 3650).toInt();
     _data['days'] = days;
     await _persist();
   }
@@ -494,7 +603,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
             FilledButton(
               onPressed: () => Navigator.pop(context, <String, dynamic>{
                 'enabled': enabled,
-                'daily': _parseUserInt(controller.text.trim()) ?? 5,
+                'daily': _parseUserInt(controller.text.trim(), 5),
               }),
               child: const Text('حفظ'),
             ),
@@ -505,7 +614,10 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     controller.dispose();
     if (result == null) return;
     _data['planEnabled'] = result['enabled'] == true;
-    if (result['daily'] is num) _data['planDaily'] = (result['daily'] as num).toInt().clamp(1, 50).toInt();
+    final daily = result['daily'];
+    if (daily is int) {
+      _data['planDaily'] = daily.clamp(1, 50).toInt();
+    }
     await _persist();
   }
 
@@ -586,7 +698,9 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       final file = await _createBackupFile();
       await Share.shareXFiles([XFile(file.path)], text: 'نسخة احتياطية لسجل قضاء الصلاة');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إنشاء النسخة الاحتياطية. يمكنك حفظها على الهاتف أو إرسالها لنفسك.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم إنشاء النسخة الاحتياطية. يمكنك حفظها على الهاتف أو إرسالها لنفسك.')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر إنشاء النسخة الاحتياطية: $e')));
@@ -595,7 +709,9 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
   Future<void> _restore() async {
     try {
-      final result = await FilePicker.pickFiles(
+      // ملاحظة مهمة: الاستدعاء الصحيح دائمًا عبر FilePicker.platform
+      // (استدعاء FilePicker.pickFiles مباشرة غير موجود ويسبب فشل الترجمة).
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: <String>['json'],
         withData: true,
@@ -621,11 +737,21 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
         confirmText: 'استعادة',
       );
       if (!confirmed) return;
-      _data = Map<String, dynamic>.from(decoded['data'] as Map);
+
+      final restored = Map<String, dynamic>.from(decoded['data'] as Map);
+      // ندمج مع القيم الافتراضية لضمان وجود كل المفاتيح المطلوبة حتى لو
+      // كانت النسخة الاحتياطية قديمة أو ناقصة، ثم نوسّع نطاق الجدول
+      // ليغطي تاريخ اليوم الحالي.
+      final merged = QadaPrayerService.defaultData()..addAll(restored);
+      _ensureLogRangeCoversToday(merged);
+      _data = merged;
       await _persist();
+
       if (mounted) {
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت استعادة سجل قضاء الصلاة بنجاح.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تمت استعادة سجل قضاء الصلاة بنجاح.')),
+        );
       }
       if (_boolValue('reminderEnabled')) await _scheduleReminder();
     } catch (e) {
@@ -865,7 +991,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
             const Text('تسجيل صلاة قضاء', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
             Text(
-              'بعد أداء الصلاة اضغط الزر وسجلها فورًا، وسيتم حفظها في السجل المحلي.',
+              'اختر الصلاة وتاريخ أدائها، وسيتم حفظها فورًا في السجل المحلي.',
               style: TextStyle(fontSize: 12, color: dark ? Colors.white70 : Colors.black87),
             ),
             const SizedBox(height: 12),
@@ -902,7 +1028,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'كل صلاة تسجلها من زر «تم قضاء صلاة» تظهر هنا مع تاريخ ووقت الإنجاز.',
+              'كل صلاة تسجلها من زر «تم قضاء صلاة» أو من جدول السجل اليومي تظهر هنا مع تاريخ الإنجاز.',
               style: TextStyle(fontSize: 12, color: dark ? Colors.white70 : Colors.black87),
             ),
             const SizedBox(height: 10),
@@ -948,11 +1074,25 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
   Future<void> _clearHistory() async {
     final confirmed = await _confirm(
       title: 'مسح سجل الإنجاز؟',
-      message: 'سيتم حذف سجل العمليات المباشرة فقط. لن تتغير أعداد القضاء ولا جدول الأيام.',
+      message: 'سيؤدي هذا أيضًا إلى إلغاء كل التحديدات في جدول السجل اليومي، لأن كل خانة مرتبطة بحدث في هذا السجل. لن تتأثر الأعداد المسجلة يدويًا عبر زر «تم قضاء صلاة».',
       confirmText: 'مسح السجل',
     );
     if (!confirmed) return;
-    _data['events'] = <dynamic>[];
+
+    // نحذف فقط الأحداث القادمة من الجدول (source == grid) مع إزالة تحديداتها،
+    // ونُبقي الأحداث المباشرة كما هي حتى لا يختفي عدد "المنجز" المرتبط بها.
+    final events = _events;
+    final gridEvents = events.where((e) => e['source'] == 'grid').toList();
+    final remainingEvents = events.where((e) => e['source'] != 'grid').toList();
+
+    final checks = _checks;
+    for (final event in gridEvents) {
+      final key = event['gridKey']?.toString();
+      if (key != null) checks.remove(key);
+    }
+
+    _data['events'] = remainingEvents;
+    _data['checks'] = checks;
     await _persist();
   }
 
@@ -1002,7 +1142,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
                   Expanded(child: Text('خطة اليوم: ${_arabicNumber(_todayCompleted)} / ${_arabicNumber(daily)} صلوات')),
                   SizedBox(
                     width: 90,
-                    child: LinearProgressIndicator(value: (_todayCompleted / daily).clamp(0.0, 1.0).toDouble()),
+                    child: LinearProgressIndicator(value: daily > 0 ? (_todayCompleted / daily).clamp(0.0, 1.0).toDouble() : 0),
                   ),
                 ],
               ),
@@ -1101,7 +1241,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
   String _formatTime(DateTime date) => '${_arabicDigits(date.hour.toString().padLeft(2, '0'))}:${_arabicDigits(date.minute.toString().padLeft(2, '0'))}';
 
-
   Map<String, dynamic> get _extraTotals {
     final raw = _data['extraTotals'];
     return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
@@ -1140,16 +1279,14 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
                 CheckboxListTile(
                   value: showQasr,
                   title: const Text('صلاة القصر'),
-                  subtitle: const Text('إظهار سجل الظهر والعصر قصرًا بشكل مستقل'),
-                  onChanged: (value) =>
-                      setDialogState(() => showQasr = value ?? false),
+                  subtitle: const Text('إظهار سجل الظهر والعصر والعشاء قصرًا بشكل مستقل'),
+                  onChanged: (value) => setDialogState(() => showQasr = value ?? false),
                 ),
                 CheckboxListTile(
                   value: showAyat,
                   title: const Text('صلاة الآيات'),
                   subtitle: const Text('إظهار سجل مستقل لصلاة الآيات'),
-                  onChanged: (value) =>
-                      setDialogState(() => showAyat = value ?? false),
+                  onChanged: (value) => setDialogState(() => showAyat = value ?? false),
                 ),
               ],
             ),
@@ -1180,18 +1317,10 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
   Future<void> _configureExtraTotals() async {
     final totals = _extraTotals;
     final controllers = <String, TextEditingController>{
-      'qasrDhuhr': TextEditingController(
-        text: _arabicNumber(_extraValue(totals, 'qasrDhuhr')),
-      ),
-      'qasrAsr': TextEditingController(
-        text: _arabicNumber(_extraValue(totals, 'qasrAsr')),
-      ),
-      'qasrIsha': TextEditingController(
-        text: _arabicNumber(_extraValue(totals, 'qasrIsha')),
-      ),
-      'ayat': TextEditingController(
-        text: _arabicNumber(_extraValue(totals, 'ayat')),
-      ),
+      'qasrDhuhr': TextEditingController(text: _arabicNumber(_extraValue(totals, 'qasrDhuhr'))),
+      'qasrAsr': TextEditingController(text: _arabicNumber(_extraValue(totals, 'qasrAsr'))),
+      'qasrIsha': TextEditingController(text: _arabicNumber(_extraValue(totals, 'qasrIsha'))),
+      'ayat': TextEditingController(text: _arabicNumber(_extraValue(totals, 'ayat'))),
     };
 
     final result = await showDialog<Map<String, int>>(
@@ -1207,56 +1336,44 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
                   controller: controllers['qasrDhuhr'],
                   keyboardType: TextInputType.number,
                   textDirection: TextDirection.rtl,
-                  decoration: const InputDecoration(
-                    labelText: 'الظهر قصر',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'الظهر قصر', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: controllers['qasrAsr'],
                   keyboardType: TextInputType.number,
                   textDirection: TextDirection.rtl,
-                  decoration: const InputDecoration(
-                    labelText: 'العصر قصر',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'العصر قصر', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: controllers['qasrIsha'],
                   keyboardType: TextInputType.number,
                   textDirection: TextDirection.rtl,
-                  decoration: const InputDecoration(
-                    labelText: 'العشاء قصر',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'العشاء قصر', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: controllers['ayat'],
                   keyboardType: TextInputType.number,
                   textDirection: TextDirection.rtl,
-                  decoration: const InputDecoration(
-                    labelText: 'صلاة الآيات',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'صلاة الآيات', border: OutlineInputBorder()),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('إلغاء'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
             FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, {
-                'qasrDhuhr': _parseUserInt(controllers['qasrDhuhr']!.text),
-                'qasrAsr': _parseUserInt(controllers['qasrAsr']!.text),
-                'qasrIsha': _parseUserInt(controllers['qasrIsha']!.text),
-                'ayat': _parseUserInt(controllers['ayat']!.text),
-              }),
+              onPressed: () {
+                final values = <String, int>{};
+                for (final key in controllers.keys) {
+                  final minimum = _extraValue(_extraCompleted, key);
+                  final entered = _parseUserInt(controllers[key]!.text);
+                  values[key] = entered < minimum ? minimum : entered;
+                }
+                Navigator.pop(dialogContext, values);
+              },
               child: const Text('حفظ'),
             ),
           ],
@@ -1271,7 +1388,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
     final newTotals = _extraTotals;
     for (final entry in result.entries) {
-      newTotals[entry.key] = entry.value < 0 ? 0 : entry.value;
+      newTotals[entry.key] = entry.value;
     }
     _data['extraTotals'] = newTotals;
     await _persist();
@@ -1286,6 +1403,36 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       return;
     }
 
+    DateTime selectedDate = DateTime.now();
+    final confirmed = await showDialog<DateTime>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, dialogSetState) => AlertDialog(
+          title: Text('تسجيل $label', textDirection: TextDirection.rtl),
+          content: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.event),
+            title: const Text('تاريخ الأداء'),
+            subtitle: Text(_formatDate(selectedDate)),
+            trailing: const Icon(Icons.edit_calendar),
+            onTap: () async {
+              final picked = await _pickPastDate(selectedDate);
+              if (picked != null) dialogSetState(() => selectedDate = picked);
+            },
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(context, selectedDate),
+              icon: const Icon(Icons.check),
+              label: const Text('تم القضاء'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == null) return;
+
     final completed = _extraCompleted;
     completed[key] = _extraValue(completed, key) + 1;
     _data['extraCompleted'] = completed;
@@ -1297,7 +1444,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       'id': DateTime.now().microsecondsSinceEpoch.toString(),
       'type': key,
       'name': label,
-      'date': DateTime.now().toIso8601String(),
+      'date': confirmed.toIso8601String(),
     });
     if (events.length > 1000) {
       events.removeRange(1000, events.length);
@@ -1330,16 +1477,8 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       return Card(
         child: ListTile(
           leading: const Icon(Icons.tune),
-          title: const Text(
-            'سجلات صلاة القصر والآيات',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            'اختياري — فعّل ما تحتاجه من الإعدادات.',
-            style: TextStyle(
-              color: dark ? Colors.white70 : Colors.black87,
-            ),
-          ),
+          title: const Text('سجلات صلاة القصر والآيات', style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text('اختياري — فعّل ما تحتاجه من الإعدادات.', style: TextStyle(color: dark ? Colors.white70 : Colors.black87)),
           trailing: const Icon(Icons.settings),
           onTap: _configureExtraTypes,
         ),
@@ -1351,22 +1490,9 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
         children: [
           const Icon(Icons.auto_awesome, color: AppColors.primaryGreen),
           const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'سجلات إضافية',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-          ),
-          IconButton(
-            tooltip: 'الإعدادات',
-            onPressed: _configureExtraTypes,
-            icon: const Icon(Icons.settings),
-          ),
-          IconButton(
-            tooltip: 'تعديل الأعداد',
-            onPressed: _configureExtraTotals,
-            icon: const Icon(Icons.edit_note),
-          ),
+          const Expanded(child: Text('سجلات إضافية', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+          IconButton(tooltip: 'الإعدادات', onPressed: _configureExtraTypes, icon: const Icon(Icons.settings)),
+          IconButton(tooltip: 'تعديل الأعداد', onPressed: _configureExtraTotals, icon: const Icon(Icons.edit_note)),
         ],
       ),
     ];
@@ -1391,17 +1517,9 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     children.add(
       Row(
         children: [
-          const Expanded(
-            child: Text(
-              'سجل الإنجاز الإضافي',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
+          const Expanded(child: Text('سجل الإنجاز الإضافي', style: TextStyle(fontWeight: FontWeight.bold))),
           if (events.isNotEmpty)
-            TextButton(
-              onPressed: _clearExtraHistory,
-              child: const Text('مسح السجل'),
-            ),
+            TextButton(onPressed: _clearExtraHistory, child: const Text('مسح السجل')),
         ],
       ),
     );
@@ -1410,11 +1528,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       children.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Text(
-            'لا توجد عمليات مسجلة بعد.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: dark ? Colors.white70 : Colors.black87),
-          ),
+          child: Text('لا توجد عمليات مسجلة بعد.', textAlign: TextAlign.center, style: TextStyle(color: dark ? Colors.white70 : Colors.black87)),
         ),
       );
     } else {
@@ -1424,18 +1538,10 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.check_circle, color: Colors.green),
-            title: Text(
-              event['name']?.toString() ?? 'صلاة إضافية',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            title: Text(event['name']?.toString() ?? 'صلاة إضافية', style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: date == null
                 ? null
-                : Text(
-                    '${_formatDate(date)} — ${_formatTime(date)}',
-                    style: TextStyle(
-                      color: dark ? Colors.white70 : Colors.black87,
-                    ),
-                  ),
+                : Text('${_formatDate(date)} — ${_formatTime(date)}', style: TextStyle(color: dark ? Colors.white70 : Colors.black87)),
           );
         }),
       );
@@ -1475,10 +1581,7 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
                 Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(
                   'الإجمالي ${_arabicNumber(total)} • المنجز ${_arabicNumber(completed)} • المتبقي ${_arabicNumber(remaining)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: dark ? Colors.white70 : Colors.black87,
-                  ),
+                  style: TextStyle(fontSize: 11, color: dark ? Colors.white70 : Colors.black87),
                 ),
               ],
             ),
