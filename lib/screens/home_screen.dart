@@ -135,7 +135,7 @@ class HomeScreen extends StatelessWidget {
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => const QadaPrayerScreen(),
+                    builder: (_) => const QadaPrayerScreen())),
          ),
           
           // 4. اتجاه القبلة
