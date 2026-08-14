@@ -124,8 +124,7 @@ class HomeScreen extends StatelessWidget {
             icon: Icons.access_time_filled,
             onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const PrayerTimesScreen())),
+                MaterialPageRoute(builder: (_) => const PrayerTimesScreen())),
           ),
           
           // 4. قضاء الصلاة
