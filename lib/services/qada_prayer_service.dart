@@ -68,7 +68,7 @@ class QadaPrayerService {
         'qasrIsha': 0,
         'ayat': 0,
       },
-      'extraEvents': <dynamic>[], 
+      'extraEvents': <dynamic>[],
     };
   }
 
@@ -76,8 +76,6 @@ class QadaPrayerService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
   }
-}
-
 
   /// نسخة احتياطية كاملة: تحفظ كل بيانات القسم كما هي،
   /// بما فيها الصلوات الخمس، خطة القضاء، السجل، التذكيرات،
@@ -133,9 +131,10 @@ class QadaPrayerService {
           events is List ? List<dynamic>.from(events) : <dynamic>[];
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_storageKey, jsonEncode(data));
+      await prefs.setString(_key, jsonEncode(data));
       return true;
     } catch (_) {
       return false;
     }
   }
+}
