@@ -15,6 +15,7 @@ import 'qibla_screen.dart';
 import 'shrines_compass_screen.dart';
 import 'duas_ziarat_screen.dart';
 import 'prayer_times_screen.dart';
+import 'qada_prayer_screen.dart';
 import 'crescent_screen.dart';
 import 'books_screen.dart';
 
@@ -126,7 +127,18 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(
                     builder: (_) => const PrayerTimesScreen())),
           ),
-
+          
+          // 4. قضاء الصلاة
+          SectionCard(
+            title: 'قضاء الصلاة',
+            subtitle: 'متابعة الصلوات الفائتة وخطة القضاء وسجل الإنجاز',
+            icon: Icons.check_circle_outline,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const QadaPrayerScreen(),
+         ),
+          
           // 4. اتجاه القبلة
           SectionCard(
             title: 'اتجاه القبلة',
