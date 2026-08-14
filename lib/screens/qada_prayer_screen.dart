@@ -709,21 +709,29 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
   Future<void> _restore() async {
     try {
-      // ملاحظة مهمة: الاستدعاء الصحيح دائمًا عبر FilePicker.platform
-      // (استدعاء FilePicker.pickFiles مباشرة غير موجود ويسبب فشل الترجمة).
-      final result = await FilePicker.platform.pickFiles(
+      // ملاحظة: بدءًا من الإصدار 12 من حزمة file_picker، أُزيل FilePicker.platform
+      // نهائيًا، وصار الاستدعاء الصحيح مباشرة عبر FilePicker.pickFiles()،
+      // وهو يرجّع List<PlatformFile> مباشرة (قائمة فارغة عند الإلغاء، وليس null).
+      final files = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: <String>['json'],
-        withData: true,
       );
-      if (result == null || result.files.isEmpty) return;
-      final picked = result.files.single;
-      String raw;
+      if (files.isEmpty) return;
+      final picked = files.first;
+      String? raw;
       if (picked.bytes != null) {
         raw = utf8.decode(picked.bytes!);
       } else if (picked.path != null) {
         raw = await File(picked.path!).readAsString();
       } else {
+        try {
+          final bytes = await picked.readAsBytes();
+          raw = utf8.decode(bytes);
+        } catch (_) {
+          raw = null;
+        }
+      }
+      if (raw == null) {
         throw Exception('تعذر قراءة الملف المختار.');
       }
 
