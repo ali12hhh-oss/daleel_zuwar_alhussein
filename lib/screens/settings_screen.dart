@@ -536,9 +536,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _shareToTelegram() async {
     final text = Uri.encodeComponent(
-      '''حمل تطبيق دليل الزائر - تطبيق ديني حسيني شامل
+      '''حمل تطبيق دليل الزائر - تطبيق ديني شامل
 يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-حصراً على المذهب الشيعي الإثني عشري'''
+حصراً على المذهب الشيعي'''
     );
     final url = Uri.parse('https://t.me/share/url?url=&text=$text');
     await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -546,9 +546,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _shareGeneral() {
     Clipboard.setData(const ClipboardData(
-      text: '''حمل تطبيق دليل الزائر - تطبيق ديني حسيني شامل
+      text: '''حمل تطبيق دليل الزائر - تطبيق ديني شامل
 يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
-حصراً على المذهب الشيعي الإثني عشري
+حصراً على المذهب الشيعي
 https://github.com/daleelzuwar/alhussein''',
     ));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -590,7 +590,7 @@ https://github.com/daleelzuwar/alhussein''',
               onTap: () {
                 Clipboard.setData(const ClipboardData(
                   text: '''حمل تطبيق دليل الزائر - تطبيق ديني حسيني شامل
-يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - خريطة العراق - اتجاه القبلة
+يحتوي على: مواقيت الصلاة - أقوال وخطب - أسئلة شرعية - المسار الاقرب على الخرائط - اتجاه القبلة - اتجاة المعصومين والاماكن المقدسة - خطب واقوال اهل البيت - كتب دينية
 حصراً على المذهب الشيعي الإثني عشري
 https://github.com/daleelzuwar/alhussein''',
                 ));
@@ -662,7 +662,7 @@ https://github.com/daleelzuwar/alhussein''',
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'تطبيق ديني حسيني شامل يهدف إلى خدمة زوار الإمام الحسين عليه السلام '
+                    'تطبيق ديني شامل يهدف إلى خدمة زوار المراقد والاماكن المقدسة '
                     'وتوفير المعلومات الشرعية والتاريخية والخدمية لهم.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13),
@@ -683,8 +683,8 @@ https://github.com/daleelzuwar/alhussein''',
           const SizedBox(height: 8),
           const _SettingTile(
             icon: Icons.directions_walk,
-            title: 'طريق زائر الحسين',
-            subtitle: 'حدد موقعك لمعرفة المسافة إلى كربلاء وفتح الخريطة',
+            title: 'دليل الزائر',
+            subtitle: 'حدد موقعك لمعرفة المسافة إلى المراقد والاماكن المقدسة وفتح الخريطة',
           ),
           const _SettingTile(
             icon: Icons.menu_book,
@@ -1004,7 +1004,7 @@ https://github.com/daleelzuwar/alhussein''',
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'تطبيق ديني حسيني شامل يهدف إلى خدمة زوار الإمام الحسين عليه السلام وتوفير '
+                    'تطبيق ديني حسيني شامل يهدف إلى خدمة زوار المراقد والاماكن المقدسة وتوفير '
                     'المعلومات الشرعية والتاريخية والخدمية لهم.',
                     style: TextStyle(fontSize: 13, height: 1.6),
                   ),
