@@ -57,10 +57,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     await _initNotifications();
   }
 
-  /// يتأكد أن نطاق أيام الجدول (days) يغطي دائمًا تاريخ اليوم الحالي.
-  /// إذا مرّ وقت طويل منذ التثبيت أو آخر فتح للتطبيق، يوسّع النطاق تلقائيًا
-  /// بدل ما يبقى محصورًا بعدد الأيام المحدد وقت التثبيت.
-  /// يرجع true إذا تم تعديل البيانات (يستدعي حفظًا).
   bool _ensureLogRangeCoversToday(Map<String, dynamic> data) {
     final now = DateTime.now();
     final rawStart = DateTime.tryParse(data['startDate']?.toString() ?? '');
@@ -109,7 +105,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
   bool _boolValue(String key) => _data[key] == true;
 
-  /// يحول الأرقام التي تظهر للمستخدم إلى أرقام عربية شرقية.
   String _arabicDigits(Object value) {
     const western = '0123456789';
     const eastern = '٠١٢٣٤٥٦٧٨٩';
@@ -232,8 +227,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     return start.add(Duration(days: day));
   }
 
-  /// يفتح منتقي تاريخ (من بداية السجل وحتى اليوم) ويرجع التاريخ المختار،
-  /// مع الحفاظ على الوقت الحالي بالساعة والدقيقة.
   Future<DateTime?> _pickPastDate(DateTime initial) async {
     final rawStart = DateTime.tryParse(_data['startDate']?.toString() ?? '');
     final firstDate = rawStart == null
@@ -359,9 +352,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     );
   }
 
-  /// تحديد/إلغاء تحديد خانة في جدول السجل اليومي.
-  /// كل تحديد يُسجَّل أيضًا كحدث حقيقي بتاريخ ذلك اليوم بالذات، بحيث يظهر
-  /// مباشرة في بطاقة "سجل الإنجاز حسب التاريخ" وليس فقط كعدّاد.
   Future<void> _toggleCheck(int day, _PrayerInfo prayer) async {
     final key = '$day-${prayer.key}';
     final currentlyChecked = _isChecked(day, prayer.key);
@@ -556,7 +546,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     controller.dispose();
     if (result == null) return;
 
-    // لا نسمح بتصغير السجل إلى ما دون اليوم الحالي حتى لا يختفي تاريخ اليوم من الجدول.
     final now = DateTime.now();
     final todayIndex = _dayIndexForDate(now);
     final minDays = todayIndex >= 0 ? todayIndex + 1 : 1;
@@ -709,15 +698,12 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
 
   Future<void> _restore() async {
     try {
-      // ملاحظة: بدءًا من الإصدار 12 من حزمة file_picker، أُزيل FilePicker.platform
-      // نهائيًا، وصار الاستدعاء الصحيح مباشرة عبر FilePicker.pickFiles()،
-      // وهو يرجّع List<PlatformFile> مباشرة (قائمة فارغة عند الإلغاء، وليس null).
-      final files = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: <String>['json'],
       );
-      if (files.isEmpty) return;
-      final picked = files.first;
+      if (result == null || result.files.isEmpty) return;
+      final picked = result.files.first;
       String? raw;
       if (picked.bytes != null) {
         raw = utf8.decode(picked.bytes!);
@@ -747,9 +733,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
       if (!confirmed) return;
 
       final restored = Map<String, dynamic>.from(decoded['data'] as Map);
-      // ندمج مع القيم الافتراضية لضمان وجود كل المفاتيح المطلوبة حتى لو
-      // كانت النسخة الاحتياطية قديمة أو ناقصة، ثم نوسّع نطاق الجدول
-      // ليغطي تاريخ اليوم الحالي.
       final merged = QadaPrayerService.defaultData()..addAll(restored);
       _ensureLogRangeCoversToday(merged);
       _data = merged;
@@ -1087,8 +1070,6 @@ class _QadaPrayerScreenState extends State<QadaPrayerScreen> {
     );
     if (!confirmed) return;
 
-    // نحذف فقط الأحداث القادمة من الجدول (source == grid) مع إزالة تحديداتها،
-    // ونُبقي الأحداث المباشرة كما هي حتى لا يختفي عدد "المنجز" المرتبط بها.
     final events = _events;
     final gridEvents = events.where((e) => e['source'] == 'grid').toList();
     final remainingEvents = events.where((e) => e['source'] != 'grid').toList();
