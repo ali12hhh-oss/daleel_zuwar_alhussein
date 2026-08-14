@@ -2,14 +2,18 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// تخزين محلي دائم نسبيًا لسجل قضاء الصلاة.
+/// تخزين محلي دائم لسجل قضاء الصلاة.
 ///
-/// كل البيانات تحفظ على الجهاز، ويمكن تصديرها إلى ملف JSON واستعادتها لاحقًا.
+/// كل البيانات تُحفظ على الجهاز عبر SharedPreferences، ويمكن تصديرها إلى
+/// ملف JSON واستعادتها لاحقًا من خلال الأزرار الموجودة في شاشة قضاء الصلاة
+/// (حفظ نسخة احتياطية / استعادة نسخة احتياطية).
 class QadaPrayerService {
   QadaPrayerService._();
 
   static const String _key = 'qada_prayer_data_v1';
 
+  /// يقرأ البيانات المحفوظة، ويدمجها دائمًا مع [defaultData] لضمان وجود
+  /// كل المفاتيح المطلوبة حتى لو كانت نسخة قديمة من البيانات ناقصة.
   static Future<Map<String, dynamic>> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
@@ -34,11 +38,12 @@ class QadaPrayerService {
   }
 
   static Map<String, dynamic> defaultData() {
+    final now = DateTime.now();
     return <String, dynamic>{
       'version': 1,
       'personName': '',
       'days': 30,
-      'startDate': DateTime.now().toIso8601String(),
+      'startDate': DateTime(now.year, now.month, now.day).toIso8601String(),
       'targets': <String, dynamic>{
         'fajr': 0,
         'dhuhr': 0,
@@ -48,6 +53,16 @@ class QadaPrayerService {
       },
       // المفتاح: dayIndex-prayerKey  مثل  0-fajr
       'checks': <String, dynamic>{},
+      // العدد المسجل يدويًا عبر زر "تم قضاء صلاة" لكل نوع صلاة
+      'manualCompleted': <String, dynamic>{
+        'fajr': 0,
+        'dhuhr': 0,
+        'asr': 0,
+        'maghrib': 0,
+        'isha': 0,
+      },
+      // سجل تفصيلي بالتاريخ لكل عملية قضاء، سواء من الزر المباشر أو من الجدول
+      'events': <dynamic>[],
       'planDaily': 5,
       'planEnabled': false,
       'reminderEnabled': false,
@@ -75,66 +90,5 @@ class QadaPrayerService {
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
-  }
-
-  /// نسخة احتياطية كاملة: تحفظ كل بيانات القسم كما هي،
-  /// بما فيها الصلوات الخمس، خطة القضاء، السجل، التذكيرات،
-  /// صلاة القصر (الظهر والعصر والعشاء)، وصلاة الآيات.
-  static Future<String> exportCompleteBackup() async {
-    final data = await load();
-    return jsonEncode(<String, dynamic>{
-      'format': 'daleel_zuwar_qada_complete',
-      'version': 3,
-      'exportedAt': DateTime.now().toIso8601String(),
-      'data': data,
-    });
-  }
-
-  /// استعادة النسخة الاحتياطية الكاملة.
-  static Future<bool> importCompleteBackup(String content) async {
-    try {
-      final decoded = jsonDecode(content);
-      if (decoded is! Map) return false;
-      final rawData = decoded['data'];
-      if (rawData is! Map) return false;
-
-      final data = Map<String, dynamic>.from(rawData);
-
-      final totals = data['extraTotals'];
-      data['extraTotals'] = totals is Map
-          ? Map<String, dynamic>.from(totals)
-          : <String, dynamic>{
-              'qasrDhuhr': 0,
-              'qasrAsr': 0,
-              'qasrIsha': 0,
-              'ayat': 0,
-            };
-      final currentTotals = Map<String, dynamic>.from(data['extraTotals']);
-      currentTotals.putIfAbsent('qasrIsha', () => 0);
-      data['extraTotals'] = currentTotals;
-
-      final completed = data['extraCompleted'];
-      data['extraCompleted'] = completed is Map
-          ? Map<String, dynamic>.from(completed)
-          : <String, dynamic>{
-              'qasrDhuhr': 0,
-              'qasrAsr': 0,
-              'qasrIsha': 0,
-              'ayat': 0,
-            };
-      final currentCompleted = Map<String, dynamic>.from(data['extraCompleted']);
-      currentCompleted.putIfAbsent('qasrIsha', () => 0);
-      data['extraCompleted'] = currentCompleted;
-
-      final events = data['extraEvents'];
-      data['extraEvents'] =
-          events is List ? List<dynamic>.from(events) : <dynamic>[];
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_key, jsonEncode(data));
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 }
