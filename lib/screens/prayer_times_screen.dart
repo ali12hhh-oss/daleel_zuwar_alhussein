@@ -1669,9 +1669,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     ),
                   ),
                 ),
+                // ✅ استُبدلت Icons.self_improvement (شكل شخص جالس
+                // بوضعية تأمل، أقرب بصرياً للتأمل البوذي) بـ
+                // Icons.mosque، وهي أيقونة جاهزة بمكتبة Flutter وواضحة
+                // الدلالة الإسلامية بدون الحاجة لصورة خارجية.
                 child:
                     const Icon(
-                  Icons.self_improvement,
+                  Icons.mosque,
                   color:
                       AppColors.lightGold,
                   size: 31,
