@@ -835,7 +835,7 @@ class _QiblaScreenState extends State<QiblaScreen>
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'دقة البوصلة منخفضة حالياً. حرّك الهاتف ببطء على شكل رقم ٨ عدة مرات، ثم أبعده عن المعادن والسيارات ومكبرات الصوت.',
+              'دقة البوصلة منخفضة حالياً. حرّك الهاتف ببطء على شكل رقم 8 عدة مرات، ثم أبعده عن المعادن والسيارات ومكبرات الصوت.',
               textDirection:
                   TextDirection.rtl,
               style: TextStyle(
@@ -1817,7 +1817,7 @@ class _QiblaScreenState extends State<QiblaScreen>
               style: textStyle,
             ),
             const Text(
-              '• عند عدم ثبات الاتجاه، حرّك الهاتف على شكل رقم ٨ عدة مرات لمعايرة الحساس.',
+              '• عند عدم ثبات الاتجاه، حرّك الهاتف على شكل رقم 8 عدة مرات لمعايرة الحساس.',
               style: textStyle,
             ),
             const Text(
