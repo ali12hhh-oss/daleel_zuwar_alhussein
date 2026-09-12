@@ -49,30 +49,31 @@ class _SplashScreenState extends State<SplashScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '۞  ۞  ۞',
-                style: GoogleFonts.amiri(
+                '۞  ❖  ۞',
+                style: GoogleFonts.cairo(
                   color: Colors.white70,
                   fontSize: 30,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 18),
               Text(
                 'دليل الزائر',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.amiri(
+                style: GoogleFonts.cairo(
                   color: Colors.white,
-                  fontSize: 42,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 44,
+                  fontWeight: FontWeight.w800,
                   height: 1.25,
                 ),
               ),
               const SizedBox(height: 18),
               Text(
-                '۞  بسم الله  ۞',
-                style: GoogleFonts.amiri(
+                '❖  بسم الله  ❖',
+                style: GoogleFonts.cairo(
                   color: Colors.white70,
                   fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 42),
