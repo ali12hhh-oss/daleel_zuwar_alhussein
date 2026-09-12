@@ -56,6 +56,15 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+
+            // ✅ تقليل حجم كود Android غير المستخدم فقط، دون حذف assets
+            // أو الكتب أو الملفات الصوتية أو تغيير جودتها.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
