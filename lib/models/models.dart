@@ -38,36 +38,6 @@ class ShariQuestion {
   });
 }
 
-/// قول أو خطبة للإمام الحسين عليه السلام، أو حديث في مودة أهل البيت
-class Quote {
-  final String text;
-  final String source; // المصدر (الكتاب/المرجع)
-  final String occasion; // المناسبة أو السياق
-  final bool isSample;
-
-  const Quote({
-    required this.text,
-    required this.source,
-    required this.occasion,
-    this.isSample = true,
-  });
-}
-
-/// حدث من أحداث معركة الطف ضمن الأيام العشرة
-class BattleEvent {
-  final int day; // من 1 إلى 10 (محرم)
-  final String title;
-  final String description;
-  final String source;
-
-  const BattleEvent({
-    required this.day,
-    required this.title,
-    required this.description,
-    required this.source,
-  });
-}
-
 /// نوع المناسبة: ولادة أو وفاة/استشهاد
 enum EventKind { birth, death }
 
