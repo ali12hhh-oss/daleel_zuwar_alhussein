@@ -785,7 +785,7 @@ class _QiblaScreenState extends State<QiblaScreen>
               height: 5,
             ),
             const Text(
-              'حصراً على المذهب الشيعي الاثني عشري',
+              'ملاحظة . دقة البوصلة تعتمد على المستشعر المغناطيسي في الهاتف اذا لم يكن في هاتفك مستشعر لاتعمل البوصلة بشكل دقيق',
               textAlign:
                   TextAlign.center,
               style: TextStyle(
