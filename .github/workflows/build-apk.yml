@@ -32,6 +32,8 @@ jobs:
         run: |
           flutter pub upgrade
           flutter pub get
+      - name: توليد أيقونات التطبيق بجميع المقاسات
+        run: flutter pub run flutter_launcher_icons
       - name: إصلاح ملف build.gradle لـ geolocator_android
         run: |
           GEO_FILE=$(find "$HOME/.pub-cache/hosted/pub.dev" -path "*/geolocator_android-*/android/build.gradle" | head -1)
