@@ -165,7 +165,6 @@ class IslamicSplashOrnament extends CustomPainter {
     final cx = size.width / 2;
 
     if (top) {
-      // قوس قريب من شكل المحراب الموجود في التصميم المرجعي.
       final arch = Path()
         ..moveTo(cx, 8)
         ..cubicTo(cx - 22, 38, cx - 42, 45, cx - 82, 63)
@@ -182,16 +181,24 @@ class IslamicSplashOrnament extends CustomPainter {
       _ornamentalTip(canvas, Offset(cx, 8), 10, fill, stroke);
       _arabesque(canvas, Offset(cx, 91), 34, stroke, thin, fill);
 
-      canvas.drawLine(30, 181, 72, 181, stroke);
-      canvas.drawLine(size.width - 30, 181, size.width - 72, 181, stroke);
-      _diamond(canvas, Offset(78, 181), 5.5, fill);
+      canvas.drawLine(const Offset(30, 181), const Offset(72, 181), stroke);
+      canvas.drawLine(
+        Offset(size.width - 30, 181),
+        Offset(size.width - 72, 181),
+        stroke,
+      );
+      _diamond(canvas, const Offset(78, 181), 5.5, fill);
       _diamond(canvas, Offset(size.width - 78, 181), 5.5, fill);
     } else {
       final y = size.height / 2;
       canvas.save();
       canvas.translate(0, y);
-      canvas.drawLine(10, 0, 105, 0, stroke);
-      canvas.drawLine(size.width - 10, 0, size.width - 105, 0, stroke);
+      canvas.drawLine(const Offset(10, 0), const Offset(105, 0), stroke);
+      canvas.drawLine(
+        Offset(size.width - 10, 0),
+        Offset(size.width - 105, 0),
+        stroke,
+      );
       _diamond(canvas, Offset(113, 0), 5.5, fill);
       _diamond(canvas, Offset(size.width - 113, 0), 5.5, fill);
       _eightPetalMedallion(canvas, Offset(cx, 0), 33, stroke, thin, fill);
@@ -232,7 +239,12 @@ class IslamicSplashOrnament extends CustomPainter {
       ..cubicTo(c.dx - 17, c.dy - 13, c.dx - 22, c.dy - 25, c.dx - 10, c.dy - 29)
       ..cubicTo(c.dx - 2, c.dy - 32, c.dx - 1, c.dy - 20, c.dx - 6, c.dy - 12)
       ..cubicTo(c.dx - 12, c.dy - 4, c.dx - 23, c.dy - 3, c.dx - 28, c.dy + 4);
-    final right = _mirrorPath(left, c.dx);
+    final right = Path()
+      ..moveTo(c.dx, c.dy + r)
+      ..cubicTo(c.dx + 8, c.dy + r * .55, c.dx + 8, c.dy + 8, c.dx + 2, c.dy + 1)
+      ..cubicTo(c.dx + 17, c.dy - 13, c.dx + 22, c.dy - 25, c.dx + 10, c.dy - 29)
+      ..cubicTo(c.dx + 2, c.dy - 32, c.dx + 1, c.dy - 20, c.dx + 6, c.dy - 12)
+      ..cubicTo(c.dx + 12, c.dy - 4, c.dx + 23, c.dy - 3, c.dx + 28, c.dy + 4);
     canvas.drawPath(left, stroke);
     canvas.drawPath(right, stroke);
 
@@ -247,18 +259,25 @@ class IslamicSplashOrnament extends CustomPainter {
     _smallLeaf(canvas, Offset(c.dx + 24, c.dy + 6), 7, stroke, true);
   }
 
-  Path _mirrorPath(Path source, double axisX) {
-    final matrix = Matrix4.identity()
-      ..translate(axisX * 2, 0)
-      ..scale(-1.0, 1.0);
-    return source.transform(matrix.storage);
-  }
-
   void _smallLeaf(Canvas canvas, Offset c, double r, Paint paint, bool flip) {
     final p = Path()
       ..moveTo(c.dx, c.dy - r)
-      ..cubicTo(c.dx + (flip ? -r : r), c.dy - r * .45, c.dx + (flip ? -r : r), c.dy + r * .45, c.dx, c.dy + r)
-      ..cubicTo(c.dx + (flip ? r : -r), c.dy + r * .45, c.dx + (flip ? r : -r), c.dy - r * .45, c.dx, c.dy - r);
+      ..cubicTo(
+        c.dx + (flip ? -r : r),
+        c.dy - r * .45,
+        c.dx + (flip ? -r : r),
+        c.dy + r * .45,
+        c.dx,
+        c.dy + r,
+      )
+      ..cubicTo(
+        c.dx + (flip ? r : -r),
+        c.dy + r * .45,
+        c.dx + (flip ? r : -r),
+        c.dy - r * .45,
+        c.dx,
+        c.dy - r,
+      );
     canvas.drawPath(p, paint);
   }
 
@@ -272,7 +291,10 @@ class IslamicSplashOrnament extends CustomPainter {
   ) {
     for (var i = 0; i < 8; i++) {
       final a = i * math.pi / 4;
-      final p = Offset(c.dx + math.cos(a) * r * .48, c.dy + math.sin(a) * r * .48);
+      final p = Offset(
+        c.dx + math.cos(a) * r * .48,
+        c.dy + math.sin(a) * r * .48,
+      );
       canvas.drawOval(
         Rect.fromCenter(center: p, width: r * .72, height: r * .38),
         stroke,
@@ -280,7 +302,10 @@ class IslamicSplashOrnament extends CustomPainter {
     }
     for (var i = 0; i < 8; i++) {
       final a = i * math.pi / 4 + math.pi / 8;
-      final p = Offset(c.dx + math.cos(a) * r * .34, c.dy + math.sin(a) * r * .34);
+      final p = Offset(
+        c.dx + math.cos(a) * r * .34,
+        c.dy + math.sin(a) * r * .34,
+      );
       canvas.drawOval(
         Rect.fromCenter(center: p, width: r * .46, height: r * .22),
         thin,
@@ -306,7 +331,7 @@ class IslamicSplashOrnament extends CustomPainter {
   bool shouldRepaint(covariant IslamicSplashOrnament oldDelegate) => oldDelegate.top != top;
 }
 
-/// زخارف جانبية رفيعة حول البسملة، لتقريب أسلوب الخطاطات الذهبية في التصميم المرجعي.
+/// زخارف جانبية رفيعة حول البسملة.
 class BismillahFlourishPainter extends CustomPainter {
   const BismillahFlourishPainter();
 
@@ -322,24 +347,55 @@ class BismillahFlourishPainter extends CustomPainter {
     final fill = Paint()
       ..color = gold
       ..style = PaintingStyle.fill;
-    final y = size.height * .62;
-    final cx = size.width / 2;
+    final y = size.height * .66;
 
     _flourish(canvas, 12, y, 1, p, fill);
     _flourish(canvas, size.width - 12, y, -1, p, fill);
 
-    canvas.drawLine(30, y, 95, y, p);
-    canvas.drawLine(size.width - 30, y, size.width - 95, y, p);
-    _diamond(canvas, Offset(101, y), 4.5, fill);
-    _diamond(canvas, Offset(size.width - 101, y), 4.5, fill);
+    canvas.drawLine(const Offset(30, 60), const Offset(95, 60), p);
+    canvas.drawLine(
+      Offset(size.width - 30, 60),
+      Offset(size.width - 95, 60),
+      p,
+    );
+    _diamond(canvas, const Offset(101, 60), 4.5, fill);
+    _diamond(canvas, Offset(size.width - 101, 60), 4.5, fill);
   }
 
-  void _flourish(Canvas canvas, double x, double y, double dir, Paint p, Paint fill) {
+  void _flourish(
+    Canvas canvas,
+    double x,
+    double y,
+    double dir,
+    Paint p,
+    Paint fill,
+  ) {
     final path = Path()
       ..moveTo(x, y)
-      ..cubicTo(x + 13 * dir, y - 2, x + 16 * dir, y - 13, x + 25 * dir, y - 12)
-      ..cubicTo(x + 34 * dir, y - 11, x + 32 * dir, y + 2, x + 23 * dir, y + 6)
-      ..cubicTo(x + 16 * dir, y + 9, x + 12 * dir, y + 3, x + 7 * dir, y);
+      ..cubicTo(
+        x + 13 * dir,
+        y - 2,
+        x + 16 * dir,
+        y - 13,
+        x + 25 * dir,
+        y - 12,
+      )
+      ..cubicTo(
+        x + 34 * dir,
+        y - 11,
+        x + 32 * dir,
+        y + 2,
+        x + 23 * dir,
+        y + 6,
+      )
+      ..cubicTo(
+        x + 16 * dir,
+        y + 9,
+        x + 12 * dir,
+        y + 3,
+        x + 7 * dir,
+        y,
+      );
     canvas.drawPath(path, p);
     _diamond(canvas, Offset(x + 18 * dir, y - 2), 4.5, fill);
   }
