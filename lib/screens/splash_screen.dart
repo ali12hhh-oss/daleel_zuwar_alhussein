@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
@@ -153,17 +154,35 @@ class IslamicSplashOrnament extends CustomPainter {
       _diamond(canvas, Offset(cx, 8), 7, fill);
       _flower(canvas, Offset(cx, 86), 30, paint, fill);
 
-      canvas.drawLine(28, 151, 76, 151, paint);
-      canvas.drawLine(size.width - 28, 151, size.width - 76, 151, paint);
-      _diamond(canvas, Offset(82, 151), 5, fill);
+      canvas.drawLine(const Offset(28, 151), const Offset(76, 151), paint);
+      canvas.drawLine(
+        Offset(size.width - 28, 151),
+        Offset(size.width - 76, 151),
+        paint,
+      );
+      _diamond(canvas, const Offset(82, 151), 5, fill);
       _diamond(canvas, Offset(size.width - 82, 151), 5, fill);
     } else {
       final y = size.height / 2;
-      canvas.drawLine(8, y, 105, y, paint);
-      canvas.drawLine(size.width - 8, y, size.width - 105, y, paint);
-      _diamond(canvas, Offset(112, y), 5, fill);
-      _diamond(canvas, Offset(size.width - 112, y), 5, fill);
-      _flower(canvas, Offset(cx, y), 27, paint, fill);
+      canvas.drawLine(const Offset(8, 0), Offset(105, 0), paint);
+      canvas.drawLine(
+        Offset(size.width - 8, 0),
+        Offset(size.width - 105, 0),
+        paint,
+      );
+      // نستخدم Translate بدل تمرير إحداثيات منفصلة إلى drawLine.
+      canvas.save();
+      canvas.translate(0, y);
+      canvas.drawLine(const Offset(8, 0), Offset(105, 0), paint);
+      canvas.drawLine(
+        Offset(size.width - 8, 0),
+        Offset(size.width - 105, 0),
+        paint,
+      );
+      _diamond(canvas, Offset(112, 0), 5, fill);
+      _diamond(canvas, Offset(size.width - 112, 0), 5, fill);
+      _flower(canvas, Offset(cx, 0), 27, paint, fill);
+      canvas.restore();
     }
   }
 
@@ -185,10 +204,10 @@ class IslamicSplashOrnament extends CustomPainter {
     Paint fill,
   ) {
     for (var i = 0; i < 8; i++) {
-      final angle = i * 3.141592653589793 / 4;
+      final angle = i * math.pi / 4;
       final petalCenter = Offset(
-        center.dx + r * 0.55 * _cos(angle),
-        center.dy + r * 0.55 * _sin(angle),
+        center.dx + r * 0.55 * math.cos(angle),
+        center.dy + r * 0.55 * math.sin(angle),
       );
       canvas.drawOval(
         Rect.fromCenter(
@@ -203,36 +222,7 @@ class IslamicSplashOrnament extends CustomPainter {
     canvas.drawCircle(center, r * 0.45, stroke);
   }
 
-  double _cos(double value) => value == 0 ? 1 : MathHelper.cos(value);
-  double _sin(double value) => value == 0 ? 0 : MathHelper.sin(value);
-
   @override
   bool shouldRepaint(covariant IslamicSplashOrnament oldDelegate) =>
       oldDelegate.top != top;
-}
-
-class MathHelper {
-  static double sin(double x) {
-    // sin/cos via dart:math without importing another library in the widget tree.
-    return _trig(x, true);
-  }
-
-  static double cos(double x) {
-    return _trig(x, false);
-  }
-
-  static double _trig(double x, bool sine) {
-    // Taylor approximation is more than sufficient for these small ornament angles.
-    var result = sine ? x : 1.0;
-    var term = result;
-    for (var n = 1; n <= 8; n++) {
-      if (sine) {
-        term *= -x * x / ((2 * n) * (2 * n + 1));
-      } else {
-        term *= -x * x / ((2 * n - 1) * (2 * n));
-      }
-      result += term;
-    }
-    return result;
-  }
 }
