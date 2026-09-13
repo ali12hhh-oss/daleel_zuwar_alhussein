@@ -255,7 +255,7 @@ class SplashDividerPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     canvas.drawLine(
-      const Offset(8, 27),
+      Offset(8, center.dy),
       Offset(center.dx - 39, center.dy),
       line,
     );
