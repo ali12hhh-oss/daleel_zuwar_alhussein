@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import 'home_screen.dart';
 
-/// شاشة الإقلاع: اسم التطبيق فقط مع زخرفة إسلامية هادئة.
+/// شاشة الإقلاع: بسم الله الرحمن الرحيم فوق اسم التطبيق مع زخرفة إسلامية نصية.
 class SplashScreen extends StatefulWidget {
   final ThemeMode themeMode;
   final VoidCallback onToggleTheme;
@@ -48,6 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // الزخرفة العلوية — نصية وليست صورة.
               Text(
                 '۞  ❖  ۞',
                 style: GoogleFonts.cairo(
@@ -57,6 +58,18 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 18),
+              // بسم الله الرحمن الرحيم — فوق اسم التطبيق.
+              Text(
+                'بسم الله الرحمن الرحيم',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cairo(
+                  color: Colors.white70,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 22),
               Text(
                 'دليل الزائر',
                 textAlign: TextAlign.center,
@@ -67,13 +80,14 @@ class _SplashScreenState extends State<SplashScreen> {
                   height: 1.25,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 22),
+              // فاصل زخرفي متناظر تحت اسم التطبيق.
               Text(
-                '❖  بسم الله  ❖',
+                '❖  ۞  ❖',
                 style: GoogleFonts.cairo(
                   color: Colors.white70,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 27,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 42),
