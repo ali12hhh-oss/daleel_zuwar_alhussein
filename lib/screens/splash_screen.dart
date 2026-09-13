@@ -28,8 +28,8 @@ class _SplashScreenState extends State<SplashScreen> {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
-      navigationBarColor: Colors.black,
-      navigationBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.black,
+      systemNavigationBarIconBrightness: Brightness.light,
     ));
     _navigateAfterDelay();
   }
