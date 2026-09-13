@@ -53,7 +53,6 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // القوس والزخرفة العلوية: مرسومة بـ CustomPainter وليست صورة.
                 const SizedBox(
                   width: 310,
                   height: 175,
@@ -93,7 +92,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // الفاصل السفلي بنفس فكرة الخط والزخرفة في التصميم المرفق.
                 const SizedBox(
                   width: 330,
                   height: 90,
@@ -164,13 +162,6 @@ class IslamicSplashOrnament extends CustomPainter {
       _diamond(canvas, Offset(size.width - 82, 151), 5, fill);
     } else {
       final y = size.height / 2;
-      canvas.drawLine(const Offset(8, 0), Offset(105, 0), paint);
-      canvas.drawLine(
-        Offset(size.width - 8, 0),
-        Offset(size.width - 105, 0),
-        paint,
-      );
-      // نستخدم Translate بدل تمرير إحداثيات منفصلة إلى drawLine.
       canvas.save();
       canvas.translate(0, y);
       canvas.drawLine(const Offset(8, 0), Offset(105, 0), paint);
