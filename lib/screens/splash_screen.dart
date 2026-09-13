@@ -44,8 +44,9 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     const ivory = Color(0xFFFFF3D2);
     const gold = Color(0xFFD9A441);
-    final width = MediaQuery.sizeOf(context).width;
-    final scale = (width / 390).clamp(0.82, 1.12);
+    final scale = (MediaQuery.sizeOf(context).width / 390)
+        .clamp(0.82, 1.12)
+        .toDouble();
 
     return Scaffold(
       backgroundColor: AppColors.primaryGreen,
@@ -71,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     width: 330 * scale,
                     height: 170 * scale,
                     child: CustomPaint(
-                      painter: IslamicSplashOrnament(),
+                      painter: const IslamicSplashOrnament(),
                     ),
                   ),
                   Transform.translate(
@@ -117,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     width: 330 * scale,
                     height: 54 * scale,
                     child: CustomPaint(
-                      painter: SplashDividerPainter(),
+                      painter: const SplashDividerPainter(),
                     ),
                   ),
                   SizedBox(height: 22 * scale),
@@ -183,9 +184,13 @@ class IslamicSplashOrnament extends CustomPainter {
     _diamond(canvas, Offset(cx, 8), 5.5, fill);
     _rosette(canvas, Offset(cx, 88), 25, stroke, fill);
 
-    canvas.drawLine(18, 150, 72, 150, stroke);
-    canvas.drawLine(size.width - 18, 150, size.width - 72, 150, stroke);
-    _diamond(canvas, Offset(78, 150), 4, fill);
+    canvas.drawLine(const Offset(18, 150), Offset(72, 150), stroke);
+    canvas.drawLine(
+      Offset(size.width - 18, 150),
+      Offset(size.width - 72, 150),
+      stroke,
+    );
+    _diamond(canvas, const Offset(78, 150), 4, fill);
     _diamond(canvas, Offset(size.width - 78, 150), 4, fill);
   }
 
@@ -249,8 +254,16 @@ class SplashDividerPainter extends CustomPainter {
       ..color = gold
       ..style = PaintingStyle.fill;
 
-    canvas.drawLine(8, center.dy, center.dx - 39, center.dy, line);
-    canvas.drawLine(center.dx + 39, center.dy, size.width - 8, center.dy, line);
+    canvas.drawLine(
+      const Offset(8, 27),
+      Offset(center.dx - 39, center.dy),
+      line,
+    );
+    canvas.drawLine(
+      Offset(center.dx + 39, center.dy),
+      Offset(size.width - 8, center.dy),
+      line,
+    );
     _diamond(canvas, Offset(31, center.dy), 3.5, fill);
     _diamond(canvas, Offset(size.width - 31, center.dy), 3.5, fill);
 
