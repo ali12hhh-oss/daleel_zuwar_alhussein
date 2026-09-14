@@ -72,32 +72,33 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // الزخرفة العلوية مرفوعة ومفتوحة من الأسفل حتى لا تنافس البسملة.
                       SizedBox(
-                        height: 208 * scale,
+                        height: 190 * scale,
                         child: CustomPaint(
                           painter: const SplashArchPainter(),
                         ),
                       ),
-                      SizedBox(height: 5 * scale),
+                      SizedBox(height: 18 * scale),
                       Text(
-                        'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+                        '﷽',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.arefRuqaaInk(
-                          color: ivory,
-                          fontSize: 33 * scale,
-                          fontWeight: FontWeight.w400,
-                          height: 1.25,
-                          letterSpacing: 0.15,
+                          color: Colors.white,
+                          fontSize: 54 * scale,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                          letterSpacing: 0,
                           shadows: const [
                             Shadow(
-                              color: Color(0x44000000),
-                              blurRadius: 3,
-                              offset: Offset(0, 1),
+                              color: Color(0x55000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 12 * scale),
+                      SizedBox(height: 25 * scale),
                       Text(
                         'دليل الزائر',
                         textAlign: TextAlign.center,
@@ -154,7 +155,7 @@ class SplashArchPainter extends CustomPainter {
     const gold = Color(0xFFD7A23A);
     const softGold = Color(0x9ED7A23A);
     final cx = size.width / 2;
-    final bottom = size.height - 18;
+    final bottom = size.height - 12;
 
     final outer = Paint()
       ..color = gold
@@ -166,33 +167,37 @@ class SplashArchPainter extends CustomPainter {
       ..color = softGold
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
     final fill = Paint()
       ..color = gold
       ..style = PaintingStyle.fill;
 
+    // قوس علوي رشيق بلا إغلاق سفلي: نهايتاه تنتهيان بنعومة بدل الخط الأفقي.
     final outerPath = Path()
-      ..moveTo(cx, 8)
-      ..cubicTo(cx - 18, 45, cx - 70, 57, cx - 108, 91)
-      ..cubicTo(cx - 133, 114, cx - 139, 147, cx - 124, bottom)
-      ..lineTo(cx + 124, bottom)
-      ..cubicTo(cx + 139, 147, cx + 133, 114, cx + 108, 91)
-      ..cubicTo(cx + 70, 57, cx + 18, 45, cx, 8);
+      ..moveTo(cx, 6)
+      ..cubicTo(cx - 18, 42, cx - 70, 54, cx - 108, 86)
+      ..cubicTo(cx - 132, 107, cx - 137, 137, cx - 122, bottom)
+      ..moveTo(cx, 6)
+      ..cubicTo(cx + 18, 42, cx + 70, 54, cx + 108, 86)
+      ..cubicTo(cx + 132, 107, cx + 137, 137, cx + 122, bottom);
     canvas.drawPath(outerPath, outer);
 
     final innerPath = Path()
-      ..moveTo(cx, 25)
-      ..cubicTo(cx - 17, 55, cx - 61, 66, cx - 91, 94)
-      ..cubicTo(cx - 110, 112, cx - 116, 143, cx - 104, bottom - 17)
-      ..lineTo(cx + 104, bottom - 17)
-      ..cubicTo(cx + 116, 143, cx + 110, 112, cx + 91, 94)
-      ..cubicTo(cx + 61, 66, cx + 17, 55, cx, 25);
+      ..moveTo(cx, 22)
+      ..cubicTo(cx - 17, 52, cx - 61, 64, cx - 91, 90)
+      ..cubicTo(cx - 109, 107, cx - 113, 133, cx - 101, bottom - 18)
+      ..moveTo(cx, 22)
+      ..cubicTo(cx + 17, 52, cx + 61, 64, cx + 91, 90)
+      ..cubicTo(cx + 109, 107, cx + 113, 133, cx + 101, bottom - 18);
     canvas.drawPath(innerPath, inner);
 
-    _diamond(canvas, Offset(cx, 8), 5.5, fill);
-    _eightPointStar(canvas, Offset(cx, 100), 22, outer, fill);
-    _diamond(canvas, Offset(cx - 105, bottom), 3.5, fill);
-    _diamond(canvas, Offset(cx + 105, bottom), 3.5, fill);
+    _diamond(canvas, Offset(cx, 6), 5.5, fill);
+    _eightPointStar(canvas, Offset(cx, 92), 20, outer, fill);
+
+    // نهايات صغيرة زخرفية تؤكد أن القوس مفتوح، من دون أي خط أفقي.
+    _diamond(canvas, Offset(cx - 122, bottom), 3.0, fill);
+    _diamond(canvas, Offset(cx + 122, bottom), 3.0, fill);
   }
 
   void _diamond(Canvas canvas, Offset center, double r, Paint paint) {
