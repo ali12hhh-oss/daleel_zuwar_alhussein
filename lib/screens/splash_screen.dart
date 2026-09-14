@@ -44,7 +44,6 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     const ivory = Color(0xFFFFF3D2);
     const gold = Color(0xFFD7A23A);
-    final media = MediaQuery.sizeOf(context);
 
     return Scaffold(
       backgroundColor: AppColors.primaryGreen,
@@ -79,18 +78,26 @@ class _SplashScreenState extends State<SplashScreen> {
                           painter: const SplashArchPainter(),
                         ),
                       ),
-                      SizedBox(height: 4 * scale),
+                      SizedBox(height: 5 * scale),
                       Text(
                         'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.amiriQuran(
+                        style: GoogleFonts.arefRuqaaInk(
                           color: ivory,
-                          fontSize: 28 * scale,
+                          fontSize: 33 * scale,
                           fontWeight: FontWeight.w400,
-                          height: 1.35,
+                          height: 1.25,
+                          letterSpacing: 0.15,
+                          shadows: const [
+                            Shadow(
+                              color: Color(0x44000000),
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 13 * scale),
+                      SizedBox(height: 12 * scale),
                       Text(
                         'دليل الزائر',
                         textAlign: TextAlign.center,
@@ -139,7 +146,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-/// قوس إسلامي هندسي نظيف، متوازن حول المحور المركزي ومن دون خطوط تقطع النص.
 class SplashArchPainter extends CustomPainter {
   const SplashArchPainter();
 
@@ -183,13 +189,8 @@ class SplashArchPainter extends CustomPainter {
       ..cubicTo(cx + 61, 66, cx + 17, 55, cx, 25);
     canvas.drawPath(innerPath, inner);
 
-    // نقطة التاج في أعلى القوس.
     _diamond(canvas, Offset(cx, 8), 5.5, fill);
-
-    // نجمة هندسية صغيرة في قلب القوس.
     _eightPointStar(canvas, Offset(cx, 100), 22, outer, fill);
-
-    // زخرفة صغيرة متناظرة عند قاعدة القوس، من دون خط أفقي خلف النص.
     _diamond(canvas, Offset(cx - 105, bottom), 3.5, fill);
     _diamond(canvas, Offset(cx + 105, bottom), 3.5, fill);
   }
@@ -234,7 +235,6 @@ class SplashArchPainter extends CustomPainter {
   bool shouldRepaint(covariant SplashArchPainter oldDelegate) => false;
 }
 
-/// فاصل زخرفي بسيط يربط العنوان ببقية الشاشة من دون ازدحام بصري.
 class SplashDividerPainter extends CustomPainter {
   const SplashDividerPainter();
 
@@ -252,8 +252,8 @@ class SplashDividerPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     const centerGap = 31.0;
-    final sideInset = 12.0;
-    final ornamentOffset = 12.0;
+    const sideInset = 12.0;
+    const ornamentOffset = 12.0;
 
     canvas.drawLine(
       Offset(sideInset, center.dy),
