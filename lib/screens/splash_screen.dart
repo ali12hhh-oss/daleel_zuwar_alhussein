@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import 'home_screen.dart';
 
-/// شاشة إقلاع عربية بطابع إسلامي، مرسومة بالكامل داخل Flutter.
+/// شاشة إقلاع عربية بتصميم إسلامي متوازن، مرسومة بالكامل داخل Flutter.
 class SplashScreen extends StatefulWidget {
   final ThemeMode themeMode;
   final VoidCallback onToggleTheme;
@@ -43,10 +43,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     const ivory = Color(0xFFFFF3D2);
-    const gold = Color(0xFFD9A441);
-    final scale = (MediaQuery.sizeOf(context).width / 390)
-        .clamp(0.82, 1.12)
-        .toDouble();
+    const gold = Color(0xFFD7A23A);
+    final media = MediaQuery.sizeOf(context);
 
     return Scaffold(
       backgroundColor: AppColors.primaryGreen,
@@ -56,84 +54,84 @@ class _SplashScreenState extends State<SplashScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0D5745),
+              Color(0xFF0D5846),
               Color(0xFF0B4D3C),
               Color(0xFF083D30),
             ],
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: RepaintBoundary(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 330 * scale,
-                    height: 170 * scale,
-                    child: CustomPaint(
-                      painter: const IslamicSplashOrnament(),
-                    ),
-                  ),
-                  Transform.translate(
-                    offset: Offset(0, -18 * scale),
-                    child: Text(
-                      'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.amiriQuran(
-                        color: ivory,
-                        fontSize: 29 * scale,
-                        fontWeight: FontWeight.w400,
-                        height: 1.25,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final widthScale = (constraints.maxWidth / 390).clamp(0.82, 1.16);
+              final heightScale = (constraints.maxHeight / 760).clamp(0.78, 1.10);
+              final scale = math.min(widthScale, heightScale).toDouble();
+
+              return Center(
+                child: SizedBox(
+                  width: math.min(constraints.maxWidth * 0.88, 430.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 208 * scale,
+                        child: CustomPaint(
+                          painter: const SplashArchPainter(),
+                        ),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 3 * scale),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18 * scale),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
+                      SizedBox(height: 4 * scale),
+                      Text(
+                        'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.amiriQuran(
+                          color: ivory,
+                          fontSize: 28 * scale,
+                          fontWeight: FontWeight.w400,
+                          height: 1.35,
+                        ),
+                      ),
+                      SizedBox(height: 13 * scale),
+                      Text(
                         'دليل الزائر',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.reemKufi(
                           color: ivory,
-                          fontSize: 49 * scale,
+                          fontSize: 46 * scale,
                           fontWeight: FontWeight.w700,
-                          height: 1.12,
-                          letterSpacing: 0.2,
+                          height: 1.15,
+                          letterSpacing: 0.0,
                           shadows: const [
                             Shadow(
-                              color: Color(0x66000000),
-                              blurRadius: 7,
-                              offset: Offset(0, 3),
+                              color: Color(0x50000000),
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                      SizedBox(height: 18 * scale),
+                      SizedBox(
+                        height: 42 * scale,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: const SplashDividerPainter(),
+                        ),
+                      ),
+                      SizedBox(height: 23 * scale),
+                      SizedBox(
+                        width: 28 * scale,
+                        height: 28 * scale,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: gold,
+                          backgroundColor: Color(0x222C7A63),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 14 * scale),
-                  SizedBox(
-                    width: 330 * scale,
-                    height: 54 * scale,
-                    child: CustomPaint(
-                      painter: const SplashDividerPainter(),
-                    ),
-                  ),
-                  SizedBox(height: 22 * scale),
-                  SizedBox(
-                    width: 30 * scale,
-                    height: 30 * scale,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      color: gold,
-                      backgroundColor: Color(0x332C7A63),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -141,57 +139,59 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-class IslamicSplashOrnament extends CustomPainter {
-  const IslamicSplashOrnament();
+/// قوس إسلامي هندسي نظيف، متوازن حول المحور المركزي ومن دون خطوط تقطع النص.
+class SplashArchPainter extends CustomPainter {
+  const SplashArchPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    const gold = Color(0xFFD9A441);
-    const softGold = Color(0xB8D9A441);
+    const gold = Color(0xFFD7A23A);
+    const softGold = Color(0x9ED7A23A);
     final cx = size.width / 2;
-    final stroke = Paint()
+    final bottom = size.height - 18;
+
+    final outer = Paint()
       ..color = gold
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
+      ..strokeWidth = 2.15
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    final softStroke = Paint()
+    final inner = Paint()
       ..color = softGold
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1;
+      ..strokeWidth = 1.15
+      ..strokeCap = StrokeCap.round;
     final fill = Paint()
       ..color = gold
       ..style = PaintingStyle.fill;
 
-    final arch = Path()
-      ..moveTo(cx, 7)
-      ..cubicTo(cx - 10, 38, cx - 74, 43, cx - 101, 76)
-      ..cubicTo(cx - 119, 98, cx - 119, 123, cx - 109, 150)
-      ..lineTo(cx + 109, 150)
-      ..cubicTo(cx + 119, 123, cx + 119, 98, cx + 101, 76)
-      ..cubicTo(cx + 74, 43, cx + 10, 38, cx, 7);
-    canvas.drawPath(arch, stroke);
+    final outerPath = Path()
+      ..moveTo(cx, 8)
+      ..cubicTo(cx - 18, 45, cx - 70, 57, cx - 108, 91)
+      ..cubicTo(cx - 133, 114, cx - 139, 147, cx - 124, bottom)
+      ..lineTo(cx + 124, bottom)
+      ..cubicTo(cx + 139, 147, cx + 133, 114, cx + 108, 91)
+      ..cubicTo(cx + 70, 57, cx + 18, 45, cx, 8);
+    canvas.drawPath(outerPath, outer);
 
-    final inner = Path()
-      ..moveTo(cx, 19)
-      ..cubicTo(cx - 14, 48, cx - 62, 52, cx - 84, 81)
-      ..cubicTo(cx - 99, 100, cx - 98, 122, cx - 91, 139)
-      ..lineTo(cx + 91, 139)
-      ..cubicTo(cx + 98, 122, cx + 99, 100, cx + 84, 81)
-      ..cubicTo(cx + 62, 52, cx + 14, 48, cx, 19);
-    canvas.drawPath(inner, softStroke);
+    final innerPath = Path()
+      ..moveTo(cx, 25)
+      ..cubicTo(cx - 17, 55, cx - 61, 66, cx - 91, 94)
+      ..cubicTo(cx - 110, 112, cx - 116, 143, cx - 104, bottom - 17)
+      ..lineTo(cx + 104, bottom - 17)
+      ..cubicTo(cx + 116, 143, cx + 110, 112, cx + 91, 94)
+      ..cubicTo(cx + 61, 66, cx + 17, 55, cx, 25);
+    canvas.drawPath(innerPath, inner);
 
+    // نقطة التاج في أعلى القوس.
     _diamond(canvas, Offset(cx, 8), 5.5, fill);
-    _rosette(canvas, Offset(cx, 88), 25, stroke, fill);
 
-    canvas.drawLine(const Offset(18, 150), Offset(72, 150), stroke);
-    canvas.drawLine(
-      Offset(size.width - 18, 150),
-      Offset(size.width - 72, 150),
-      stroke,
-    );
-    _diamond(canvas, const Offset(78, 150), 4, fill);
-    _diamond(canvas, Offset(size.width - 78, 150), 4, fill);
+    // نجمة هندسية صغيرة في قلب القوس.
+    _eightPointStar(canvas, Offset(cx, 100), 22, outer, fill);
+
+    // زخرفة صغيرة متناظرة عند قاعدة القوس، من دون خط أفقي خلف النص.
+    _diamond(canvas, Offset(cx - 105, bottom), 3.5, fill);
+    _diamond(canvas, Offset(cx + 105, bottom), 3.5, fill);
   }
 
   void _diamond(Canvas canvas, Offset center, double r, Paint paint) {
@@ -204,82 +204,84 @@ class IslamicSplashOrnament extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
-  void _rosette(
+  void _eightPointStar(
     Canvas canvas,
     Offset center,
     double radius,
     Paint stroke,
     Paint fill,
   ) {
-    for (var i = 0; i < 8; i++) {
-      final angle = i * math.pi / 4;
-      final petal = Offset(
-        center.dx + radius * 0.53 * math.cos(angle),
-        center.dy + radius * 0.53 * math.sin(angle),
+    final path = Path();
+    for (var i = 0; i < 16; i++) {
+      final angle = -math.pi / 2 + i * math.pi / 8;
+      final r = i.isEven ? radius : radius * 0.43;
+      final point = Offset(
+        center.dx + r * math.cos(angle),
+        center.dy + r * math.sin(angle),
       );
-      canvas.save();
-      canvas.translate(petal.dx, petal.dy);
-      canvas.rotate(angle);
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset.zero,
-          width: radius * 0.70,
-          height: radius * 0.32,
-        ),
-        stroke,
-      );
-      canvas.restore();
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
     }
-    canvas.drawCircle(center, radius * 0.20, fill);
-    canvas.drawCircle(center, radius * 0.42, stroke);
+    path.close();
+    canvas.drawPath(path, stroke);
+    canvas.drawCircle(center, radius * 0.16, fill);
   }
 
   @override
-  bool shouldRepaint(covariant IslamicSplashOrnament oldDelegate) => false;
+  bool shouldRepaint(covariant SplashArchPainter oldDelegate) => false;
 }
 
+/// فاصل زخرفي بسيط يربط العنوان ببقية الشاشة من دون ازدحام بصري.
 class SplashDividerPainter extends CustomPainter {
   const SplashDividerPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    const gold = Color(0xFFD9A441);
+    const gold = Color(0xFFD7A23A);
     final center = Offset(size.width / 2, size.height / 2);
     final line = Paint()
       ..color = gold
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
+      ..strokeWidth = 1.65
       ..strokeCap = StrokeCap.round;
     final fill = Paint()
       ..color = gold
       ..style = PaintingStyle.fill;
 
+    const centerGap = 31.0;
+    final sideInset = 12.0;
+    final ornamentOffset = 12.0;
+
     canvas.drawLine(
-      Offset(8, center.dy),
-      Offset(center.dx - 39, center.dy),
+      Offset(sideInset, center.dy),
+      Offset(center.dx - centerGap, center.dy),
       line,
     );
     canvas.drawLine(
-      Offset(center.dx + 39, center.dy),
-      Offset(size.width - 8, center.dy),
+      Offset(center.dx + centerGap, center.dy),
+      Offset(size.width - sideInset, center.dy),
       line,
     );
-    _diamond(canvas, Offset(31, center.dy), 3.5, fill);
-    _diamond(canvas, Offset(size.width - 31, center.dy), 3.5, fill);
+
+    _diamond(canvas, Offset(sideInset + ornamentOffset, center.dy), 3.2, fill);
+    _diamond(canvas, Offset(size.width - sideInset - ornamentOffset, center.dy), 3.2, fill);
 
     final outer = Path()
-      ..moveTo(center.dx, center.dy - 15)
-      ..lineTo(center.dx + 15, center.dy)
-      ..lineTo(center.dx, center.dy + 15)
-      ..lineTo(center.dx - 15, center.dy)
+      ..moveTo(center.dx, center.dy - 13)
+      ..lineTo(center.dx + 13, center.dy)
+      ..lineTo(center.dx, center.dy + 13)
+      ..lineTo(center.dx - 13, center.dy)
       ..close();
     canvas.drawPath(outer, line);
 
     final inner = Path()
-      ..moveTo(center.dx, center.dy - 6)
-      ..lineTo(center.dx + 6, center.dy)
-      ..lineTo(center.dx, center.dy + 6)
-      ..lineTo(center.dx - 6, center.dy)
+      ..moveTo(center.dx, center.dy - 5.5)
+      ..lineTo(center.dx + 5.5, center.dy)
+      ..lineTo(center.dx, center.dy + 5.5)
+      ..lineTo(center.dx - 5.5, center.dy)
       ..close();
     canvas.drawPath(inner, fill);
   }
